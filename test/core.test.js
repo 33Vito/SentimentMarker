@@ -79,7 +79,8 @@ const fs2 = require('fs');
 const exDir = process.env.EXAMPLES || require('path').join(__dirname, '..', 'examples');
 const pyJson = JSON.parse(fs2.readFileSync(exDir + '/launch-week.scored.json', 'utf8'));
 let d2 = C.docFromScored(pyJson);
-ok(d2.warn.unmatched === 0 && d2.warn.skipped === 0, 'python JSON loads with no warnings');
+const noWarn = d => Object.values(d.warn).every(v => v === 0);
+ok(noWarn(d2), 'python JSON loads with no warnings: ' + JSON.stringify(d2.warn));
 ok(d2.has.word && d2.has.sent && d2.has.para, 'python JSON has all levels');
 ok(d2.ref && d2.ref.scores.length > 1000, 'reference parsed: ' + (d2.ref && d2.ref.scores.length));
 ok(d2.sents.every((s, i) => s.id === i) && d2.words.every((t, i) => t.wid === i), 'ids sequential');
@@ -193,6 +194,16 @@ ok(/句.*来自文件/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mix
 ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:1360px\)/.test(html) && !/min-width:1520px/.test(html), 'wide breakpoint is 1360px in CSS and JS');
 ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
 ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
+
+// item 12: the examples in docs/FORMAT.md load cleanly
+const fmd = fs2.readFileSync(require('path').join(__dirname, '..', 'docs', 'FORMAT.md'), 'utf8');
+const fcsv = C.docFromScored(C.csvToScored(fmd.split('```csv\n')[1].split('```')[0]));
+ok(noWarn(fcsv) && fcsv.blocks[0].type === 'h' && fcsv.words.map(t => t.text).join() === 'better,feared', 'FORMAT.md CSV example loads with no warnings');
+const fjson = JSON.parse(fmd.split('```json\n')[1].split('```')[0]);
+fjson.reference.scores = fjson.reference.scores.filter(v => typeof v === 'number');
+const fj = C.docFromScored(fjson);
+ok(noWarn(fj) && fj.words[0].text === 'better', 'FORMAT.md JSON example offsets are right');
+ok(noWarn(csvDoc), 'python CSV loads with no warnings');
 
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
