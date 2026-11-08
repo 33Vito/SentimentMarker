@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SentimentMarker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..700&family=Literata:opsz,wght@7..72,400..700&display=swap">
+<style>
+/* Layout concept: grey desk, one white page in the middle, a thin toolbar on top,
+   a heat strip (minimap) along the right edge. Marker colours: orange = negative, teal = positive. */
+:root{
+  --bg:#e8eaee; --paper:#fbfbfc; --ink:#1c2128; --muted:#5d6672; --line:#d5d9e0;
+  --chip:#eceef2; --chip-on:#1c2128; --chip-on-ink:#fbfbfc;
+  --pos:#14a596; --neg:#f2802b; --a-min:.15; --a-max:.74; --focus:#3d6ee0;
+  --shadow:0 1px 2px rgba(20,24,30,.06),0 10px 32px rgba(20,24,30,.08);
+  --font-read:'Literata','Noto Serif SC','Songti SC','Source Han Serif SC',Georgia,serif;
+  --font-ui:'DM Sans','PingFang SC','Noto Sans SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif;
+  --font-num:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --bar-h:120px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101318; --paper:#181c22; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a;
+    --chip:#222831; --chip-on:#e9ecf0; --chip-on-ink:#14181d;
+    --pos:#1fb5a5; --neg:#f08c3f; --a-min:.14; --a-max:.52; --focus:#8fb0ff;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101318; --paper:#181c22; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a;
+  --chip:#222831; --chip-on:#e9ecf0; --chip-on-ink:#14181d;
+  --pos:#1fb5a5; --neg:#f08c3f; --a-min:.14; --a-max:.52; --focus:#8fb0ff;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font-ui);
+  padding-block:0 5rem;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-text-size-adjust:100%;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.pos{--hue:var(--pos)} .neg{--hue:var(--neg)}
+
+/* toolbar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);display:grid;gap:.6rem;padding-block:.75rem .65rem;max-width:60rem;margin-inline:auto;border-bottom:1px solid transparent}
+.bar.scrolled{border-bottom-color:var(--line)}
+.row{display:flex;align-items:center;gap:.6rem 1rem;flex-wrap:wrap;min-width:0}
+.top{justify-content:space-between;flex-wrap:nowrap}
+.brand{font:650 1rem/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap}
+.brand em{font-style:normal;padding:.08em .22em;margin-left:.04em;border-radius:.25em;
+  background-image:linear-gradient(103deg,color-mix(in srgb,var(--neg) 55%,transparent) 0,color-mix(in srgb,var(--neg) 55%,transparent) 48%,color-mix(in srgb,var(--pos) 55%,transparent) 52%,color-mix(in srgb,var(--pos) 55%,transparent) 100%)}
+.actions{display:flex;gap:.4rem}
+.btn{font:500 .8125rem/1 var(--font-ui);padding:.55rem .85rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:color-mix(in srgb,var(--ink) 35%,var(--line))}
+.btn.solid{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.seg{display:inline-flex;padding:3px;background:var(--chip);border-radius:.7rem;gap:2px}
+.seg button{border:0;background:transparent;padding:.42rem .95rem;border-radius:.5rem;font:500 .875rem/1 var(--font-ui);color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--chip-on);color:var(--chip-on-ink)}
+.legend{display:inline-flex;align-items:center;gap:.45rem;font:500 .75rem var(--font-ui);color:var(--muted)}
+.ramp{width:5.5rem;height:.55rem;border-radius:99px;border:1px solid var(--line);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--neg) 80%,transparent),transparent 50%,color-mix(in srgb,var(--pos) 80%,transparent))}
+.slider{display:flex;align-items:center;gap:.55rem;font:500 .75rem var(--font-ui);color:var(--muted);flex:1 1 11rem;min-width:0}
+.slider input{flex:1;min-width:5rem;accent-color:var(--ink)}
+.slider output{font:400 .75rem var(--font-num);min-width:2.6em;text-align:right;color:var(--ink)}
+.topics{display:flex;align-items:center;gap:.45rem;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.topics::-webkit-scrollbar{display:none}
+.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .75rem;border-radius:999px;border:1px solid var(--line);background:var(--paper);font:500 .8125rem/1 var(--font-ui);white-space:nowrap;flex:none}
+.chip small{font:400 .7rem var(--font-num);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.chip[aria-pressed="true"] small{color:inherit;opacity:.7}
+.chip .rm{opacity:.6;margin-right:-.2rem;padding:0 .15rem}
+.kw{flex:0 0 8.5rem;border:1px dashed var(--line);background:transparent;border-radius:999px;padding:.4rem .75rem;font:500 .8125rem/1 var(--font-ui)}
+.kw::placeholder{color:var(--muted)}
+.match{font:400 .75rem var(--font-num);color:var(--muted);flex:none;padding-left:.3rem}
+.lbl{font:500 .75rem var(--font-ui);color:var(--muted);flex:none;margin-right:.1rem}
+.only-m{display:none}
+
+/* page */
+.stage{display:block}
+.sheet{max-width:44rem;margin:.6rem auto 0;background:var(--paper);border-radius:1rem;box-shadow:var(--shadow);padding:clamp(1.4rem,4.5vw,3rem) clamp(1.3rem,5vw,3.4rem) clamp(2rem,5vw,3.6rem)}
+.dochead{margin-bottom:1.6rem;padding-bottom:1.3rem;border-bottom:1px solid var(--line)}
+.src{display:flex;align-items:center;gap:.5rem;margin:0 0 .6rem;font:400 .75rem var(--font-num);color:var(--muted);overflow-wrap:anywhere}
+.badge{font:500 .68rem var(--font-ui);letter-spacing:.04em;padding:.18rem .45rem;border-radius:.3rem;background:var(--chip);color:var(--ink)}
+.dochead h1{margin:0;font:650 clamp(1.6rem,4.6vw,2.15rem)/1.15 var(--font-ui);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
+.meta{margin:.7rem 0 .9rem;font:400 .8125rem var(--font-ui);color:var(--muted)}
+.dist{display:flex;height:.5rem;border-radius:99px;overflow:hidden;gap:2px;background:transparent}
+.dist i{display:block;min-width:2px}
+.dist .neg{background:color-mix(in srgb,var(--neg) 75%,transparent)}
+.dist .neu{background:var(--line)}
+.dist .pos{background:color-mix(in srgb,var(--pos) 75%,transparent)}
+.dlg{display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin:.5rem 0 0;font:400 .75rem var(--font-num);color:var(--muted)}
+
+.doc{font-family:var(--font-read);font-size:1.0625rem;line-height:1.85;color:var(--ink);overflow-wrap:break-word;hyphens:auto}
+.blk{margin:0 -.8rem 1.1rem;padding:.3rem .8rem;border-radius:.6rem;transition:background-color .2s,opacity .2s,box-shadow .2s}
+.blk.hd{margin-top:2.1rem;margin-bottom:.4rem;font:650 1.25rem/1.4 var(--font-ui);letter-spacing:-.01em;text-wrap:balance}
+.blk.hd:first-child{margin-top:0}
+.s,.w{transition:opacity .2s}
+.s{cursor:default}
+.s.dim{opacity:.3}
+.blk.blkdim{opacity:.26}
+.s.sel,.blk.sel{outline:1.5px solid color-mix(in srgb,var(--ink) 55%,transparent);outline-offset:2px;border-radius:.3em}
+.blk.sel{border-radius:.6rem}
+
+/* the marker */
+.lv-word .w.on,.lv-sent .s.on{
+  --hl:color-mix(in srgb,var(--hue) calc((var(--a-min) + var(--k) * (var(--a-max) - var(--a-min))) * 100%),transparent);
+  background-image:linear-gradient(103deg,transparent 0,var(--hl) 1.6%,var(--hl) 97%,transparent 100%);
+  background-repeat:no-repeat;background-size:100% 92%;background-position:0 58%;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  border-radius:.3em;padding:.05em .18em;margin:0 -.18em;
+}
+.lv-para .blk.on{
+  --hl:color-mix(in srgb,var(--hue) calc((var(--a-min) * .7 + var(--k) * (var(--a-max) - var(--a-min)) * .55) * 100%),transparent);
+  background-color:var(--hl);
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--hue) 85%,transparent);
+}
+.lv-sent .s,.lv-para .blk{cursor:pointer}
+.lv-word .w{cursor:pointer}
+@media (hover:hover){
+  .lv-sent .s:hover,.lv-word .w:hover{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--ink) 35%,transparent);text-underline-offset:.22em}
+  .lv-para .blk:hover{background-color:color-mix(in srgb,var(--ink) 4%,transparent)}
+  .lv-para .blk.on:hover{background-color:var(--hl)}
+}
+
+/* heat strip */
+.mm{position:fixed;z-index:20;right:max(3px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 6px);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:14px;touch-action:none;cursor:pointer}
+.mm canvas{display:block;width:100%;height:100%}
+.vp{position:absolute;left:-1px;right:-1px;border:1.5px solid color-mix(in srgb,var(--ink) 65%,transparent);border-radius:3px;background:color-mix(in srgb,var(--ink) 7%,transparent);pointer-events:none}
+
+/* inspector */
+.insp{position:fixed;z-index:35;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));margin-inline:auto;max-width:42rem;
+  bottom:max(12px,env(safe-area-inset-bottom,0px));background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);
+  padding:.85rem 1rem 1rem;max-height:min(46vh,24rem);overflow:auto;font-family:var(--font-ui)}
+@media (min-width:1440px){
+  .insp{left:auto;right:max(44px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:20rem;max-height:calc(100vh - var(--bar-h) - 48px)}
+}
+.ih{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.ik{font:500 .75rem var(--font-ui);color:var(--muted)}
+.is{font:600 1.15rem var(--font-num)}
+.is.pos{color:var(--ink)}
+.x{margin-left:auto;border:0;background:var(--chip);width:1.9rem;height:1.9rem;border-radius:.5rem;font-size:1.1rem;line-height:1}
+.itx{margin:0 0 .7rem;font:400 .9rem/1.6 var(--font-read);color:var(--ink)}
+.cl{list-style:none;margin:0;padding:0;display:grid;gap:.35rem}
+.cl li{display:grid;grid-template-columns:minmax(0,auto) auto 1fr;gap:.2rem .6rem;align-items:baseline;padding:.3rem .45rem;border-radius:.45rem}
+.cl li.hit{background:var(--chip)}
+.cl .wt{font:500 .875rem var(--font-ui);overflow-wrap:anywhere}
+.cl .sc,.cl .sn{font:500 .78rem var(--font-num);padding:.1rem .4rem;border-radius:.3rem;background:color-mix(in srgb,var(--hue) 30%,transparent);white-space:nowrap}
+.cl .nt{font:400 .75rem var(--font-ui);color:var(--muted);min-width:0}
+.cl.bl li{grid-template-columns:auto 1fr}
+.none,.ctx{margin:.4rem 0 0;font:400 .78rem var(--font-ui);color:var(--muted)}
+.ctx b{font:500 .78rem var(--font-num);color:var(--ink)}
+
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--chip-on);color:var(--chip-on-ink);border-radius:.55rem;padding:.4rem .6rem;font:500 .78rem/1.5 var(--font-ui);box-shadow:var(--shadow);display:grid;gap:.1rem;max-width:16rem}
+.tip .dot{display:inline-block;width:.55rem;height:.55rem;border-radius:99px;margin-right:.4rem;background:var(--hue,var(--muted))}
+.tip b{font:500 .78rem var(--font-num)}
+.tip .m{opacity:.7}
+
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 4.2rem);background:var(--chip-on);color:var(--chip-on-ink);border-radius:.7rem;padding:.6rem .9rem;font:500 .85rem/1.4 var(--font-ui);box-shadow:var(--shadow);max-width:min(30rem,calc(100% - 32px))}
+.drop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(3px);font:600 1.2rem var(--font-ui)}
+.drop span{padding:2.2rem 2.6rem;border:2px dashed var(--ink);border-radius:1.2rem}
+.paste{position:fixed;inset:0;z-index:65;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:blur(3px)}
+.pcard{width:min(40rem,100%);background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);padding:1rem;display:grid;gap:.8rem}
+.pcard h2{margin:0;font:650 1rem var(--font-ui)}
+.pcard textarea{width:100%;min-height:12rem;max-height:50vh;resize:vertical;border:1px solid var(--line);border-radius:.7rem;background:var(--bg);padding:.8rem;font:400 .95rem/1.6 var(--font-read)}
+.pcard .acts{display:flex;justify-content:flex-end;gap:.5rem}
+
+@media (max-width:760px){
+  .sheet{margin-right:22px}
+  .topics{display:none}
+  .topics.open{display:flex}
+  .only-m{display:inline-flex}
+  .blk{margin-inline:-.55rem;padding-inline:.55rem}
+  .legend .ramp{width:4rem}
+  .actions{gap:.3rem}
+  .actions .btn{padding:.5rem .6rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+</head>
+<body>
+<header class="bar" id="bar">
+  <div class="row top">
+    <div class="brand">Sentiment<em>Marker</em></div>
+    <div class="actions">
+      <button class="btn solid" id="btnOpen" type="button">打开文件</button>
+      <button class="btn" id="btnPaste" type="button">粘贴文本</button>
+      <button class="btn" id="btnSample" type="button">示例</button>
+    </div>
+  </div>
+  <div class="row ctl">
+    <div class="seg" role="radiogroup" aria-label="分析粒度" id="seg">
+      <button type="button" role="radio" aria-checked="false" data-level="word" title="词（按 1）">词</button>
+      <button type="button" role="radio" aria-checked="true" data-level="sent" title="句（按 2）">句</button>
+      <button type="button" role="radio" aria-checked="false" data-level="para" title="段（按 3）">段</button>
+    </div>
+    <span class="legend" aria-hidden="true"><span>负面</span><i class="ramp"></i><span>正面</span></span>
+    <label class="slider" for="th">弱信号过滤<input id="th" type="range" min="0" max="0.9" step="0.01" value="0.15"><output id="thOut" for="th">15%</output></label>
+    <button class="btn only-m" id="btnTopics" type="button" aria-expanded="false">主题词</button>
+  </div>
+  <div class="row topics" id="topics">
+    <span class="lbl">主题词</span>
+    <span id="chips" style="display:contents"></span>
+    <input class="kw" id="kwInput" type="text" placeholder="添加主题词" aria-label="添加主题词" autocomplete="off">
+    <span class="match" id="matchCount" aria-live="polite"></span>
+  </div>
+</header>
+
+<main class="stage">
+  <div class="sheet">
+    <div class="dochead" id="dochead"></div>
+    <article class="doc lv-sent" id="doc" aria-label="文档正文"></article>
+  </div>
+</main>
+
+<aside class="mm" id="mm" title="整篇情感热力条，点击或拖动跳转"><canvas id="mmCanvas"></canvas><div class="vp" id="vp"></div></aside>
+<aside class="insp" id="insp" hidden></aside>
+<div class="tip" id="tip" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="drop" id="drop" hidden><span>松开以打开 PDF / Markdown / 文本</span></div>
+<div class="paste" id="paste" hidden>
+  <div class="pcard">
+    <h2>粘贴文本或 Markdown</h2>
+    <textarea id="pasteText" placeholder="把文章、笔记或网页正文粘贴到这里"></textarea>
+    <div class="acts"><button class="btn" id="pasteCancel" type="button">取消</button><button class="btn solid" id="pasteGo" type="button">分析</button></div>
+  </div>
+</div>
+<input type="file" id="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/plain,text/markdown" hidden>
+
+<script>
+//<core>
+/* ========== CORE: input parsing + sentiment engine (no DOM) ========== */
+const CAP = { word: 3.0, sent: 0.6, para: 0.3 };
+const LEX = new Map(), NEGS = new Set(), BOOST = new Map();
+const BUTS = new Set(['but','however','nevertheless','nonetheless','但是','可是','然而','不过']);
+const lex = (v, s) => { for (const w of s.split(/\s+/)) if (w) LEX.set(w, v); };
+
+lex(3.5, `amazing wonderful fantastic outstanding superb excellent thrilled delighted love loved lovely awesome terrific perfect triumph triumphant breakthrough ecstatic spectacular magnificent flawless`);
+lex(2.8, `great happy joy joyful proud impressive remarkable cheerful grateful brilliant beautiful inspiring inspired exciting excited victory win won winning succeed success successful thriving generous`);
+lex(2.2, `good pleasant pleasure enjoy enjoyed enjoyable glad confident confidence hopeful encouraging encouraged valuable strength strong stronger strongest stable secure reliable effective efficient benefit benefits growth gain gained gains improve improved improvement improving progress welcome healthy recover recovered recovery relief relieved smooth clean best better`);
+lex(1.9, `thanks thank thankful`);
+lex(1.6, `kind kindly helpful useful nice fine fair solid steady calm safe ready trust trusted supportive patient patience honest clear easy easier simple fresh fun warm bright rise rose rising boost opportunity opportunities positive`);
+lex(1.0, `active interested interesting free approve approved repair repaired fix fixed solve solved resolve resolved pleased upgrade`);
+lex(-3.5, `terrible awful horrible disaster catastrophe catastrophic devastating devastated hate hated disgusting tragic tragedy collapse collapsed fraud horrific nightmare brutal furious`);
+lex(-2.8, `bad angry anger painful pain crisis fail failed failure failing hurt loss lose loses losing lost damage damaged corrupt corrupted broken disappointing disappointed disappointment miserable hopeless`);
+lex(-2.2, `poor weak worse worst threat threatened fear afraid anxious anxiety sad sadness stress stressed stressful conflict crash crashed mistake mistakes error errors bug bugs blame blamed blaming debt deficit shortage decline declined declining drop dropped fall fell falling cancel cancelled canceled reject rejected refuse refused harm harmful regret frustrating frustrated frustration exhausted exhausting lonely bleak grim dire`);
+lex(-1.8, `sorry`);
+lex(-1.6, `problem problems risk risks worry worried worries concern concerned doubt doubts uncertain uncertainty fragile unstable volatile slow delay delayed lag lagging difficult difficulty struggle struggled struggling tense tired miss missed missing expensive costly burden confusing confused confusion messy discouraged trouble troubled`);
+lex(-1.2, `serious unfortunate unfortunately limited lack lacking tough`);
+/* Chinese (small starter set) */
+lex(2.5, `优秀 出色 精彩 惊喜 美好 满意 成功 高兴 开心 喜欢 感谢 希望 稳定 顺利 有效 宝贵 友善 温暖 进步 增长 信任 强大 棒`);
+lex(2.0, `好 不错 赞`);
+lex(-2.6, `糟糕 失败 痛苦 愤怒 崩溃 危机 失望 恐惧 悲伤 焦虑 难过 伤害`);
+lex(-1.8, `担心 损失 下降 困难 疲惫 压力 错误 冲突 脆弱 不安 遗憾 不好 坏 抱歉`);
+lex(-1.4, `问题 风险 延迟`);
+for (const w of `not no never none nobody nothing neither nor nowhere without hardly scarcely cannot cant dont doesnt didnt isnt arent wasnt werent wont wouldnt couldnt shouldnt havent hasnt hadnt aint don't doesn't didn't isn't aren't wasn't weren't won't wouldn't couldn't shouldn't haven't hasn't hadn't can't ain't 不 没 没有 无 非 未 别 不是 并非`.split(/\s+/)) NEGS.add(w);
+Object.entries({very:1.35,extremely:1.5,really:1.3,incredibly:1.5,so:1.25,highly:1.3,deeply:1.4,truly:1.3,remarkably:1.4,absolutely:1.5,completely:1.4,totally:1.4,especially:1.3,particularly:1.25,quite:1.15,utterly:1.5,seriously:1.3,
+  slightly:.75,somewhat:.8,barely:.7,fairly:.9,rather:.9,mildly:.7,partly:.8,marginally:.75,
+  非常:1.5,很:1.3,特别:1.4,十分:1.4,太:1.3,极其:1.6,相当:1.3,格外:1.4,有点:.75,稍微:.8,略:.85,比较:.9,还算:.85}).forEach(([k,v]) => BOOST.set(k, v));
+
+const CJK_RE = /[㐀-鿿豈-﫿]/;
+const CJK_MULTI = new Set([...LEX.keys(), ...NEGS, ...BOOST.keys(), ...BUTS].filter(k => CJK_RE.test(k) && [...k].length >= 2));
+const SEG = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter(undefined, { granularity: 'word' }) : null;
+
+function splitCJK(s) {
+  const chars = [...s];
+  if (chars.length < 2) return [{ text: s, word: true }];
+  if (CJK_MULTI.has(s)) return [{ text: s, word: true }];
+  const out = []; let i = 0, buf = '';
+  while (i < chars.length) {
+    let hit = 0;
+    for (let L = Math.min(4, chars.length - i); L >= 2; L--) { if (CJK_MULTI.has(chars.slice(i, i + L).join(''))) { hit = L; break; } }
+    if (hit) { if (buf) { out.push({ text: buf, word: true }); buf = ''; } out.push({ text: chars.slice(i, i + hit).join(''), word: true }); i += hit; }
+    else { buf += chars[i]; i++; }
+  }
+  if (buf) out.push({ text: buf, word: true });
+  return out;
+}
+function rawTokens(text) {
+  const base = [];
+  if (SEG) { for (const s of SEG.segment(text)) base.push({ text: s.segment, word: !!s.isWordLike }); }
+  else { const re = /[\p{L}\p{N}'’]+|\s+|[^\s\p{L}\p{N}]/gu; let m; while ((m = re.exec(text))) base.push({ text: m[0], word: /[\p{L}\p{N}]/u.test(m[0]) }); }
+  const res = [];
+  for (const t of base) { if (t.word && CJK_RE.test(t.text)) res.push(...splitCJK(t.text)); else res.push(t); }
+  return res;
+}
+function lexLookup(w) {
+  if (LEX.has(w)) return LEX.get(w);
+  if (CJK_RE.test(w)) return undefined;
+  const tries = [];
+  if (w.endsWith('ies')) tries.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('ied')) tries.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('ably')) tries.push(w.slice(0, -4) + 'able');
+  if (w.endsWith('ily')) tries.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('ly')) tries.push(w.slice(0, -2));
+  if (w.endsWith('es')) tries.push(w.slice(0, -2));
+  if (w.endsWith('s')) tries.push(w.slice(0, -1));
+  if (w.endsWith('ed')) { tries.push(w.slice(0, -2)); tries.push(w.slice(0, -1)); }
+  if (w.endsWith('ing')) { tries.push(w.slice(0, -3)); tries.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('er')) tries.push(w.slice(0, -2));
+  for (const t of tries) if (t.length > 2 && LEX.has(t)) return LEX.get(t);
+  return undefined;
+}
+function lookup(lower) {
+  if (NEGS.has(lower) || /n't$/.test(lower)) return { k: 'neg' };
+  if (BOOST.has(lower)) return { k: 'boost', m: BOOST.get(lower) };
+  const v = lexLookup(lower);
+  if (v !== undefined) return { k: 'lex', v };
+  return null;
+}
+const strength = (level, score) => Math.min(1, Math.abs(score) / CAP[level]);
+
+function analyzeSentence(text) {
+  const toks = rawTokens(text);
+  const wi = [];
+  toks.forEach((t, i) => { if (t.word) { t.lower = t.text.toLowerCase().replace(/[’‘]/g, "'"); t.info = lookup(t.lower); wi.push(i); } });
+  let butAt = -1;
+  for (let p = 0; p < wi.length; p++) {
+    const t = toks[wi[p]];
+    if (BUTS.has(t.lower)) { const prev = p > 0 ? toks[wi[p - 1]] : null; if (!(prev && prev.info && prev.info.k === 'neg')) { butAt = p; break; } }
+  }
+  let S = 0; const scored = [];
+  const hasLower = /[a-z]/.test(text);
+  for (let p = 0; p < wi.length; p++) {
+    const t = toks[wi[p]];
+    if (!t.info || t.info.k !== 'lex') continue;
+    const v = t.info.v; let mult = 1, negW = null; const notes = [];
+    for (let d = 1; d <= 3 && p - d >= 0; d++) {
+      const pt = toks[wi[p - d]], pi = pt.info;
+      if (!pi) continue;
+      if (pi.k === 'boost') { const m = 1 + (pi.m - 1) * [1, .95, .9][d - 1]; mult *= m; notes.push({ t: 'boost', w: pt.text, m }); }
+      else if (pi.k === 'neg' && !negW) negW = pt.text;
+    }
+    let eff = v * mult;
+    if (negW) { eff *= v > 0 ? -0.6 : -0.5; notes.push({ t: 'neg', w: negW }); }
+    if (hasLower && t.text.length > 2 && t.text === t.text.toUpperCase() && /[A-Z]/.test(t.text)) { eff *= 1.2; notes.push({ t: 'caps' }); }
+    eff = Math.max(-4.5, Math.min(4.5, eff));
+    t.score = eff; t.base = v; t.notes = notes;
+    let w = 1;
+    if (butAt >= 0) { w = p < butAt ? 0.5 : p > butAt ? 1.5 : 1; if (w !== 1) notes.push({ t: 'but', w }); }
+    S += eff * w; scored.push(t);
+  }
+  const ex = (text.match(/!/g) || []).length;
+  if (S !== 0 && ex) S += Math.sign(S) * Math.min(ex, 3) * 0.3;
+  return { text, toks, scored, raw: S, score: S / Math.sqrt(S * S + 15), lc: text.toLowerCase() };
+}
+
+const ABBR = new Set(['mr','mrs','ms','dr','prof','sr','jr','st','vs','etc','e.g','i.e','fig','figs','al','no','inc','ltd','co','dept','approx','est','vol','pp','cf','eq','sec','ch','jan','feb','mar','apr','jun','jul','aug','sep','sept','oct','nov','dec','u.s','u.k']);
+function splitSentences(text) {
+  const out = []; let start = 0, m;
+  const re = /([.!?…]+|[。！？]+)(["'”’»)\]」』）]*)(\s*)/g;
+  while ((m = re.exec(text))) {
+    const end = m.index + m[1].length + m[2].length, gapEnd = re.lastIndex;
+    const cjk = /[。！？]/.test(m[1]);
+    if (!cjk) {
+      if (!m[3] && gapEnd < text.length) continue;
+      const before = text.slice(start, m.index);
+      if (m[1] === '.') {
+        const lw = (before.match(/([A-Za-z.]+)$/) || [])[1];
+        if (lw && (ABBR.has(lw.toLowerCase()) || lw.length === 1)) continue;
+        if (start === 0 && /^\d+$/.test(before.trim())) continue;
+        const next = text[gapEnd];
+        if (next && /[a-z]/.test(next)) continue;
+      }
+    }
+    out.push({ text: text.slice(start, end), gap: text.slice(end, gapEnd) });
+    start = gapEnd;
+  }
+  if (start < text.length) out.push({ text: text.slice(start), gap: '' });
+  return out.filter(s => s.text.trim());
+}
+
+const STOP = new Set(`the and but with without within from into onto over under about after before during while because that this these those then than they them their theirs were been being does done have has had having its itself she him her hers who whom whose which what when where why how all any both each few more most other some such only own same too very can will just should would could might may must shall also not nor yet still even ever never again once here there thus though although whether either neither one two three four five six seven eight nine ten hundred many much every another anyone someone everyone nobody nothing something anything everything first last next new old like get got make made makes making take took taken see saw seen say said says told tell came come goes went going gone around across along among between through against towards upon per via etc monday tuesday wednesday thursday friday saturday sunday january february march april june july august september october november december`.split(/\s+/));
+const normWord = w => { w = w.toLowerCase().replace(/’/g, "'"); if (!CJK_RE.test(w) && w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0, -1); return w; };
+
+function buildDoc(title, blocks) {
+  const doc = { title, blocks: [], sents: [], words: [] };
+  let sid = 0, wid = 0;
+  blocks.forEach((b, bi) => {
+    const blk = { id: bi, type: b.type, sents: [], score: 0, k: 0 };
+    for (const st of splitSentences(b.text)) {
+      const a = analyzeSentence(st.text);
+      a.gap = st.gap; a.id = sid++; a.block = bi;
+      a.norm = new Set(); for (const t of a.toks) if (t.word) a.norm.add(normWord(t.text));
+      a.k = strength('sent', a.score);
+      for (const t of a.scored) { t.wid = wid++; t.k = strength('word', t.score); doc.words.push(t); }
+      blk.sents.push(a); doc.sents.push(a);
+    }
+    blk.score = blk.sents.length ? blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length : 0;
+    blk.k = strength('para', blk.score);
+    doc.blocks.push(blk);
+  });
+  return doc;
+}
+function extractTopics(doc, max = 8) {
+  const cnt = new Map();
+  for (const s of doc.sents) for (const t of s.toks) {
+    if (!t.word || t.info || /^\d+$/.test(t.text)) continue;
+    const k = normWord(t.text), cjk = CJK_RE.test(k);
+    if ((!cjk && k.length < 4) || (cjk && [...k].length < 2) || STOP.has(k)) continue;
+    let e = cnt.get(k); if (!e) { e = { key: k, count: 0, surf: new Map() }; cnt.set(k, e); }
+    e.count++; const sf = t.text.toLowerCase(); e.surf.set(sf, (e.surf.get(sf) || 0) + 1);
+  }
+  return [...cnt.values()].filter(e => e.count >= 2)
+    .sort((a, b) => b.count - a.count || b.key.length - a.key.length).slice(0, max)
+    .map(e => ({ key: e.key, sub: null, label: [...e.surf.entries()].sort((a, b) => b[1] - a[1])[0][0], count: e.count, on: false, custom: false }));
+}
+function makeTopic(str, doc) {
+  const s = str.trim().toLowerCase(); if (!s) return null;
+  const phrase = /\s/.test(s) || CJK_RE.test(s);
+  const t = { key: phrase ? s : normWord(s), sub: phrase ? s : null, label: s, count: 0, on: true, custom: true };
+  if (doc) t.count = doc.sents.filter(x => matches(x, t)).length;
+  return t;
+}
+const matches = (sent, t) => t.sub ? sent.lc.includes(t.sub) : sent.norm.has(t.key);
+
+function parseText(raw) {
+  return raw.replace(/\r\n?/g, '\n').split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean).map(text => ({ type: 'p', text }));
+}
+const mdClean = t => t.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*`~]+/g, '').replace(/\s+/g, ' ').trim();
+function parseMarkdown(raw) {
+  raw = raw.replace(/\r\n?/g, '\n').replace(/^---\n[\s\S]*?\n---\n/, '');
+  const blocks = []; let buf = [], code = false;
+  const flush = () => { if (buf.length) { const t = mdClean(buf.join(' ')); if (t) blocks.push({ type: 'p', text: t }); buf = []; } };
+  for (const line of raw.split('\n')) {
+    if (/^\s*```/.test(line)) { flush(); code = !code; continue; }
+    if (code) continue;
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    if (h) { flush(); const t = mdClean(h[2]); if (t) blocks.push({ type: 'h', text: t }); continue; }
+    if (!line.trim()) { flush(); continue; }
+    if (/^\s*\|/.test(line) || /^\s*[-*_]{3,}\s*$/.test(line)) { flush(); continue; }
+    const li = line.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
+    if (li) { flush(); buf.push(li[1]); flush(); continue; }
+    buf.push(line.replace(/^\s*>\s?/, '').trim());
+  }
+  flush(); return blocks;
+}
+
+/* PDF text items -> lines -> blocks (pure, so it can be tested without pdf.js) */
+function itemsToLines(items) {
+  const lines = []; let cur = null;
+  for (const it of items) {
+    if (typeof it.str !== 'string' || it.str === '') continue;
+    const tr = it.transform, x = tr[4], y = tr[5];
+    const size = Math.abs(it.height) || Math.hypot(tr[2], tr[3]) || 10;
+    if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x }; }
+    if (cur.text && x - cur.endX > size * 0.2 && !/\s$/.test(cur.text) && !/^\s/.test(it.str)) cur.text += ' ';
+    cur.text += it.str; cur.endX = x + (it.width || 0); cur.size = Math.max(cur.size, size);
+  }
+  if (cur) lines.push(cur);
+  return lines.map(l => ({ ...l, text: l.text.replace(/\s+/g, ' ').trim() })).filter(l => l.text);
+}
+function linesToBlocks(pages) {
+  const n = pages.length, freq = new Map();
+  const key = l => l.text.replace(/\d+/g, '#').trim().toLowerCase();
+  const edge = (l, p) => { const H = p.height || 800; return l.y > H * 0.92 || l.y < H * 0.08; };
+  pages.forEach(p => { const seen = new Set(); p.lines.forEach(l => { if (edge(l, p)) { const k = key(l); if (!seen.has(k)) { seen.add(k); freq.set(k, (freq.get(k) || 0) + 1); } } }); });
+  const drop = (l, p) => edge(l, p) && ((n >= 3 && freq.get(key(l)) >= Math.max(3, n * 0.4)) || /^(page\s*)?\d{1,4}(\s*(of|\/)\s*\d{1,4})?$/i.test(l.text.trim()));
+  const kept = pages.map(p => p.lines.filter(l => !drop(l, p)));
+  const hist = new Map();
+  kept.forEach(ls => ls.forEach(l => { const k = Math.round(l.size); hist.set(k, (hist.get(k) || 0) + l.text.length); }));
+  const body = [...hist.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 10;
+  const blocks = []; let curP = null, curH = null, prevHead = false;
+  const closeP = () => { if (curP) { blocks.push({ type: 'p', text: curP.text.trim() }); curP = null; } };
+  kept.forEach(ls => {
+    const gaps = []; for (let i = 1; i < ls.length; i++) { const g = ls[i - 1].y - ls[i].y; if (g > 0 && g < ls[i].size * 3) gaps.push(g); }
+    gaps.sort((a, b) => a - b);
+    const typical = gaps.length ? gaps[Math.floor((gaps.length - 1) / 2)] : (ls[0] ? ls[0].size * 1.3 : 12);
+    ls.forEach((l, i) => {
+      const prev = i > 0 ? ls[i - 1] : null, gap = prev ? prev.y - l.y : null;
+      const isHead = l.size >= body * 1.18 && l.text.length <= 140 && !/[,;]$/.test(l.text);
+      if (isHead) {
+        if (curH && prevHead && gap != null && gap < l.size * 1.8 && Math.abs(prev.size - l.size) < 0.6) curH.text += ' ' + l.text;
+        else { closeP(); curH = { type: 'h', text: l.text }; blocks.push(curH); }
+        prevHead = true; return;
+      }
+      curH = null; prevHead = false;
+      let fresh;
+      if (!curP) fresh = true;
+      else if (!prev) fresh = /[.!?:”"')\]。！？]$/.test(curP.text.trim());
+      else fresh = gap > typical * 1.45 || (l.x > prev.x + l.size * 1.2 && /[.!?”"')]$/.test(curP.text.trim()));
+      if (fresh) { closeP(); curP = { text: l.text }; }
+      else if (/[A-Za-z]-$/.test(curP.text) && /^[a-z]/.test(l.text)) curP.text = curP.text.slice(0, -1) + l.text;
+      else curP.text += ' ' + l.text;
+    });
+  });
+  closeP();
+  return blocks.filter(b => b.text);
+}
+if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP };
+//</core>
+
+//<app>
+/* ========== APP: rendering + interaction ========== */
+const SAMPLE_TITLE = 'Launch Week Retrospective';
+const SAMPLE_MD = `## Monday: the launch
+We shipped the new reader on Monday, and the first day went better than anyone expected. Early users loved the clean layout, and several told us it was the most pleasant product they had tried this year. The team was thrilled, although nobody had slept much.
+
+## Wednesday: the bug
+By Wednesday, the mood had changed. A serious bug corrupted saved highlights for about two hundred customers, and the support queue filled with angry messages. It was a painful mistake, and we are deeply sorry. The fix was slow because the failing code was fragile and poorly documented.
+
+## Money
+Funding was the other worry. Our runway looks uncertain after the market dropped, and two investors cancelled meetings. Still, one advisor was not discouraged and offered a generous introduction that could change the funding picture. We remain cautiously hopeful.
+
+## Customers
+The customers who stayed were remarkably kind. They reported the problem clearly, tested each patch, and never blamed the team. One wrote that the product was not perfect but already valuable, which meant a lot to everyone. That patience is a real strength we should protect.
+
+## What comes next
+Looking ahead, the plan is simple. We will repair the storage layer, write honest documentation, and improve onboarding so new users succeed faster. Growth matters less than trust right now. If we keep the product stable, the rest should follow.
+
+Thanks to the whole team for an exhausting, difficult, and ultimately encouraging week. We lost sleep and some confidence, but we gained a better product and a stronger group.`;
+const MAX_PAGES = 200;
+
+const $ = s => document.querySelector(s);
+const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics') };
+const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0 };
+let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
+
+const fmt = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const sg = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let toastTimer = 0;
+function toast(msg, ms = 3200) {
+  clearTimeout(toastTimer);
+  if (!msg) { E.toast.hidden = true; return; }
+  E.toast.textContent = msg; E.toast.hidden = false;
+  if (ms) toastTimer = setTimeout(() => { E.toast.hidden = true; }, ms);
+}
+
+function renderHead() {
+  const D = S.doc, n = D.sents.length;
+  let pos = 0, neg = 0, sum = 0;
+  D.sents.forEach(s => { if (s.score >= 0.12) pos++; else if (s.score <= -0.12) neg++; sum += s.score; });
+  const neu = n - pos - neg; S.avg = n ? sum / n : 0;
+  const pct = v => Math.round(v / n * 100) + '%';
+  const paras = D.blocks.filter(b => b.type === 'p').length;
+  E.head.innerHTML = `<p class="src"><span>${esc(S.name)}</span>${S.sample ? '<span class="badge">示例</span>' : ''}</p>
+    <h1>${esc(D.title)}</h1>
+    <p class="meta">${paras} 段 · ${n} 句 · ${D.words.length} 个情感词 · 全文均值 ${fmt(S.avg)}</p>
+    <div class="dist" role="img" aria-label="负面 ${pct(neg)}，中性 ${pct(neu)}，正面 ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
+    <p class="dlg"><span>负面 ${pct(neg)}</span><span>中性 ${pct(neu)}</span><span>正面 ${pct(pos)}</span></p>`;
+}
+function renderDoc() {
+  const out = [];
+  S.doc.blocks.forEach(b => {
+    const tag = b.type === 'h' ? 'h2' : 'p';
+    out.push(`<${tag} class="blk${b.type === 'h' ? ' hd' : ''} ${sg(b.score)}" data-b="${b.id}" style="--k:${b.k.toFixed(3)}">`);
+    for (const s of b.sents) {
+      out.push(`<span class="s ${sg(s.score)}" data-s="${s.id}" style="--k:${s.k.toFixed(3)}">`);
+      for (const t of s.toks) {
+        if (t.score) out.push(`<span class="w ${sg(t.score)}" data-w="${t.wid}" style="--k:${t.k.toFixed(3)}">${esc(t.text)}</span>`);
+        else out.push(esc(t.text));
+      }
+      out.push('</span>' + esc(s.gap));
+    }
+    out.push(`</${tag}>`);
+  });
+  E.doc.innerHTML = out.join('');
+  els = { w: [...E.doc.querySelectorAll('.w')], s: [...E.doc.querySelectorAll('.s')], b: [...E.doc.querySelectorAll('.blk')] };
+}
+
+function refresh() {
+  E.doc.className = 'doc lv-' + S.level;
+  const [E_, D_] = S.level === 'word' ? [els.w, S.doc.words] : S.level === 'sent' ? [els.s, S.doc.sents] : [els.b, S.doc.blocks];
+  for (let i = 0; i < E_.length; i++) E_[i].classList.toggle('on', D_[i].k > 0 && D_[i].k >= S.th);
+  applyTopics();
+}
+function applyTopics() {
+  const act = S.topics.filter(t => t.on); let hits = 0;
+  visS = []; visB = [];
+  S.doc.blocks.forEach((b, bi) => {
+    const flags = b.sents.map(s => act.some(t => matches(s, t)));
+    const any = flags.some(Boolean), be = els.b[bi];
+    visB[bi] = !act.length || any;
+    be.classList.toggle('blkdim', !!act.length && !any);
+    b.sents.forEach((s, i) => {
+      const vis = !act.length || flags[i];
+      visS[s.id] = vis && (!act.length || any);
+      els.s[s.id].classList.toggle('dim', !!act.length && any && !flags[i]);
+      if (act.length && flags[i]) hits++;
+    });
+  });
+  E.match.textContent = act.length ? `匹配 ${hits} 句` : '';
+  const nOn = act.length;
+  E.btnTopics.textContent = nOn ? `主题词 · ${nOn}` : '主题词';
+  drawMinimap();
+}
+function setLevel(l) {
+  S.level = l;
+  E.seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.level === l)));
+  closeInsp(); refresh();
+}
+
+/* topic chips */
+function renderChips() {
+  const anyOn = S.topics.some(t => t.on);
+  E.chips.innerHTML = S.topics.map((t, i) =>
+    `<button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}">${esc(t.label)} <small>${t.count}</small>${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="删除">×</span>' : ''}</button>`).join('')
+    + (anyOn ? '<button type="button" class="chip" data-clear="1">清除</button>' : '');
+}
+E.chips.addEventListener('click', e => {
+  if (e.target.closest('[data-clear]')) { S.topics.forEach(t => t.on = false); }
+  else if (e.target.dataset.rm) { S.topics.splice(+e.target.dataset.rm, 1); }
+  else { const c = e.target.closest('.chip'); if (!c) return; const t = S.topics[+c.dataset.i]; t.on = !t.on; }
+  renderChips(); applyTopics();
+});
+E.kw.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const t = makeTopic(E.kw.value, S.doc); if (!t) return;
+  if (!t.count) { toast(`文中没有找到“${t.label}”`); return; }
+  S.topics.push(t); E.kw.value = ''; renderChips(); applyTopics();
+});
+E.btnTopics.addEventListener('click', () => { const o = E.topics.classList.toggle('open'); E.btnTopics.setAttribute('aria-expanded', String(o)); syncBar(); });
+
+/* heat strip */
+function layout() {
+  if (!S.doc) return;
+  const sy = window.scrollY, f = e => { const r = e.getBoundingClientRect(); return { top: r.top + sy, h: r.height }; };
+  pos = { s: els.s.map(f), b: els.b.map(f) };
+}
+function drawMinimap() {
+  const W = E.mm.clientWidth, H = E.mm.clientHeight;
+  if (!W || !H || !S.doc) return;
+  const dpr = window.devicePixelRatio || 1, cv = E.mmc;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const total = document.documentElement.scrollHeight, sc = H / total;
+  const cp = cssVar('--pos'), cn = cssVar('--neg');
+  const ar = E.doc.getBoundingClientRect();
+  ctx.globalAlpha = .55; ctx.fillStyle = cssVar('--line');
+  ctx.fillRect(2, (ar.top + window.scrollY) * sc, W - 4, Math.max(2, ar.height * sc));
+  const para = S.level === 'para', list = para ? S.doc.blocks : S.doc.sents, P = para ? pos.b : pos.s, vis = para ? visB : visS;
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    if (!(it.k > 0 && it.k >= S.th) || vis[i] === false || !P[i]) continue;
+    ctx.fillStyle = it.score > 0 ? cp : cn; ctx.globalAlpha = Math.min(1, .35 + it.k * .65);
+    ctx.fillRect(2, P[i].top * sc, W - 4, Math.max(2, P[i].h * sc));
+  }
+  ctx.globalAlpha = 1; updateVP();
+}
+function updateVP() {
+  const total = document.documentElement.scrollHeight, H = E.mm.clientHeight;
+  E.vp.style.top = (window.scrollY / total * H) + 'px';
+  E.vp.style.height = Math.max(10, window.innerHeight / total * H) + 'px';
+}
+let drag = false;
+const jump = e => { const r = E.mm.getBoundingClientRect(); window.scrollTo({ top: (e.clientY - r.top) / r.height * document.documentElement.scrollHeight - window.innerHeight / 2 }); };
+E.mm.addEventListener('pointerdown', e => { drag = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
+E.mm.addEventListener('pointermove', e => { if (drag) jump(e); });
+E.mm.addEventListener('pointerup', () => { drag = false; });
+E.mm.addEventListener('pointercancel', () => { drag = false; });
+
+/* inspector */
+const noteText = t => t.notes.map(n => n.t === 'boost' ? `${n.m < 1 ? '减弱' : '加强'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `否定 ${n.w}` : n.t === 'caps' ? '全大写 ×1.2' : n.w < 1 ? '转折之前 ×0.5' : '转折之后 ×1.5').join(' · ');
+function inspSent(s, wid) {
+  const b = S.doc.blocks[s.block];
+  const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
+    `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
+  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span><button class="x" type="button" data-close aria-label="关闭">×</button></div>
+    <p class="itx">${esc(s.text)}</p>
+    ${rows ? `<ul class="cl">${rows}</ul>` : '<p class="none">这句没有命中情感词。</p>'}
+    <p class="ctx">所在段落 <b>${fmt(b.score)}</b> · 全文均值 <b>${fmt(S.avg)}</b></p>`;
+}
+function inspBlock(b) {
+  const rows = b.sents.map(s => `<li class="${sg(s.score)}"><span class="sn">${fmt(s.score)}</span><span class="nt">${esc(s.text.length > 70 ? s.text.slice(0, 70) + '…' : s.text)}</span></li>`).join('');
+  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span><button class="x" type="button" data-close aria-label="关闭">×</button></div>
+    <p class="ctx" style="margin:0 0 .6rem">段内 ${b.sents.length} 句的平均值</p><ul class="cl bl">${rows}</ul>`;
+}
+function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
+function closeInsp() { clearSelClass(); S.sel = null; E.insp.hidden = true; }
+function select(kind, id, wid) {
+  if (S.sel && S.sel.kind === kind && S.sel.id === id && S.sel.wid === wid) { closeInsp(); return; }
+  clearSelClass(); S.sel = { kind, id, wid };
+  (kind === 'b' ? els.b[id] : els.s[id]).classList.add('sel');
+  E.insp.innerHTML = kind === 'b' ? inspBlock(S.doc.blocks[id]) : inspSent(S.doc.sents[id], wid);
+  E.insp.hidden = false;
+}
+E.insp.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeInsp(); });
+E.doc.addEventListener('click', e => {
+  const sEl = e.target.closest('.s'), bEl = e.target.closest('.blk'), wEl = e.target.closest('.w');
+  if (S.level === 'para') { if (bEl) select('b', +bEl.dataset.b); }
+  else if (sEl) select('s', +sEl.dataset.s, wEl ? +wEl.dataset.w : undefined);
+  else closeInsp();
+});
+
+/* hover tip (mouse only) */
+let tipRAF = 0;
+function showTip(e) {
+  const t = e.target; if (!t.closest) return;
+  const wEl = t.closest('.w'), sEl = t.closest('.s'), bEl = t.closest('.blk'), rows = [];
+  if (S.level === 'para' && bEl) { const b = S.doc.blocks[+bEl.dataset.b]; rows.push(`<span class="${sg(b.score)}"><i class="dot"></i>段落 <b>${fmt(b.score)}</b></span>`); }
+  if (S.level === 'sent' && sEl) { const s = S.doc.sents[+sEl.dataset.s]; rows.push(`<span class="${sg(s.score)}"><i class="dot"></i>句 <b>${fmt(s.score)}</b></span>`); }
+  if (S.level !== 'para' && wEl) { const w = S.doc.words[+wEl.dataset.w]; rows.push(`<span class="${sg(w.score)}"><i class="dot"></i>词 <b>${esc(w.text)} ${fmt(w.score, 1)}</b></span>`); if (w.notes.length) rows.push(`<span class="m">${esc(noteText(w))}</span>`); }
+  if (!rows.length) { E.tip.hidden = true; return; }
+  E.tip.innerHTML = rows.join(''); E.tip.hidden = false;
+  const r = E.tip.getBoundingClientRect();
+  E.tip.style.left = Math.min(window.innerWidth - r.width - 8, e.clientX + 14) + 'px';
+  E.tip.style.top = Math.min(window.innerHeight - r.height - 8, e.clientY + 18) + 'px';
+}
+E.doc.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; cancelAnimationFrame(tipRAF); tipRAF = requestAnimationFrame(() => showTip(e)); });
+E.doc.addEventListener('pointerleave', () => { E.tip.hidden = true; });
+
+/* loading documents */
+function openDoc(title, blocks, meta) {
+  const doc = buildDoc(title, blocks);
+  if (!doc.sents.length) throw new Error('没有找到可分析的文字');
+  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || title; S.topics = extractTopics(doc, 8); S.sel = null;
+  E.insp.hidden = true;
+  renderHead(); renderDoc(); renderChips(); refresh();
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => { layout(); drawMinimap(); });
+}
+async function readPDF(file) {
+  if (!window.pdfjsLib) throw new Error('PDF 引擎没有加载成功，请检查网络后刷新页面');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const n = Math.min(pdf.numPages, MAX_PAGES), pages = [];
+  for (let i = 1; i <= n; i++) {
+    toast(`正在读取第 ${i} / ${n} 页…`, 0);
+    const page = await pdf.getPage(i), tc = await page.getTextContent(), vp = page.getViewport({ scale: 1 });
+    pages.push({ height: vp.height, lines: itemsToLines(tc.items) });
+  }
+  toast(pdf.numPages > n ? `为保持流畅，只读取了前 ${n} 页` : '', 4000);
+  pdf.destroy();
+  const blocks = linesToBlocks(pages);
+  if (blocks.reduce((a, b) => a + b.text.length, 0) < 40) throw new Error('这份 PDF 里读不到文字，可能是扫描件。v1 暂不支持 OCR。');
+  return blocks;
+}
+async function loadFile(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  try {
+    toast(`正在读取 ${file.name}…`, 0);
+    let blocks;
+    if (ext === 'pdf' || file.type === 'application/pdf') blocks = await readPDF(file);
+    else { const t = await file.text(); blocks = (ext === 'md' || ext === 'markdown') ? parseMarkdown(t) : parseText(t); }
+    openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+    if (!E.toast.hidden && /读取/.test(E.toast.textContent)) toast('');
+  } catch (err) { toast('打开失败：' + (err && err.message ? err.message : err), 6000); }
+}
+function loadSample() { openDoc(SAMPLE_TITLE, parseMarkdown(SAMPLE_MD), { sample: true, name: 'launch-week.md' }); }
+
+/* wiring */
+$('#btnOpen').addEventListener('click', () => E.file.click());
+E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
+$('#btnSample').addEventListener('click', loadSample);
+$('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
+$('#pasteCancel').addEventListener('click', () => { E.paste.hidden = true; });
+$('#pasteGo').addEventListener('click', () => {
+  const t = E.pasteText.value.trim(); if (!t) return;
+  try { openDoc('粘贴的文本', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: '粘贴的文本' }); E.paste.hidden = true; }
+  catch (err) { toast('分析失败：' + err.message); }
+});
+E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
+let thRAF = 0;
+E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { dragDepth++; E.drop.hidden = false; } });
+window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) E.drop.hidden = true; });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; E.drop.hidden = true; const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+document.addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
+  if (e.key === '1') setLevel('word'); else if (e.key === '2') setLevel('sent'); else if (e.key === '3') setLevel('para');
+  else if (e.key === 'Escape') { closeInsp(); E.paste.hidden = true; }
+});
+function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); }
+new ResizeObserver(syncBar).observe(E.bar);
+let rz = 0;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawMinimap(); }, 120); });
+let scRAF = 0;
+window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', window.scrollY > 4); cancelAnimationFrame(scRAF); scRAF = requestAnimationFrame(updateVP); }, { passive: true });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
+
+loadSample();
+syncBar();
+//</app>
+</script>
+</body>
+</html>
