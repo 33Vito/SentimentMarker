@@ -109,6 +109,59 @@ const um = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Fine day.', wor
 ok(um.warn.unmatched === 2 && um.words.length === 1, 'unmatched / bad words counted: ' + um.warn.unmatched);
 const onlySent = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.' }] });
 ok(onlySent.sents.length === 2 && !onlySent.has.word, 'text-only paragraph is split, no word level');
+// item 1: code-point offsets (Python str indices) vs UTF-16
+const emo = '🎉 Great launch, awful bug.';
+const pyOff = (t, w) => { const cps = [...t], wc = [...w]; for (let i = 0; i + wc.length <= cps.length; i++) if (cps.slice(i, i + wc.length).join('') === w) return [i, i + wc.length]; return null; };
+const [g0, g1] = pyOff(emo, 'Great'), [a0, a1] = pyOff(emo, 'awful');
+ok(g0 === 2 && a0 === 16, 'python-style offsets are code points: ' + g0 + ',' + a0);
+const de = C.docFromScored({ paragraphs: [{ sentences: [{ text: emo, words: [{ text: 'Great', score: 2, start: g0, end: g1 }, { text: 'awful', score: -3, start: a0, end: a1 }] }] }] });
+ok(de.words.map(t => t.text).join() === 'Great,awful' && de.warn.misaligned === 0 && de.warn.unmatched === 0, 'emoji sentence: code-point offsets highlight the right words: ' + de.words.map(t => t.text).join());
+const ej = C.docToJSON(de).paragraphs[0].sentences[0].words;
+ok(ej[0].start === g0 && ej[0].end === g1 && ej[1].start === a0, 'export writes code-point offsets');
+const ec = C.docToCSV(de).split('\n').filter(l => l.startsWith('word,'));
+ok(ec[0].split(',')[6] === String(g0) && ec[1].split(',')[6] === String(a0), 'CSV export writes code-point offsets');
+const wrong = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Great food, awful service.', words: [{ text: 'awful', score: -3, start: 0, end: 5 }] }] }] });
+ok(wrong.words[0].text === 'awful' && wrong.warn.misaligned === 1, 'wrong-but-in-range offset is relocated, not highlighted on the wrong text');
+const wrong2 = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Great food.', words: [{ text: 'awful', score: -3, start: 0, end: 5 }] }] }] });
+ok(wrong2.words.length === 0 && wrong2.warn.unmatched === 1, 'wrong offset for a word that is not in the sentence -> unmatched');
+const nfc = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Café is GOOD.', words: [{ text: 'Café', score: 1, start: 0, end: 5 }, { text: 'good', score: 2, start: 9, end: 13 }] }] }] });
+ok(nfc.warn.misaligned === 0 && nfc.words.length === 2, 'offset check is NFC-normalised and case-insensitive');
+// item 2: paragraph-only input
+const po = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.', score: 0.4, sentences: [] }] });
+ok(po.sents.length === 2 && po.blocks[0].score === 0.4, 'sentences: [] falls back to splitting p.text');
+const pcsv = C.docFromScored(C.csvToScored('level,paragraph,sentence,text,score\nparagraph,0,,Good news. Bad news.,0.3\nparagraph,1,,,0.5\n'));
+ok(pcsv.sents.length === 2 && pcsv.has.para && pcsv.warn.skipped === 1, 'CSV paragraph rows with text work; score-only paragraph skipped and counted');
+// item 4: CSV orphans / empty sentence text
+const orph = C.csvToScored('level,paragraph,sentence,text,score\nsentence,0,0,Fine day.,0.2\nsentence,0,1,,0.1\nword,0,1,x,1\nword,0,2,good,1\nword,0,0,Fine,1\n');
+ok(orph._bad === 3, 'CSV: empty sentence row + orphan word rows counted as bad: ' + orph._bad);
+ok(C.docFromScored(orph).warn.bad === 3, 'bad rows reach warn');
+ok(C.parseCSV('a,b\r\n"x\r\ny",2\r\n')[1][0] === 'x\ny', 'parseCSV normalises \\r\\n inside quoted fields');
+// item 5: unordered keyword lists, ## subwords
+const uo = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Bad start, good end, good mood.', words: [{ text: 'good', score: 2 }, { text: 'bad', score: -2 }, { text: 'good', score: 2 }, { text: '##mood', score: 1 }] }] }] });
+ok(uo.words.map(t => t.text).join() === 'Bad,good,good,mood' && uo.warn.unmatched === 0, 'unordered words found from sentence start, each occurrence once; ## stripped: ' + uo.words.map(t => t.text).join() + ' ' + uo.warn.unmatched);
+// item 9: per-level center
+const pc = C.docFromScored({ center: { word: 3, sentence: 0.5, paragraph: 0 }, reference: { scores: [1, 2, 4, 5, 5, 1] }, paragraphs: [{ score: 0.2, sentences: [{ text: 'Great food.', score: 0.9, words: [{ text: 'Great', score: 5 }] }] }] });
+ok(pc.words[0].score === 2 && Math.abs(pc.sents[0].score - 0.4) < 1e-9 && pc.blocks[0].score === 0.2 && pc.ref.scores[0] === -2, 'center object applies per level; reference uses word center');
+ok(C.docFromScored({ center: 3, paragraphs: [{ score: 4, sentences: [{ text: 'x y.', score: 4 }] }] }).blocks[0].score === 1, 'plain number center still works');
+// item 10: derived flags
+const dv = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Good.', score: 0.5 }, { text: 'Bad.', words: [{ text: 'Bad', score: -2 }] }] }] });
+ok(!dv.sents[0].derived && dv.sents[1].derived && dv.blocks[0].derived && dv.mixedSent, 'derived sentence / paragraph scores flagged; mixed doc detected');
+
+// item 3: export -> import keeps scale, reference and the file's own scale (center)
+const capEq = (x, y) => ['word', 'sent', 'para'].every(k => Math.abs(x.cap[k] - y.cap[k]) < 1e-3);
+const rt2 = C.docFromScored(C.docToJSON(d2));
+ok(capEq(rt2, d2) && rt2.ref && rt2.ref.scores.length === d2.ref.scores.length && rt2.ref.examples.length === d2.ref.examples.length, 'JSON export keeps scale + reference');
+const autoDoc = mini({});
+const rt3 = C.docFromScored(C.docToJSON(autoDoc));
+ok(capEq(rt3, autoDoc) && rt3.capSrc.word === 'file' && autoDoc.capSrc.word === 'auto', 'auto caps exported as scale and re-imported unchanged');
+const cdoc = C.docFromScored({ center: { word: 3, sentence: 0, paragraph: 0 }, reference: { name: 'stars', scores: [1, 2, 2, 4, 5, 5] }, paragraphs: [{ sentences: [{ text: 'Great food.', words: [{ text: 'Great', score: 5 }] }] }] });
+const cj = C.docToJSON(cdoc);
+ok(cj.paragraphs[0].sentences[0].words[0].score === 5 && cj.reference.scores[0] === 1 && cj.center.word === 3, 'export undoes center and writes it back');
+const cr = C.docFromScored(cj);
+ok(cr.words[0].score === cdoc.words[0].score && cr.ref.scores.join() === cdoc.ref.scores.join() && capEq(cr, cdoc), 'centered export -> import is stable');
+const bj = C.docToJSON(C.buildDoc('t', blocks));
+ok(bj.scale && bj.reference && bj.reference.scores.length > 100 && C.buildSpec(C.docFromScored(bj)).own === false, 'built-in doc export carries scale + reference (spectrum kept)');
+
 // spectrum
 const spc = C.buildSpec(d2);
 ok(spc && !spc.own && spc.refN === d2.ref.scores.length && spc.docN === d2.words.length, 'spectrum with reference');

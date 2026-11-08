@@ -429,21 +429,22 @@ function buildDoc(title, blocks) {
   const doc = { title, blocks: [], sents: [], words: [] };
   let sid = 0, wid = 0;
   blocks.forEach((b, bi) => {
-    const blk = { id: bi, type: b.type, sents: [], score: 0, k: 0 };
+    const blk = { id: bi, type: b.type, sents: [], score: 0, k: 0, derived: false };
     for (const st of splitSentences(b.text)) {
       const a = analyzeSentence(st.text);
       a.gap = st.gap; a.id = sid++; a.block = bi;
       a.norm = new Set(); for (const t of a.toks) if (t.word) a.norm.add(normWord(t.text));
       a.wt = a.toks;
-      a.k = strength('sent', a.score);
+      a.k = strength('sent', a.score); a.derived = true;
       for (const t of a.scored) { t.wid = wid++; t.k = strength('word', t.score); doc.words.push(t); }
       blk.sents.push(a); doc.sents.push(a);
     }
     blk.score = blk.sents.length ? blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length : 0;
-    blk.k = strength('para', blk.score);
+    blk.k = strength('para', blk.score); blk.derived = true;
     doc.blocks.push(blk);
   });
-  doc.cap = CAP; doc.ref = builtinRef(); setHas(doc);
+  doc.cap = CAP; doc.capSrc = { word: 'builtin', sent: 'builtin', para: 'builtin' }; doc.center = { word: 0, sent: 0, para: 0 };
+  doc.ref = builtinRef(); setHas(doc);
   return doc;
 }
 /* which levels have any non-zero score (the UI greys out the rest) */
@@ -554,36 +555,71 @@ const isNum = v => typeof v === 'number' && isFinite(v);
 const r4 = v => Math.round(v * 10000) / 10000;
 const noteText = t => (t.notes || []).map(n => n.t === 'boost' ? `${n.m < 1 ? '减弱' : '加强'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `否定 ${n.w}` : n.t === 'caps' ? '全大写 ×1.2' : n.t === 'text' ? n.s : n.w < 1 ? '转折之前 ×0.5' : '转折之后 ×1.5').join(' · ');
 
+/* offsets in files are Unicode code points (= Python str indices); JS strings index UTF-16 units.
+   cpMap(text)[i] is the UTF-16 index of code point i (length = code points + 1). */
+const cpMap = text => { const m = [0]; let u = 0; for (const ch of text) { u += ch.length; m.push(u); } return m; };
+const cpLen = s => { let n = 0; for (const _ of s) n++; return n; };
+const fold = s => s.normalize('NFC').toLowerCase();
+/* first occurrence of needle (case-insensitive) at or after `from` that does not overlap a claimed span;
+   if none, retry from the start of the sentence (so unordered keyword lists still work) */
+function findFree(text, needle, from, claimed) {
+  const lt = text.toLowerCase(), ln = needle.toLowerCase();
+  const [hay, nd] = lt.length === text.length && ln.length === needle.length ? [lt, ln] : [text, needle];
+  const free = (a, b) => claimed.every(c => b <= c.a || a >= c.b);
+  for (const start of from > 0 ? [from, 0] : [0]) {
+    for (let i = hay.indexOf(nd, start); i >= 0; i = hay.indexOf(nd, i + 1)) if (free(i, i + nd.length)) return i;
+  }
+  return -1;
+}
+/* center: a number (all levels) or {word, sentence, paragraph}; missing levels are 0 */
+function readCenter(c) {
+  const out = { word: 0, sent: 0, para: 0 };
+  if (isNum(c)) out.word = out.sent = out.para = c;
+  else if (c && typeof c === 'object') { if (isNum(c.word)) out.word = c.word; if (isNum(c.sentence)) out.sent = c.sentence; if (isNum(c.paragraph)) out.para = c.paragraph; }
+  return out;
+}
+
 function docFromScored(obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('文件内容不是有效的打分数据（格式见 docs/FORMAT.md）');
   if (!Array.isArray(obj.paragraphs) || !obj.paragraphs.length) throw new Error('缺少 paragraphs 数组（格式见 docs/FORMAT.md）');
-  const center = isNum(obj.center) ? obj.center : 0, adj = v => v - center;
-  const warn = { unmatched: 0, bad: obj._bad || 0, skipped: 0 };
-  const doc = { title: String(obj.title || '未命名文档'), blocks: [], sents: [], words: [], warn, ref: null };
+  const center = readCenter(obj.center), adjW = v => v - center.word, adjS = v => v - center.sent, adjP = v => v - center.para;
+  const warn = { unmatched: 0, misaligned: 0, bad: obj._bad || 0, skipped: 0 };
+  const doc = { title: String(obj.title || '未命名文档'), blocks: [], sents: [], words: [], warn, ref: null, center };
   let sid = 0, wid = 0;
   obj.paragraphs.forEach(p => {
-    let sentsIn = p && Array.isArray(p.sentences) ? p.sentences : null;
+    let sentsIn = p && Array.isArray(p.sentences) && p.sentences.length ? p.sentences : null;
     if (!sentsIn && p && typeof p.text === 'string' && p.text.trim()) sentsIn = splitSentences(p.text.trim());
+    /* no sentences and no text: nothing to show (a paragraph score alone is skipped and counted) */
     if (!sentsIn || !sentsIn.length) { warn.skipped++; return; }
     const bi = doc.blocks.length;
-    const blk = { id: bi, type: p.type === 'h' ? 'h' : 'p', sents: [], score: 0, k: 0 };
+    const blk = { id: bi, type: p.type === 'h' ? 'h' : 'p', sents: [], score: 0, k: 0, derived: false };
     sentsIn.forEach((s, si) => {
       const text = String(typeof s === 'string' ? s : (s && s.text != null ? s.text : ''));
-      if (!text.trim()) return;
+      if (!text.trim()) { warn.bad++; return; }
       const wordsIn = s && Array.isArray(s.words) ? s.words : [];
-      const spans = []; let cursor = 0;
+      const m = cpMap(text), ncp = m.length - 1, items = [], claimed = [];
       for (const w of wordsIn) {
-        if (!w || typeof w.text !== 'string' || !w.text || !isNum(w.score)) { warn.unmatched++; continue; }
+        if (!w || typeof w.text !== 'string' || !isNum(w.score)) { warn.unmatched++; continue; }
+        const needle = w.text.replace(/^##/, '');           /* WordPiece-style subword marker */
+        if (!needle) { warn.unmatched++; continue; }
+        const hasOff = w.start != null || w.end != null;
         let a = -1, b = -1;
-        if (Number.isInteger(w.start) && Number.isInteger(w.end) && w.start >= 0 && w.end <= text.length && w.start < w.end) { a = w.start; b = w.end; }
-        else {
-          let i = text.indexOf(w.text, cursor);
-          if (i < 0) i = text.toLowerCase().indexOf(w.text.toLowerCase(), cursor);
-          if (i >= 0) { a = i; b = i + w.text.length; }
+        if (Number.isInteger(w.start) && Number.isInteger(w.end) && w.start >= 0 && w.end <= ncp && w.start < w.end) {
+          const ua = m[w.start], ub = m[w.end];
+          if (fold(text.slice(ua, ub)) === fold(needle)) { a = ua; b = ub; claimed.push({ a, b }); }
         }
-        if (a < 0) { warn.unmatched++; continue; }
-        cursor = b;
-        spans.push({ a, b, score: adj(w.score), note: typeof w.note === 'string' && w.note ? w.note : null });
+        items.push({ w, needle, hasOff, a, b });
+      }
+      const spans = []; let cursor = 0;
+      for (const it of items) {
+        if (it.a < 0) {
+          const i = findFree(text, it.needle, cursor, claimed);
+          if (i < 0) { warn.unmatched++; continue; }
+          if (it.hasOff) warn.misaligned++;             /* offsets given but pointed at other text: relocated by search */
+          it.a = i; it.b = i + it.needle.length; claimed.push({ a: it.a, b: it.b });
+        }
+        cursor = it.b;
+        spans.push({ a: it.a, b: it.b, score: adjW(it.w.score), note: typeof it.w.note === 'string' && it.w.note ? it.w.note : null });
       }
       spans.sort((x, y) => x.a - y.a);
       const toks = []; let pos = 0;
@@ -595,64 +631,78 @@ function docFromScored(obj) {
       }
       if (pos < text.length) toks.push({ text: text.slice(pos), word: false });
       const scored = toks.filter(t => t.word && t.score);
-      let score;
-      if (s && isNum(s.score)) score = adj(s.score);
-      else { const S = scored.reduce((x, t) => x + t.score, 0); score = S / Math.sqrt(S * S + 15); }
+      let score, derived = false;
+      if (s && isNum(s.score)) score = adjS(s.score);
+      else { const S = scored.reduce((x, t) => x + t.score, 0); score = S / Math.sqrt(S * S + 15); derived = true; }
       const last = si === sentsIn.length - 1;
       const gap = s && typeof s.gap === 'string' ? s.gap : (last || CJK_RE.test(text.slice(-1)) || /[。！？]$/.test(text) ? '' : ' ');
-      const a = { text, toks, scored, score, raw: score, lc: text.toLowerCase(), gap, id: sid++, block: bi, k: 0 };
+      const a = { text, toks, scored, score, raw: score, derived, lc: text.toLowerCase(), gap, id: sid++, block: bi, k: 0 };
       a.wt = rawTokens(text); a.norm = new Set();
       for (const t of a.wt) if (t.word) { t.lower = t.text.toLowerCase().replace(/[’‘]/g, "'"); t.info = lookup(t.lower); a.norm.add(normWord(t.text)); }
       for (const t of scored) { t.wid = wid++; doc.words.push(t); }
       blk.sents.push(a); doc.sents.push(a);
     });
     if (!blk.sents.length) { warn.skipped++; return; }
-    blk.score = isNum(p.score) ? adj(p.score) : blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length;
+    if (isNum(p.score)) blk.score = adjP(p.score);
+    else { blk.score = blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length; blk.derived = true; }
     doc.blocks.push(blk);
   });
   if (!doc.sents.length) throw new Error('文件里没有可显示的句子');
   const R = obj.reference;
   if (R && Array.isArray(R.scores)) {
-    const sc = R.scores.filter(isNum).map(adj).filter(v => v !== 0).sort((x, y) => x - y);
+    const sc = R.scores.filter(isNum).map(adjW).filter(v => v !== 0).sort((x, y) => x - y);
     if (sc.length >= 5) doc.ref = { name: String(R.name || '参考词表'), scores: sc,
-      examples: (Array.isArray(R.examples) ? R.examples : []).filter(e => e && typeof e.text === 'string' && isNum(e.score)).map(e => ({ text: e.text, score: adj(e.score) })) };
+      examples: (Array.isArray(R.examples) ? R.examples : []).filter(e => e && typeof e.text === 'string' && isNum(e.score)).map(e => ({ text: e.text, score: adjW(e.score) })) };
   }
   const sc = obj.scale;
   const pick = key => (isNum(sc) && sc > 0) ? sc : (sc && isNum(sc[key]) && sc[key] > 0 ? sc[key] : 0);
   const auto = arr => { const a = arr.map(Math.abs).filter(v => v > 0).sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * 0.9))] : 0; };
-  const cap = {
-    word: pick('word') || auto(doc.words.map(t => t.score)) || CAP.word,
-    sent: pick('sentence') || auto(doc.sents.map(s => s.score)) || CAP.sent,
-    para: pick('paragraph') || auto(doc.blocks.map(b => b.score)) || CAP.para,
-  };
-  doc.cap = cap;
+  const cap = {}, capSrc = {};
+  [['word', 'word', () => doc.words.map(t => t.score)], ['sent', 'sentence', () => doc.sents.map(s => s.score)], ['para', 'paragraph', () => doc.blocks.map(b => b.score)]].forEach(([lv, key, vals]) => {
+    const f = pick(key), au = f ? 0 : auto(vals());
+    cap[lv] = f || au || CAP[lv]; capSrc[lv] = f ? 'file' : au ? 'auto' : 'default';
+  });
+  doc.cap = cap; doc.capSrc = capSrc;
+  doc.mixedSent = doc.sents.some(s => s.derived) && doc.sents.some(s => !s.derived);
   doc.words.forEach(t => { t.k = strength('word', t.score, cap); });
   doc.sents.forEach(s => { s.k = strength('sent', s.score, cap); });
   doc.blocks.forEach(b => { b.k = strength('para', b.score, cap); });
   setHas(doc);
   return doc;
 }
+/* Export writes every score on the file's own scale: the centre is added back and written as `center`,
+   so export -> import gives the same scores, colour scale and spectrum. Word offsets are code points. */
+const docCenter = doc => doc.center || { word: 0, sent: 0, para: 0 };
 function docToJSON(doc) {
-  return { version: 1, title: doc.title, paragraphs: doc.blocks.map(b => ({
-    type: b.type, score: r4(b.score),
+  const c = docCenter(doc), out = { version: 1, title: doc.title };
+  if (c.word || c.sent || c.para) out.center = c.word === c.sent && c.sent === c.para ? c.word : { word: c.word, sentence: c.sent, paragraph: c.para };
+  const cap = doc.cap || CAP;
+  out.scale = { word: r4(cap.word), sentence: r4(cap.sent), paragraph: r4(cap.para) };
+  if (doc.ref) out.reference = { name: doc.ref.name, scores: doc.ref.scores.map(v => r4(v + c.word)),
+    examples: (doc.ref.examples || []).filter(e => isNum(e.score)).map(e => ({ text: e.text, score: r4(e.score + c.word) })) };
+  out.paragraphs = doc.blocks.map(b => ({
+    type: b.type, score: r4(b.score + c.para),
     sentences: b.sents.map(s => {
       let off = 0; const words = [];
       for (const t of s.toks) {
-        if (t.word && t.score) { const w = { text: t.text, score: r4(t.score), start: off, end: off + t.text.length }; const n = noteText(t); if (n) w.note = n; words.push(w); }
-        off += t.text.length;
+        const n = cpLen(t.text);
+        if (t.word && t.score) { const w = { text: t.text, score: r4(t.score + c.word), start: off, end: off + n }; const nt = noteText(t); if (nt) w.note = nt; words.push(w); }
+        off += n;
       }
-      return { text: s.text, score: r4(s.score), words };
-    }) })) };
+      return { text: s.text, score: r4(s.score + c.sent), words };
+    }) }));
+  return out;
 }
 function docToCSV(doc) {
+  const c = docCenter(doc);
   const q = v => { v = String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const rows = [['level', 'paragraph', 'sentence', 'text', 'score', 'type', 'start', 'end', 'note']];
   doc.blocks.forEach((b, bi) => {
-    rows.push(['paragraph', bi, '', '', r4(b.score), b.type, '', '', '']);
+    rows.push(['paragraph', bi, '', '', r4(b.score + c.para), b.type, '', '', '']);
     b.sents.forEach((s, si) => {
-      rows.push(['sentence', bi, si, s.text, r4(s.score), '', '', '', '']);
+      rows.push(['sentence', bi, si, s.text, r4(s.score + c.sent), '', '', '', '']);
       let off = 0;
-      for (const t of s.toks) { if (t.word && t.score) rows.push(['word', bi, si, t.text, r4(t.score), '', off, off + t.text.length, noteText(t)]); off += t.text.length; }
+      for (const t of s.toks) { const n = cpLen(t.text); if (t.word && t.score) rows.push(['word', bi, si, t.text, r4(t.score + c.word), '', off, off + n, noteText(t)]); off += n; }
     });
   });
   return rows.map(r => r.map(q).join(',')).join('\n') + '\n';
@@ -662,7 +712,11 @@ function parseCSV(text) {
   const rows = []; let row = [], f = '', quoted = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
-    if (quoted) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else quoted = false; } else f += c; }
+    if (quoted) {
+      if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else quoted = false; }
+      else if (c === '\r') { if (text[i + 1] === '\n') i++; f += '\n'; }   /* \r\n or \r inside a quoted field -> \n */
+      else f += c;
+    }
     else if (c === '"') quoted = true;
     else if (c === ',') { row.push(f); f = ''; }
     else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); f = ''; if (row.length > 1 || row[0] !== '') rows.push(row); row = []; }
@@ -691,7 +745,11 @@ function csvToScored(text) {
     }
     const si = num(get(r, 'sentence')); if (si === undefined) { bad++; continue; }
     let s = p.sents.get(si); if (!s) { s = { words: [] }; p.sents.set(si, s); }
-    if (lv === 'sentence') { s.text = get(r, 'text') || ''; const sc = num(get(r, 'score')); if (sc !== undefined) s.score = sc; }
+    if (lv === 'sentence') {
+      const tx = get(r, 'text') || '';
+      if (!tx.trim()) { bad++; continue; }                 /* a sentence row needs its text */
+      s.text = tx; const sc = num(get(r, 'score')); if (sc !== undefined) s.score = sc;
+    }
     else if (lv === 'word') {
       const sc = num(get(r, 'score')); if (sc === undefined) { bad++; continue; }
       const w = { text: get(r, 'text') || '', score: sc }, a = num(get(r, 'start')), b = num(get(r, 'end'));
@@ -700,8 +758,18 @@ function csvToScored(text) {
       s.words.push(w);
     } else bad++;
   }
-  const paragraphs = [...P.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => ({ type: p.type, score: p.score, text: p.text,
-    sentences: [...p.sents.entries()].sort((a, b) => a[0] - b[0]).map(([, s]) => s).filter(s => s.text !== undefined) }));
+  const paragraphs = [...P.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => {
+    const sentences = [];
+    for (const [, s] of [...p.sents.entries()].sort((a, b) => a[0] - b[0])) {
+      if (s.text === undefined) { bad += s.words.length; continue; }   /* word rows whose sentence row is missing or empty */
+      sentences.push(s);
+    }
+    const o = { type: p.type };
+    if (p.score !== undefined) o.score = p.score;
+    if (p.text) o.text = p.text;
+    if (sentences.length) o.sentences = sentences;                       /* else docFromScored splits o.text */
+    return o;
+  });
   return { version: 1, title: '', paragraphs, _bad: bad };
 }
 
@@ -767,9 +835,10 @@ const fmt = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFix
 const sg = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let toastTimer = 0;
-function toast(msg, ms = 3200) {
-  clearTimeout(toastTimer);
+let toastTimer = 0, toastBusy = false;
+/* busy = a progress message ("正在读取…") that loadFile may clear when it is done; other toasts are left alone */
+function toast(msg, ms = 3200, busy = false) {
+  clearTimeout(toastTimer); toastBusy = !!msg && busy;
   if (!msg) { E.toast.hidden = true; return; }
   E.toast.textContent = msg; E.toast.hidden = false;
   if (ms) toastTimer = setTimeout(() => { E.toast.hidden = true; }, ms);
@@ -1035,30 +1104,41 @@ function openDoc(title, blocks, meta) {
   if (!E.spec.hidden) renderSpec();
   window.scrollTo(0, 0);
   requestAnimationFrame(() => { layout(); drawMinimap(); });
-  const w = doc.warn;
-  if (w && (w.unmatched || w.bad || w.skipped)) toast(`已跳过 ${w.unmatched || 0} 个对不上句子的词、${w.bad || 0} 行无效数据、${w.skipped || 0} 个空段`, 7000);
+  const w = doc.warn, parts = [];
+  if (w) {
+    if (w.misaligned) parts.push(`${w.misaligned} 个词的偏移和原文对不上，已按文字重新定位`);
+    if (w.unmatched) parts.push(`跳过 ${w.unmatched} 个在句子里找不到的词`);
+    if (w.bad) parts.push(`跳过 ${w.bad} 行/条无效数据`);
+    if (w.skipped) parts.push(`跳过 ${w.skipped} 个没有文字的段`);
+  }
+  const msg = parts.join('；');
+  if (msg) toast(msg, 8000);
+  return msg;
 }
 function openScoredText(text, kind, name) {
   let obj;
   if (kind === 'json') { try { obj = JSON.parse(text); } catch (e) { throw new Error('JSON 解析失败：' + e.message); } }
   else obj = csvToScored(text);
   if (obj && typeof obj === 'object' && !obj.title) obj.title = name.replace(/\.[^.]+$/, '').replace(/\.scored$/, '');
-  openDoc(null, null, { name, scored: obj, badge: '外部打分' });
+  return openDoc(null, null, { name, scored: obj, badge: '外部打分' });
 }
 function exportDoc(kind) {
   if (!S.doc) return;
   const base = (S.doc.title || 'sentimentmarker').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '-').toLowerCase();
   const name = `${base}.scored.${kind}`;
-  const text = kind === 'json' ? JSON.stringify(docToJSON(S.doc), null, 1) : '﻿' + docToCSV(S.doc);
+  const text = kind === 'json' ? JSON.stringify(docToJSON(S.doc), null, 1) : '\ufeff' + docToCSV(S.doc);
   try {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: kind === 'json' ? 'application/json' : 'text/csv;charset=utf-8' }));
     a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  } catch (e) { /* some embedded viewers block downloads; the clipboard copy below still works */ }
+    toast(`已开始下载 ${name}；如果没有看到文件，可能是当前页面不允许下载，请在本地打开 index.html 再导出`, 6000);
+    return;
+  } catch (e) { /* the download could not even be started (some embedded viewers): fall back to the clipboard */ }
   const small = text.length < 1.5e6;
   (small && navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(
-    () => toast(`已复制 ${name} 的内容到剪贴板；如果浏览器没有开始下载，粘贴到新文件里保存即可`, 6000), () => toast(`已尝试下载 ${name}；如果没有反应，请在本地打开 index.html 使用导出`, 6000));
+    () => toast(`浏览器不允许下载，已把 ${name} 的内容复制到剪贴板，粘贴到新文件里保存即可`, 7000),
+    () => toast(`浏览器不允许下载，也无法复制到剪贴板；请在本地打开 index.html 再导出`, 7000));
 }
 async function readPDF(file) {
   if (!window.pdfjsLib) throw new Error('PDF 引擎没有加载成功，请检查网络后刷新页面');
@@ -1066,28 +1146,30 @@ async function readPDF(file) {
   const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
   const n = Math.min(pdf.numPages, MAX_PAGES), pages = [];
   for (let i = 1; i <= n; i++) {
-    toast(`正在读取第 ${i} / ${n} 页…`, 0);
+    toast(`正在读取第 ${i} / ${n} 页…`, 0, true);
     const page = await pdf.getPage(i), tc = await page.getTextContent(), vp = page.getViewport({ scale: 1 });
     pages.push({ height: vp.height, lines: itemsToLines(tc.items) });
   }
-  toast(pdf.numPages > n ? `为保持流畅，只读取了前 ${n} 页` : '', 4000);
+  const note = pdf.numPages > n ? `为保持流畅，只读取了前 ${n} 页（共 ${pdf.numPages} 页）` : '';
   pdf.destroy();
   const blocks = linesToBlocks(pages);
   if (blocks.reduce((a, b) => a + b.text.length, 0) < 40) throw new Error('这份 PDF 里读不到文字，可能是扫描件。v1 暂不支持 OCR。');
-  return blocks;
+  return { blocks, note };
 }
 async function loadFile(file) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   try {
-    toast(`正在读取 ${file.name}…`, 0);
-    if (ext === 'json' || ext === 'csv') openScoredText(await file.text(), ext, file.name);
+    toast(`正在读取 ${file.name}…`, 0, true);
+    let warnMsg = '', note = '';
+    if (ext === 'json' || ext === 'csv') warnMsg = openScoredText(await file.text(), ext, file.name);
     else {
       let blocks;
-      if (ext === 'pdf' || file.type === 'application/pdf') blocks = await readPDF(file);
+      if (ext === 'pdf' || file.type === 'application/pdf') ({ blocks, note } = await readPDF(file));
       else { const t = await file.text(); blocks = (ext === 'md' || ext === 'markdown') ? parseMarkdown(t) : parseText(t); }
-      openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+      warnMsg = openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
     }
-    if (!E.toast.hidden && /读取/.test(E.toast.textContent)) toast('');
+    if (note) toast(warnMsg ? note + '；' + warnMsg : note, 8000);   /* keep the truncation notice; never cleared by the progress check */
+    else if (toastBusy) toast('');
   } catch (err) { toast('打开失败：' + (err && err.message ? err.message : err), 6000); }
 }
 function loadSample() { openDoc(SAMPLE_TITLE, parseMarkdown(SAMPLE_MD), { sample: true, name: 'launch-week.md' }); }
