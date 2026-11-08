@@ -195,6 +195,14 @@ ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:13
 ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
 ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
 
+// article picker: two embedded demo docs served from examples/demos.js (window.DEMOS)
+ok(/<select[^>]*id="selDemo"/.test(html) && !/id="btnSample"/.test(html), 'sample button replaced by an article picker');
+ok(/window\.DEMOS/.test(appSrc) && /loadDemo/.test(appSrc) && /initDemoSel\(\);/.test(appSrc), 'picker wired to window.DEMOS at boot');
+const djs = fs2.readFileSync(exDir + '/demos.js', 'utf8');
+const dlist = JSON.parse(djs.slice(djs.indexOf('window.DEMOS =') + 'window.DEMOS ='.length).replace(/;\s*$/, ''));
+ok(dlist.length === 2 && dlist.every(d => d.label && d.file && d.scored && d.scored.title), 'demos.js bundles exactly two labelled scored articles');
+dlist.forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
+
 // item 12: the examples in docs/FORMAT.md load cleanly
 const fmd = fs2.readFileSync(require('path').join(__dirname, '..', 'docs', 'FORMAT.md'), 'utf8');
 const fcsv = C.docFromScored(C.csvToScored(fmd.split('```csv\n')[1].split('```')[0]));

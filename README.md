@@ -29,11 +29,15 @@ python examples/score_with_python.py examples/launch-week.md   # 生成 launch-w
 
 纯前端，没有构建步骤。直接用浏览器打开 `index.html`，或者放到任何静态托管上。
 PDF 解析用的 pdf.js 从 cdnjs 加载，所以需要联网。
+顶栏「示例文章」下拉内置两篇演示：RBA《Financial Stability Review》2026 年 10 月 Assessment 部分（真实文本，外部打分），以及一篇合成演示文（同样 LM×VADER 打分）。启动时自动打开第一篇。
 
 ## 结构
 
 - `docs/FORMAT.md`：打分文件格式
 - `examples/`：示例文本、两种格式的打分结果、Python 打分脚本（可改成你的模型）
+- `examples/demos.js`：页面内置的两篇演示文章数据（`window.DEMOS`，由各 `*.scored.json` 打包生成；换文章后重新打包即可，classic `<script>` 加载，`file://` 下无需服务器）
+- `examples/fsr-assessment-2026-10.txt / .scored.json`：RBA FSR 的 Assessment 正文（用页面自身的 pdf.js 行还原逻辑从 PDF 提取）
+- `examples/financial-stability-review-2026-10.pdf`：© Reserve Bank of Australia, Financial Stability Review – October 2026，随仓库附带仅作演示用途
 
 
 `index.html` 里的脚本分成两段，用注释标记：

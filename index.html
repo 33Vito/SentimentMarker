@@ -243,7 +243,7 @@ button{cursor:pointer}
     <div class="actions">
       <button class="btn solid" id="btnOpen" type="button">打开文件</button>
       <button class="btn" id="btnPaste" type="button">粘贴文本</button>
-      <button class="btn" id="btnSample" type="button">示例</button>
+      <select class="btn" id="selDemo" title="选择演示文章" aria-label="演示文章"><option value="">示例文章…</option></select>
     </div>
   </div>
   <div class="row ctl">
@@ -286,6 +286,7 @@ button{cursor:pointer}
   </div>
 </div>
 <input type="file" id="file" accept=".pdf,.md,.markdown,.txt,.json,.csv,application/json,text/csv,application/pdf,text/plain,text/markdown" hidden>
+<script src="examples/demos.js"></script>
 
 <script>
 //<core>
@@ -1226,12 +1227,24 @@ async function loadFile(file) {
     else if (toastBusy) toast('');
   } catch (err) { toast('打开失败：' + (err && err.message ? err.message : err), 6000); }
 }
-function loadSample() { openDoc(SAMPLE_TITLE, parseMarkdown(SAMPLE_MD), { sample: true, name: 'launch-week.md' }); }
+/* article picker: demo docs embedded in examples/demos.js (window.DEMOS = [{label, file, scored}, …]) */
+function loadDemo(i) {
+  const d = (window.DEMOS || [])[i];
+  if (!d) return false;
+  try { openDoc(null, null, { name: d.file, scored: d.scored, badge: '外部打分' }); return true; }
+  catch (err) { toast('打开示例文章失败：' + (err && err.message ? err.message : err), 6000); return false; }
+}
+function initDemoSel() {
+  const sel = $('#selDemo'), list = window.DEMOS || [];
+  list.forEach((d, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = d.label; sel.appendChild(o); });
+  if (!list.length) { const o = document.createElement('option'); o.value = ''; o.textContent = '缺少 examples/demos.js'; o.disabled = true; sel.appendChild(o); return; }
+  sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); });
+  if (loadDemo(0)) sel.value = '0';
+}
 
 /* wiring */
 $('#btnOpen').addEventListener('click', () => E.file.click());
 E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
-$('#btnSample').addEventListener('click', loadSample);
 $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
 $('#pasteCancel').addEventListener('click', () => { E.paste.hidden = true; });
 $('#pasteGo').addEventListener('click', () => {
@@ -1271,7 +1284,7 @@ window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', win
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
 
-loadSample();
+initDemoSel();
 syncBar();
 //</app>
 </script>
