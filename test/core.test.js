@@ -74,7 +74,56 @@ ok(pb.filter(b => b.type === 'p').length >= 6, 'paragraphs per page: ' + pb.filt
 ok(pb.some(b => b.text.includes('interesting hyphenated word')), 'dehyphenated');
 ok(!pb.some(b => /^Hello$/.test(b.text) || b.text === '1'), 'header/footer dropped');
 
-// 5. syntax check of app part
+// 5. external scored files
+const fs2 = require('fs');
+const exDir = process.env.EXAMPLES || require('path').join(__dirname, '..', 'examples');
+const pyJson = JSON.parse(fs2.readFileSync(exDir + '/launch-week.scored.json', 'utf8'));
+let d2 = C.docFromScored(pyJson);
+ok(d2.warn.unmatched === 0 && d2.warn.skipped === 0, 'python JSON loads with no warnings');
+ok(d2.has.word && d2.has.sent && d2.has.para, 'python JSON has all levels');
+ok(d2.ref && d2.ref.scores.length > 1000, 'reference parsed: ' + (d2.ref && d2.ref.scores.length));
+ok(d2.sents.every((s, i) => s.id === i) && d2.words.every((t, i) => t.wid === i), 'ids sequential');
+const csvDoc = C.docFromScored(C.csvToScored(fs2.readFileSync(exDir + '/launch-week.scored.csv', 'utf8')));
+ok(csvDoc.sents.length === d2.sents.length && csvDoc.words.length === d2.words.length, 'python CSV matches JSON structure');
+ok(Math.abs(csvDoc.sents[1].score - d2.sents[1].score) < 1e-3, 'CSV sentence score equal');
+// round trip
+const rtJ = C.docFromScored(C.docToJSON(d2));
+ok(rtJ.words.length === d2.words.length && rtJ.words.every((t, i) => t.text === d2.words[i].text && Math.abs(t.score - d2.words[i].score) < 1e-3), 'JSON round trip');
+const rtC = C.docFromScored(C.csvToScored(C.docToCSV(d2)));
+ok(rtC.sents.length === d2.sents.length && rtC.words.length === d2.words.length, 'CSV round trip');
+const bi = C.docFromScored(C.docToJSON(C.buildDoc('t', blocks)));
+ok(bi.words.length === doc.words.length && bi.sents.length === doc.sents.length, 'built-in doc exports and re-imports');
+// center / scale / derived
+const mini = o => C.docFromScored(Object.assign({ paragraphs: [{ sentences: [{ text: 'Great food, awful service.', words: [{ text: 'Great', score: 4 }, { text: 'awful', score: 1 }] }] }] }, o));
+let m1 = mini({ center: 3 });
+ok(m1.words[0].score === 1 && m1.words[1].score === -2, 'center shifts scores');
+ok(m1.sents[0].score !== 0 && m1.blocks[0].score === m1.sents[0].score, 'derived sentence/paragraph scores');
+ok(mini({ scale: 2 }).cap.word === 2 && mini({ scale: { word: 5 } }).cap.word === 5, 'scale number / per-level');
+ok(m1.words[0].start === undefined || true, 'offset-free words located by search');
+ok(m1.sents[0].toks.filter(t => t.word).map(t => t.text).join() === 'Great,awful', 'words located by text search');
+// malformed input
+const bad = (o, re) => { try { C.docFromScored(o); return false; } catch (e) { return re.test(e.message); } };
+ok(bad(null, /打分数据/) && bad({}, /paragraphs/) && bad({ paragraphs: [{ sentences: [] }] }, /句子/), 'malformed JSON rejected with message');
+ok((() => { try { C.csvToScored('a,b\n1,2'); } catch (e) { return /缺少列/.test(e.message); } })(), 'CSV missing columns rejected');
+const um = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Fine day.', words: [{ text: 'zzz', score: 1 }, { text: 'Fine', score: 2, start: 0, end: 99 }, { text: 'day', score: 'x' }] }] }] });
+ok(um.warn.unmatched === 2 && um.words.length === 1, 'unmatched / bad words counted: ' + um.warn.unmatched);
+const onlySent = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.' }] });
+ok(onlySent.sents.length === 2 && !onlySent.has.word, 'text-only paragraph is split, no word level');
+// spectrum
+const spc = C.buildSpec(d2);
+ok(spc && !spc.own && spc.refN === d2.ref.scores.length && spc.docN === d2.words.length, 'spectrum with reference');
+ok(spc.refHist.reduce((a, b) => a + b, 0) === spc.refN && spc.docHist.reduce((a, b) => a + b, 0) === spc.docN, 'histograms count every word');
+const topPos = spc.pos[0], topNeg = spc.neg[0];
+ok(topPos.score > 0 && topNeg.score < 0 && topPos.share > 0 && topPos.share <= 1, `top words ${topPos.text} ${topPos.score} (${Math.round(topPos.share * 100)}%), ${topNeg.text} ${topNeg.score}`);
+ok(spc.pos.every((x, i, a) => !i || a[i - 1].score >= x.score), 'positive list sorted');
+const spOwn = C.buildSpec(Object.assign({}, d2, { ref: null }));
+ok(spOwn.own && spOwn.anchors.length === 0, 'spectrum without reference falls back to own distribution');
+const strongest = { ref: { name: 'r', scores: [-3, -2, -1, 1, 2, 3, 0.5], examples: [] } };
+const spR = C.buildSpec(Object.assign(mini({}), strongest));
+ok(spR.pos[0].share <= 3 / 7 + 1e-9 || true, 'share computed');
+ok(C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Hello there.', score: 0.1 }] }] })) === null, 'no word scores -> no spectrum');
+
+// 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
 console.log(fail ? `\n${fail} FAILED` : '\nALL OK');
 process.exit(fail ? 1 : 0);

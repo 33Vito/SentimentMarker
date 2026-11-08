@@ -9,6 +9,21 @@
 - 点击句子或段落，查看每个词的得分、否定、加强和转折的影响
 - 右侧热力条显示整篇文档的情感分布，点击或拖动跳转
 - 支持 PDF、Markdown、TXT 和粘贴文本
+- **打开外部打分文件**（JSON / CSV）：分数由你自己的 Python 模块或 API 算好，阅读器只负责显示
+- 「情感光谱」侧栏：本文的词在一个参考词表（如 VADER 词典）的分布里处于什么位置，列出最正面 / 最负面的词和百分位
+- 可导出当前文档的打分结果（JSON / CSV），当作格式模板
+
+## 用你自己的打分
+
+阅读器不做情感判断。用 Python 或 API 给每个词 / 句 / 段打好分，存成 JSON 或 CSV，再拖进页面：
+
+```
+pip install vaderSentiment
+python examples/score_with_python.py examples/launch-week.md   # 生成 launch-week.scored.json
+```
+
+格式见 [docs/FORMAT.md](docs/FORMAT.md)。三个粒度可以只给其中一部分；给 `reference`（参考词表的分数）就能画出情感光谱。
+没有外部分数时，页面用内置词典打分，右上角标记为「内置词典」，只当演示。
 
 ## 使用
 
@@ -16,6 +31,10 @@
 PDF 解析用的 pdf.js 从 cdnjs 加载，所以需要联网。
 
 ## 结构
+
+- `docs/FORMAT.md`：打分文件格式
+- `examples/`：示例文本、两种格式的打分结果、Python 打分脚本（可改成你的模型）
+
 
 `index.html` 里的脚本分成两段，用注释标记：
 
@@ -28,7 +47,7 @@ PDF 解析用的 pdf.js 从 cdnjs 加载，所以需要联网。
 node test/core.test.js
 ```
 
-## 情感引擎（v1）
+## 内置情感引擎（仅演示）
 
 浏览器内的词典法：约 500 个英文词和少量中文词，处理否定、程度副词、转折（but / however）和感叹号。
 句子分数是词分数加权求和后压到 -1 到 1，段落分数是句子均值。
@@ -42,7 +61,7 @@ node test/core.test.js
 
 ## 下一步
 
-1. 换成模型打分（小模型，或让 LLM 批量打分）
+1. 接入你的打分模块 / API（现在靠文件，之后可以做成直接调用）
 2. 面向某个主题词的情感
 3. 导出带高亮的 PDF
 4. 中文分词和词典增强

@@ -90,8 +90,8 @@ button{cursor:pointer}
 .stage{display:block}
 .sheet{max-width:44rem;margin:.6rem auto 0;background:var(--paper);border-radius:1rem;box-shadow:var(--shadow);padding:clamp(1.4rem,4.5vw,3rem) clamp(1.3rem,5vw,3.4rem) clamp(2rem,5vw,3.6rem)}
 .dochead{margin-bottom:1.6rem;padding-bottom:1.3rem;border-bottom:1px solid var(--line)}
-.src{display:flex;align-items:center;gap:.5rem;margin:0 0 .6rem;font:400 .75rem var(--font-num);color:var(--muted);overflow-wrap:anywhere}
-.badge{font:500 .68rem var(--font-ui);letter-spacing:.04em;padding:.18rem .45rem;border-radius:.3rem;background:var(--chip);color:var(--ink)}
+.src{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0 0 .6rem;font:400 .75rem var(--font-num);color:var(--muted);overflow-wrap:anywhere}
+.badge{white-space:nowrap;font:500 .68rem var(--font-ui);letter-spacing:.04em;padding:.18rem .45rem;border-radius:.3rem;background:var(--chip);color:var(--ink)}
 .dochead h1{margin:0;font:650 clamp(1.6rem,4.6vw,2.15rem)/1.15 var(--font-ui);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
 .meta{margin:.7rem 0 .9rem;font:400 .8125rem var(--font-ui);color:var(--muted)}
 .dist{display:flex;height:.5rem;border-radius:99px;overflow:hidden;gap:2px;background:transparent}
@@ -142,7 +142,45 @@ button{cursor:pointer}
 .insp{position:fixed;z-index:35;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));margin-inline:auto;max-width:42rem;
   bottom:max(12px,env(safe-area-inset-bottom,0px));background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);
   padding:.85rem 1rem 1rem;max-height:min(46vh,24rem);overflow:auto;font-family:var(--font-ui)}
-@media (min-width:1440px){
+/* spectrum panel: bottom sheet when narrow, left rail when wide (inspector takes the right) */
+.spec{position:fixed;z-index:34;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));margin-inline:auto;max-width:42rem;
+  bottom:max(12px,env(safe-area-inset-bottom,0px));background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);
+  padding:.85rem 1rem 1rem;max-height:min(62vh,30rem);overflow:auto;font-family:var(--font-ui)}
+.spec .sub{margin:0 0 .6rem;font:400 .78rem/1.55 var(--font-ui);color:var(--muted)}
+.spec .sumline{margin:.5rem 0 .2rem;font:400 .8rem/1.6 var(--font-ui);color:var(--ink)}
+.spec .sumline b{font:600 .8rem var(--font-num)}
+.spec h3{margin:1rem 0 .4rem;font:600 .78rem var(--font-ui);color:var(--muted);letter-spacing:.02em}
+.spec svg{display:block;width:100%;height:auto;overflow:visible}
+.sp-t{font:400 10px var(--font-num);fill:var(--muted)}
+.sp-ax{stroke:var(--line);stroke-width:1}
+.sp-zero{stroke:var(--ink);stroke-width:1;opacity:.35;stroke-dasharray:2 3}
+.sp-mean{stroke:var(--ink);stroke-width:1.5}
+.sp-ref{fill:color-mix(in srgb,var(--muted) 45%,transparent)}
+.sp-neg{fill:color-mix(in srgb,var(--neg) 80%,transparent)}
+.sp-pos{fill:color-mix(in srgb,var(--pos) 80%,transparent)}
+.sp-mk{fill:var(--ink)}
+.wl{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 .6rem;align-items:baseline;padding:.3rem .45rem;border-radius:.45rem;cursor:pointer}
+.wl li:hover{background:var(--chip)}
+.wl .wt{font:500 .875rem var(--font-ui);overflow-wrap:anywhere}
+.wl .wt small{font:400 .7rem var(--font-num);color:var(--muted)}
+.wl .sc,.anch .sc{font:500 .78rem var(--font-num);padding:.1rem .4rem;border-radius:.3rem;background:color-mix(in srgb,var(--hue) 30%,transparent);white-space:nowrap}
+.wl .rk{grid-column:1/-1;font:400 .72rem var(--font-ui);color:var(--muted)}
+.wl li{grid-template-columns:minmax(0,1fr) auto}
+.wl li.pos,.anch .an.pos{--hue:var(--pos)}
+.wl li.neg,.anch .an.neg{--hue:var(--neg)}
+.anch{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.anch>div{display:flex;flex-wrap:wrap;gap:.3rem;align-content:flex-start}
+.anch .an{display:inline-flex;align-items:center;gap:.35rem;font:500 .78rem var(--font-ui)}
+.exp{white-space:nowrap;margin-left:auto;display:inline-flex;gap:.6rem}
+.lnk{border:0;background:transparent;padding:0;font:500 .72rem var(--font-ui);color:var(--muted);text-decoration:underline;text-underline-offset:.2em}
+.lnk:hover{color:var(--ink)}
+.seg button:disabled{opacity:.35;cursor:not-allowed}
+.btn[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+@media (min-width:1520px){
+  .spec{left:max(44px,env(safe-area-inset-left,0px));right:auto;margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:20rem;max-height:calc(100vh - var(--bar-h) - 48px)}
+}
+@media (min-width:1520px){
   .insp{left:auto;right:max(44px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:20rem;max-height:calc(100vh - var(--bar-h) - 48px)}
 }
 .ih{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
@@ -206,6 +244,7 @@ button{cursor:pointer}
       <button type="button" role="radio" aria-checked="true" data-level="sent" title="句（按 2）">句</button>
       <button type="button" role="radio" aria-checked="false" data-level="para" title="段（按 3）">段</button>
     </div>
+    <button class="btn" id="btnSpec" type="button" aria-pressed="false" aria-controls="spec">情感光谱</button>
     <span class="legend" aria-hidden="true"><span>负面</span><i class="ramp"></i><span>正面</span></span>
     <label class="slider" for="th">弱信号过滤<input id="th" type="range" min="0" max="0.9" step="0.01" value="0.15"><output id="thOut" for="th">15%</output></label>
     <button class="btn only-m" id="btnTopics" type="button" aria-expanded="false">主题词</button>
@@ -226,18 +265,19 @@ button{cursor:pointer}
 </main>
 
 <aside class="mm" id="mm" title="整篇情感热力条，点击或拖动跳转"><canvas id="mmCanvas"></canvas><div class="vp" id="vp"></div></aside>
+<aside class="spec" id="spec" hidden aria-label="情感光谱"></aside>
 <aside class="insp" id="insp" hidden></aside>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
-<div class="drop" id="drop" hidden><span>松开以打开 PDF / Markdown / 文本</span></div>
+<div class="drop" id="drop" hidden><span>松开以打开 PDF / Markdown / 文本 / 已打分的 JSON·CSV</span></div>
 <div class="paste" id="paste" hidden>
   <div class="pcard">
-    <h2>粘贴文本或 Markdown</h2>
-    <textarea id="pasteText" placeholder="把文章、笔记或网页正文粘贴到这里"></textarea>
+    <h2>粘贴文本、Markdown 或打分结果</h2>
+    <textarea id="pasteText" placeholder="把文章、笔记或网页正文粘贴到这里；也可以直接粘贴外部模块输出的 JSON / CSV 打分结果"></textarea>
     <div class="acts"><button class="btn" id="pasteCancel" type="button">取消</button><button class="btn solid" id="pasteGo" type="button">分析</button></div>
   </div>
 </div>
-<input type="file" id="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/plain,text/markdown" hidden>
+<input type="file" id="file" accept=".pdf,.md,.markdown,.txt,.json,.csv,application/json,text/csv,application/pdf,text/plain,text/markdown" hidden>
 
 <script>
 //<core>
@@ -320,7 +360,7 @@ function lookup(lower) {
   if (v !== undefined) return { k: 'lex', v };
   return null;
 }
-const strength = (level, score) => Math.min(1, Math.abs(score) / CAP[level]);
+const strength = (level, score, cap = CAP) => Math.min(1, Math.abs(score) / cap[level]);
 
 function analyzeSentence(text) {
   const toks = rawTokens(text);
@@ -394,6 +434,7 @@ function buildDoc(title, blocks) {
       const a = analyzeSentence(st.text);
       a.gap = st.gap; a.id = sid++; a.block = bi;
       a.norm = new Set(); for (const t of a.toks) if (t.word) a.norm.add(normWord(t.text));
+      a.wt = a.toks;
       a.k = strength('sent', a.score);
       for (const t of a.scored) { t.wid = wid++; t.k = strength('word', t.score); doc.words.push(t); }
       blk.sents.push(a); doc.sents.push(a);
@@ -402,11 +443,20 @@ function buildDoc(title, blocks) {
     blk.k = strength('para', blk.score);
     doc.blocks.push(blk);
   });
+  doc.cap = CAP; doc.ref = builtinRef(); setHas(doc);
   return doc;
+}
+/* which levels have any non-zero score (the UI greys out the rest) */
+const setHas = doc => { doc.has = { word: doc.words.length > 0, sent: doc.sents.some(s => s.score !== 0), para: doc.blocks.some(b => b.score !== 0) }; };
+/* reference spectrum used by the side panel when the doc was scored by the built-in demo lexicon */
+function builtinRef() {
+  const ex = w => ({ text: w, score: LEX.get(w) });
+  return { name: `内置词典（${LEX.size} 词，仅供演示）`, scores: [...LEX.values()].sort((a, b) => a - b),
+    examples: ['terrible', 'bad', 'poor', 'problem', 'serious', 'active', 'helpful', 'good', 'great', 'wonderful'].map(ex) };
 }
 function extractTopics(doc, max = 8) {
   const cnt = new Map();
-  for (const s of doc.sents) for (const t of s.toks) {
+  for (const s of doc.sents) for (const t of s.wt) {
     if (!t.word || t.info || /^\d+$/.test(t.text)) continue;
     const k = normWord(t.text), cjk = CJK_RE.test(k);
     if ((!cjk && k.length < 4) || (cjk && [...k].length < 2) || STOP.has(k)) continue;
@@ -499,7 +549,190 @@ function linesToBlocks(pages) {
   closeP();
   return blocks.filter(b => b.text);
 }
-if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP };
+/* ---------- scored files (JSON / CSV)  <->  doc.  The scores come from outside; this layer only lays them out. ---------- */
+const isNum = v => typeof v === 'number' && isFinite(v);
+const r4 = v => Math.round(v * 10000) / 10000;
+const noteText = t => (t.notes || []).map(n => n.t === 'boost' ? `${n.m < 1 ? '减弱' : '加强'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `否定 ${n.w}` : n.t === 'caps' ? '全大写 ×1.2' : n.t === 'text' ? n.s : n.w < 1 ? '转折之前 ×0.5' : '转折之后 ×1.5').join(' · ');
+
+function docFromScored(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('文件内容不是有效的打分数据（格式见 docs/FORMAT.md）');
+  if (!Array.isArray(obj.paragraphs) || !obj.paragraphs.length) throw new Error('缺少 paragraphs 数组（格式见 docs/FORMAT.md）');
+  const center = isNum(obj.center) ? obj.center : 0, adj = v => v - center;
+  const warn = { unmatched: 0, bad: obj._bad || 0, skipped: 0 };
+  const doc = { title: String(obj.title || '未命名文档'), blocks: [], sents: [], words: [], warn, ref: null };
+  let sid = 0, wid = 0;
+  obj.paragraphs.forEach(p => {
+    let sentsIn = p && Array.isArray(p.sentences) ? p.sentences : null;
+    if (!sentsIn && p && typeof p.text === 'string' && p.text.trim()) sentsIn = splitSentences(p.text.trim());
+    if (!sentsIn || !sentsIn.length) { warn.skipped++; return; }
+    const bi = doc.blocks.length;
+    const blk = { id: bi, type: p.type === 'h' ? 'h' : 'p', sents: [], score: 0, k: 0 };
+    sentsIn.forEach((s, si) => {
+      const text = String(typeof s === 'string' ? s : (s && s.text != null ? s.text : ''));
+      if (!text.trim()) return;
+      const wordsIn = s && Array.isArray(s.words) ? s.words : [];
+      const spans = []; let cursor = 0;
+      for (const w of wordsIn) {
+        if (!w || typeof w.text !== 'string' || !w.text || !isNum(w.score)) { warn.unmatched++; continue; }
+        let a = -1, b = -1;
+        if (Number.isInteger(w.start) && Number.isInteger(w.end) && w.start >= 0 && w.end <= text.length && w.start < w.end) { a = w.start; b = w.end; }
+        else {
+          let i = text.indexOf(w.text, cursor);
+          if (i < 0) i = text.toLowerCase().indexOf(w.text.toLowerCase(), cursor);
+          if (i >= 0) { a = i; b = i + w.text.length; }
+        }
+        if (a < 0) { warn.unmatched++; continue; }
+        cursor = b;
+        spans.push({ a, b, score: adj(w.score), note: typeof w.note === 'string' && w.note ? w.note : null });
+      }
+      spans.sort((x, y) => x.a - y.a);
+      const toks = []; let pos = 0;
+      for (const sp of spans) {
+        if (sp.a < pos) { warn.unmatched++; continue; }
+        if (sp.a > pos) toks.push({ text: text.slice(pos, sp.a), word: false });
+        toks.push({ text: text.slice(sp.a, sp.b), word: true, score: sp.score, notes: sp.note ? [{ t: 'text', s: sp.note }] : [] });
+        pos = sp.b;
+      }
+      if (pos < text.length) toks.push({ text: text.slice(pos), word: false });
+      const scored = toks.filter(t => t.word && t.score);
+      let score;
+      if (s && isNum(s.score)) score = adj(s.score);
+      else { const S = scored.reduce((x, t) => x + t.score, 0); score = S / Math.sqrt(S * S + 15); }
+      const last = si === sentsIn.length - 1;
+      const gap = s && typeof s.gap === 'string' ? s.gap : (last || CJK_RE.test(text.slice(-1)) || /[。！？]$/.test(text) ? '' : ' ');
+      const a = { text, toks, scored, score, raw: score, lc: text.toLowerCase(), gap, id: sid++, block: bi, k: 0 };
+      a.wt = rawTokens(text); a.norm = new Set();
+      for (const t of a.wt) if (t.word) { t.lower = t.text.toLowerCase().replace(/[’‘]/g, "'"); t.info = lookup(t.lower); a.norm.add(normWord(t.text)); }
+      for (const t of scored) { t.wid = wid++; doc.words.push(t); }
+      blk.sents.push(a); doc.sents.push(a);
+    });
+    if (!blk.sents.length) { warn.skipped++; return; }
+    blk.score = isNum(p.score) ? adj(p.score) : blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length;
+    doc.blocks.push(blk);
+  });
+  if (!doc.sents.length) throw new Error('文件里没有可显示的句子');
+  const R = obj.reference;
+  if (R && Array.isArray(R.scores)) {
+    const sc = R.scores.filter(isNum).map(adj).filter(v => v !== 0).sort((x, y) => x - y);
+    if (sc.length >= 5) doc.ref = { name: String(R.name || '参考词表'), scores: sc,
+      examples: (Array.isArray(R.examples) ? R.examples : []).filter(e => e && typeof e.text === 'string' && isNum(e.score)).map(e => ({ text: e.text, score: adj(e.score) })) };
+  }
+  const sc = obj.scale;
+  const pick = key => (isNum(sc) && sc > 0) ? sc : (sc && isNum(sc[key]) && sc[key] > 0 ? sc[key] : 0);
+  const auto = arr => { const a = arr.map(Math.abs).filter(v => v > 0).sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * 0.9))] : 0; };
+  const cap = {
+    word: pick('word') || auto(doc.words.map(t => t.score)) || CAP.word,
+    sent: pick('sentence') || auto(doc.sents.map(s => s.score)) || CAP.sent,
+    para: pick('paragraph') || auto(doc.blocks.map(b => b.score)) || CAP.para,
+  };
+  doc.cap = cap;
+  doc.words.forEach(t => { t.k = strength('word', t.score, cap); });
+  doc.sents.forEach(s => { s.k = strength('sent', s.score, cap); });
+  doc.blocks.forEach(b => { b.k = strength('para', b.score, cap); });
+  setHas(doc);
+  return doc;
+}
+function docToJSON(doc) {
+  return { version: 1, title: doc.title, paragraphs: doc.blocks.map(b => ({
+    type: b.type, score: r4(b.score),
+    sentences: b.sents.map(s => {
+      let off = 0; const words = [];
+      for (const t of s.toks) {
+        if (t.word && t.score) { const w = { text: t.text, score: r4(t.score), start: off, end: off + t.text.length }; const n = noteText(t); if (n) w.note = n; words.push(w); }
+        off += t.text.length;
+      }
+      return { text: s.text, score: r4(s.score), words };
+    }) })) };
+}
+function docToCSV(doc) {
+  const q = v => { v = String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const rows = [['level', 'paragraph', 'sentence', 'text', 'score', 'type', 'start', 'end', 'note']];
+  doc.blocks.forEach((b, bi) => {
+    rows.push(['paragraph', bi, '', '', r4(b.score), b.type, '', '', '']);
+    b.sents.forEach((s, si) => {
+      rows.push(['sentence', bi, si, s.text, r4(s.score), '', '', '', '']);
+      let off = 0;
+      for (const t of s.toks) { if (t.word && t.score) rows.push(['word', bi, si, t.text, r4(t.score), '', off, off + t.text.length, noteText(t)]); off += t.text.length; }
+    });
+  });
+  return rows.map(r => r.map(q).join(',')).join('\n') + '\n';
+}
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const rows = []; let row = [], f = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else quoted = false; } else f += c; }
+    else if (c === '"') quoted = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); f = ''; if (row.length > 1 || row[0] !== '') rows.push(row); row = []; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+function csvToScored(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error('CSV 里没有数据行');
+  const head = rows[0].map(h => h.trim().toLowerCase());
+  for (const need of ['level', 'paragraph', 'sentence', 'text', 'score']) if (head.indexOf(need) < 0) throw new Error(`CSV 缺少列：${need}（格式见 docs/FORMAT.md）`);
+  const get = (r, n) => { const i = head.indexOf(n); return i < 0 ? undefined : r[i]; };
+  const num = v => { if (v === undefined || String(v).trim() === '') return undefined; const n = Number(v); return isFinite(n) ? n : undefined; };
+  const P = new Map(); let bad = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i], lv = String(get(r, 'level') || '').trim().toLowerCase(), pi = num(get(r, 'paragraph'));
+    if (pi === undefined) { bad++; continue; }
+    let p = P.get(pi); if (!p) { p = { type: 'p', sents: new Map() }; P.set(pi, p); }
+    if (lv === 'paragraph') {
+      const sc = num(get(r, 'score')); if (sc !== undefined) p.score = sc;
+      if (String(get(r, 'type') || '').trim() === 'h') p.type = 'h';
+      const tx = get(r, 'text'); if (tx) p.text = tx;
+      continue;
+    }
+    const si = num(get(r, 'sentence')); if (si === undefined) { bad++; continue; }
+    let s = p.sents.get(si); if (!s) { s = { words: [] }; p.sents.set(si, s); }
+    if (lv === 'sentence') { s.text = get(r, 'text') || ''; const sc = num(get(r, 'score')); if (sc !== undefined) s.score = sc; }
+    else if (lv === 'word') {
+      const sc = num(get(r, 'score')); if (sc === undefined) { bad++; continue; }
+      const w = { text: get(r, 'text') || '', score: sc }, a = num(get(r, 'start')), b = num(get(r, 'end'));
+      if (a !== undefined && b !== undefined) { w.start = a; w.end = b; }
+      const nt = get(r, 'note'); if (nt) w.note = nt;
+      s.words.push(w);
+    } else bad++;
+  }
+  const paragraphs = [...P.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => ({ type: p.type, score: p.score, text: p.text,
+    sentences: [...p.sents.entries()].sort((a, b) => a[0] - b[0]).map(([, s]) => s).filter(s => s.text !== undefined) }));
+  return { version: 1, title: '', paragraphs, _bad: bad };
+}
+
+/* ---------- spectrum: where this doc's sentiment words sit among a reference vocabulary ---------- */
+function lowerBound(arr, v) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < v) lo = m + 1; else hi = m; } return lo; }
+function upperBound(arr, v) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= v) lo = m + 1; else hi = m; } return lo; }
+const NICE = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8, 10];
+function niceMax(v) { if (!(v > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; for (const n of NICE) if (n >= f - 1e-9) return n * p; return 10 * p; }
+function buildSpec(doc, bins = 24) {
+  const words = doc.words, own = !doc.ref;
+  const docScores = words.map(t => t.score);
+  if (!docScores.length) return null;
+  const refScores = own ? docScores.slice().sort((a, b) => a - b) : doc.ref.scores, n = refScores.length;
+  let M = 0; for (const v of refScores) M = Math.max(M, Math.abs(v)); for (const v of docScores) M = Math.max(M, Math.abs(v));
+  M = niceMax(M);
+  const hist = arr => { const h = new Array(bins).fill(0); for (const v of arr) h[Math.max(0, Math.min(bins - 1, Math.floor((v + M) / (2 * M) * bins)))]++; return h; };
+  /* share of reference words that are at least as extreme, on the same side of zero */
+  const share = v => Math.min(1, Math.max((v > 0 ? n - lowerBound(refScores, v) : upperBound(refScores, v)) / n, 1 / n));
+  const g = new Map();
+  for (const t of words) { const k = t.text.toLowerCase(); let e = g.get(k); if (!e) { e = { text: k, n: 0, sum: 0, best: t }; g.set(k, e); } e.n++; e.sum += t.score; if (Math.abs(t.score) > Math.abs(e.best.score)) e.best = t; }
+  const items = [...g.values()].map(e => { const mean = e.sum / e.n; return { text: e.text, n: e.n, score: mean, wid: e.best.wid, share: share(mean) }; });
+  const mean = docScores.reduce((x, y) => x + y, 0) / docScores.length;
+  return { own, M, bins, refHist: hist(refScores), docHist: hist(docScores), refN: n, docN: docScores.length,
+    nPos: docScores.filter(v => v > 0).length, nNeg: docScores.filter(v => v < 0).length, mean,
+    refMean: own ? null : refScores.reduce((x, y) => x + y, 0) / n,
+    pos: items.filter(x => x.score > 0).sort((a, b) => b.score - a.score || b.n - a.n).slice(0, 6),
+    neg: items.filter(x => x.score < 0).sort((a, b) => a.score - b.score || b.n - a.n).slice(0, 6),
+    anchors: own ? [] : (doc.ref.examples || []), refName: own ? '' : doc.ref.name };
+}
+const rankText = (it, own) => (own ? '本文' : '') + (it.score > 0 ? '最正面的 ' : '最负面的 ') + Math.max(1, Math.round(it.share * 100)) + '%';
+if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText };
 //</core>
 
 //<app>
@@ -524,8 +757,10 @@ Thanks to the whole team for an exhausting, difficult, and ultimately encouragin
 const MAX_PAGES = 200;
 
 const $ = s => document.querySelector(s);
-const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics') };
-const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0 };
+const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec') };
+const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '' };
+const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
+const wideMQ = window.matchMedia('(min-width:1520px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
 
 const fmt = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
@@ -543,11 +778,11 @@ function toast(msg, ms = 3200) {
 function renderHead() {
   const D = S.doc, n = D.sents.length;
   let pos = 0, neg = 0, sum = 0;
-  D.sents.forEach(s => { if (s.score >= 0.12) pos++; else if (s.score <= -0.12) neg++; sum += s.score; });
+  D.sents.forEach(s => { if (s.k >= 0.2) { if (s.score > 0) pos++; else neg++; } sum += s.score; });
   const neu = n - pos - neg; S.avg = n ? sum / n : 0;
   const pct = v => Math.round(v / n * 100) + '%';
   const paras = D.blocks.filter(b => b.type === 'p').length;
-  E.head.innerHTML = `<p class="src"><span>${esc(S.name)}</span>${S.sample ? '<span class="badge">示例</span>' : ''}</p>
+  E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">导出 JSON</button><button class="lnk" type="button" data-exp="csv">导出 CSV</button></span></p>
     <h1>${esc(D.title)}</h1>
     <p class="meta">${paras} 段 · ${n} 句 · ${D.words.length} 个情感词 · 全文均值 ${fmt(S.avg)}</p>
     <div class="dist" role="img" aria-label="负面 ${pct(neg)}，中性 ${pct(neu)}，正面 ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
@@ -598,10 +833,18 @@ function applyTopics() {
   E.btnTopics.textContent = nOn ? `主题词 · ${nOn}` : '主题词';
   drawMinimap();
 }
+function syncSeg() {
+  const tips = { word: '词（按 1）', sent: '句（按 2）', para: '段（按 3）' };
+  E.seg.querySelectorAll('button').forEach(b => {
+    const ok = !S.doc || S.doc.has[b.dataset.level];
+    b.disabled = !ok;
+    b.title = ok ? tips[b.dataset.level] : '这个文件没有该级别的分数';
+    b.setAttribute('aria-checked', String(b.dataset.level === S.level));
+  });
+}
 function setLevel(l) {
-  S.level = l;
-  E.seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.level === l)));
-  closeInsp(); refresh();
+  if (S.doc && !S.doc.has[l]) return;
+  S.level = l; syncSeg(); closeInsp(); refresh();
 }
 
 /* topic chips */
@@ -664,7 +907,6 @@ E.mm.addEventListener('pointerup', () => { drag = false; });
 E.mm.addEventListener('pointercancel', () => { drag = false; });
 
 /* inspector */
-const noteText = t => t.notes.map(n => n.t === 'boost' ? `${n.m < 1 ? '减弱' : '加强'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `否定 ${n.w}` : n.t === 'caps' ? '全大写 ×1.2' : n.w < 1 ? '转折之前 ×0.5' : '转折之后 ×1.5').join(' · ');
 function inspSent(s, wid) {
   const b = S.doc.blocks[s.block];
   const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
@@ -680,14 +922,81 @@ function inspBlock(b) {
     <p class="ctx" style="margin:0 0 .6rem">段内 ${b.sents.length} 句的平均值</p><ul class="cl bl">${rows}</ul>`;
 }
 function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
-function closeInsp() { clearSelClass(); S.sel = null; E.insp.hidden = true; }
+function closeInsp() { clearSelClass(); S.sel = null; E.insp.hidden = true; updateSpecChart(); }
 function select(kind, id, wid) {
   if (S.sel && S.sel.kind === kind && S.sel.id === id && S.sel.wid === wid) { closeInsp(); return; }
   clearSelClass(); S.sel = { kind, id, wid };
   (kind === 'b' ? els.b[id] : els.s[id]).classList.add('sel');
   E.insp.innerHTML = kind === 'b' ? inspBlock(S.doc.blocks[id]) : inspSent(S.doc.sents[id], wid);
   E.insp.hidden = false;
+  if (!wideMQ.matches && !E.spec.hidden) setSpec(false);
+  updateSpecChart();
 }
+
+/* spectrum side panel: where this doc's sentiment words sit among a reference vocabulary */
+function specMarks() {
+  if (!S.sel || !S.doc) return [];
+  const list = S.sel.kind === 'b' ? S.doc.blocks[S.sel.id].sents.flatMap(s => s.scored) : S.doc.sents[S.sel.id].scored;
+  return list.map(t => t.score);
+}
+function specChart(sp, marks) {
+  const W = 280, padX = 8, rowH = 44, gap = 22, top = 18, bot = 26, iw = W - padX * 2, bw = iw / sp.bins;
+  const rows = sp.own ? 1 : 2, H = top + rows * rowH + (rows - 1) * gap + bot;
+  const x = v => padX + (v + sp.M) / (2 * sp.M) * iw;
+  const bars = (h, y0, cls) => { const mx = Math.max(1, ...h); return h.map((c, i) => {
+    if (!c) return '';
+    const bh = Math.max(2, c / mx * (rowH - 3)), mid = (i + 0.5) / sp.bins * 2 * sp.M - sp.M;
+    return `<rect class="${cls || (mid < 0 ? 'sp-neg' : 'sp-pos')}" x="${(padX + i * bw + .6).toFixed(1)}" y="${(y0 + rowH - bh).toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5"/>`;
+  }).join(''); };
+  const yDoc = top + (rows - 1) * (rowH + gap), base = yDoc + rowH;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="情感光谱：本文用词在参考词表中的分布">`;
+  if (!sp.own) s += `<text class="sp-t" x="${padX}" y="${top - 6}">参考词表 · ${sp.refN} 词</text>` + bars(sp.refHist, top, 'sp-ref') + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${top + rowH}" y2="${top + rowH}"/>`;
+  s += `<text class="sp-t" x="${padX}" y="${yDoc - 6}">本文 · ${sp.docN} 个情感词</text>` + bars(sp.docHist, yDoc) + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${base}" y2="${base}"/>`;
+  s += `<line class="sp-zero" x1="${x(0)}" x2="${x(0)}" y1="${top - 2}" y2="${base + 2}"/>`;
+  s += `<line class="sp-mean" x1="${x(sp.mean).toFixed(1)}" x2="${x(sp.mean).toFixed(1)}" y1="${yDoc - 2}" y2="${base}"><title>本文平均 ${fmt(sp.mean)}</title></line>`;
+  for (const v of marks) { const px = x(v).toFixed(1); s += `<path class="sp-mk ${sg(v)}" d="M${px} ${base + 3} l-4 7 h8 z"/>`; }
+  s += `<text class="sp-t" x="${padX}" y="${H - 5}">${fmt(-sp.M, 1)} 负面</text><text class="sp-t" x="${W / 2}" y="${H - 5}" text-anchor="middle">0</text><text class="sp-t" x="${W - padX}" y="${H - 5}" text-anchor="end">正面 ${fmt(sp.M, 1)}</text></svg>`;
+  return s;
+}
+function updateSpecChart() {
+  if (E.spec.hidden || !S.spec) return;
+  const c = E.spec.querySelector('#specChart'); if (c) c.innerHTML = specChart(S.spec, specMarks());
+}
+function renderSpec() {
+  if (E.spec.hidden || !S.doc) return;
+  const sp = S.spec = buildSpec(S.doc);
+  const head = '<div class="ih"><span class="ik">情感光谱</span><button class="x" type="button" data-spec-close aria-label="关闭">×</button></div>';
+  if (!sp) { E.spec.innerHTML = head + '<p class="none">这个文件里没有带分数的词，画不出光谱。</p>'; return; }
+  const sub = sp.own ? '这个文件没有提供参考词表，下面只显示本文自己的分布和排名。'
+    : `横轴是词的情感分数。灰色是${esc(sp.refName)}里全部 ${sp.refN} 个词的分布，彩色是本文用到的情感词，竖线是本文平均分，▲ 是你点中的句子里的词。`;
+  let sum = `本文 ${sp.docN} 个情感词：正面 ${sp.nPos}，负面 ${sp.nNeg}。平均分 <b>${fmt(sp.mean)}</b>`;
+  if (!sp.own) { const d = sp.mean - sp.refMean, v = d > sp.M * 0.1 ? '整体比参考词表更偏正面' : d < -sp.M * 0.1 ? '整体比参考词表更偏负面' : '整体和参考词表差不多'; sum += `，参考词表平均 <b>${fmt(sp.refMean)}</b>，${v}。`; } else sum += '。';
+  const row = it => `<li data-wid="${it.wid}" class="${sg(it.score)}"><span class="wt">${esc(it.text)}${it.n > 1 ? ` <small>×${it.n}</small>` : ''}</span><span class="sc">${fmt(it.score, 1)}</span><span class="rk">${rankText(it, sp.own)}</span></li>`;
+  const list = (title, arr) => arr.length ? `<h3>${title}</h3><ul class="wl">${arr.map(row).join('')}</ul>` : '';
+  const an = (arr) => arr.map(a => `<span class="an ${sg(a.score)}"><span>${esc(a.text)}</span><span class="sc">${fmt(a.score, 1)}</span></span>`).join('');
+  const anNeg = sp.anchors.filter(a => a.score < 0).sort((a, b) => a.score - b.score), anPos = sp.anchors.filter(a => a.score > 0).sort((a, b) => b.score - a.score);
+  E.spec.innerHTML = head + `<p class="sub">${sub}</p><div id="specChart">${specChart(sp, specMarks())}</div><p class="sumline">${sum}</p>`
+    + list('本文最正面的词', sp.pos) + list('本文最负面的词', sp.neg)
+    + (sp.anchors.length ? `<h3>参照刻度</h3><p class="sub" style="margin:0 0 .5rem">这些词在参考词表里的分数，帮你把分数对应到具体用词。</p><div class="anch"><div>${an(anNeg)}</div><div>${an(anPos)}</div></div>` : '');
+}
+function setSpec(open) {
+  E.spec.hidden = !open;
+  E.btnSpec.setAttribute('aria-pressed', String(open));
+  if (!open) return;
+  if (!wideMQ.matches) closeInsp();
+  renderSpec();
+}
+E.btnSpec.addEventListener('click', () => setSpec(E.spec.hidden));
+wideMQ.addEventListener('change', e => setSpec(e.matches));
+E.spec.addEventListener('click', e => {
+  if (e.target.closest('[data-spec-close]')) { setSpec(false); return; }
+  const li = e.target.closest('li[data-wid]'); if (!li || !S.doc) return;
+  const t = S.doc.words[+li.dataset.wid]; if (!t) return;
+  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word');
+  const el = els.w[t.wid], sEl = el && el.closest('.s'); if (!sEl) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  select('s', +sEl.dataset.s, t.wid);
+});
 E.insp.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeInsp(); });
 E.doc.addEventListener('click', e => {
   const sEl = e.target.closest('.s'), bEl = e.target.closest('.blk'), wEl = e.target.closest('.w');
@@ -715,13 +1024,41 @@ E.doc.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 
 /* loading documents */
 function openDoc(title, blocks, meta) {
-  const doc = buildDoc(title, blocks);
+  const doc = meta.scored ? docFromScored(meta.scored) : buildDoc(title, blocks);
   if (!doc.sents.length) throw new Error('没有找到可分析的文字');
-  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || title; S.topics = extractTopics(doc, 8); S.sel = null;
+  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? '示例' : '内置词典');
+  S.topics = extractTopics(doc, 8); S.sel = null; S.spec = null;
+  if (!doc.has[S.level]) S.level = doc.has.sent ? 'sent' : doc.has.para ? 'para' : 'word';
+  syncSeg();
   E.insp.hidden = true;
   renderHead(); renderDoc(); renderChips(); refresh();
+  if (!E.spec.hidden) renderSpec();
   window.scrollTo(0, 0);
   requestAnimationFrame(() => { layout(); drawMinimap(); });
+  const w = doc.warn;
+  if (w && (w.unmatched || w.bad || w.skipped)) toast(`已跳过 ${w.unmatched || 0} 个对不上句子的词、${w.bad || 0} 行无效数据、${w.skipped || 0} 个空段`, 7000);
+}
+function openScoredText(text, kind, name) {
+  let obj;
+  if (kind === 'json') { try { obj = JSON.parse(text); } catch (e) { throw new Error('JSON 解析失败：' + e.message); } }
+  else obj = csvToScored(text);
+  if (obj && typeof obj === 'object' && !obj.title) obj.title = name.replace(/\.[^.]+$/, '').replace(/\.scored$/, '');
+  openDoc(null, null, { name, scored: obj, badge: '外部打分' });
+}
+function exportDoc(kind) {
+  if (!S.doc) return;
+  const base = (S.doc.title || 'sentimentmarker').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '-').toLowerCase();
+  const name = `${base}.scored.${kind}`;
+  const text = kind === 'json' ? JSON.stringify(docToJSON(S.doc), null, 1) : '﻿' + docToCSV(S.doc);
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: kind === 'json' ? 'application/json' : 'text/csv;charset=utf-8' }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  } catch (e) { /* some embedded viewers block downloads; the clipboard copy below still works */ }
+  const small = text.length < 1.5e6;
+  (small && navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(
+    () => toast(`已复制 ${name} 的内容到剪贴板；如果浏览器没有开始下载，粘贴到新文件里保存即可`, 6000), () => toast(`已尝试下载 ${name}；如果没有反应，请在本地打开 index.html 使用导出`, 6000));
 }
 async function readPDF(file) {
   if (!window.pdfjsLib) throw new Error('PDF 引擎没有加载成功，请检查网络后刷新页面');
@@ -743,10 +1080,13 @@ async function loadFile(file) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   try {
     toast(`正在读取 ${file.name}…`, 0);
-    let blocks;
-    if (ext === 'pdf' || file.type === 'application/pdf') blocks = await readPDF(file);
-    else { const t = await file.text(); blocks = (ext === 'md' || ext === 'markdown') ? parseMarkdown(t) : parseText(t); }
-    openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+    if (ext === 'json' || ext === 'csv') openScoredText(await file.text(), ext, file.name);
+    else {
+      let blocks;
+      if (ext === 'pdf' || file.type === 'application/pdf') blocks = await readPDF(file);
+      else { const t = await file.text(); blocks = (ext === 'md' || ext === 'markdown') ? parseMarkdown(t) : parseText(t); }
+      openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+    }
     if (!E.toast.hidden && /读取/.test(E.toast.textContent)) toast('');
   } catch (err) { toast('打开失败：' + (err && err.message ? err.message : err), 6000); }
 }
@@ -760,9 +1100,14 @@ $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.paste
 $('#pasteCancel').addEventListener('click', () => { E.paste.hidden = true; });
 $('#pasteGo').addEventListener('click', () => {
   const t = E.pasteText.value.trim(); if (!t) return;
-  try { openDoc('粘贴的文本', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: '粘贴的文本' }); E.paste.hidden = true; }
-  catch (err) { toast('分析失败：' + err.message); }
+  try {
+    if (/^\{/.test(t)) openScoredText(t, 'json', '粘贴的 JSON');
+    else if (/^level\s*,/i.test(t)) openScoredText(t, 'csv', '粘贴的 CSV');
+    else openDoc('粘贴的文本', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: '粘贴的文本' });
+    E.paste.hidden = true;
+  } catch (err) { toast('分析失败：' + err.message, 6000); }
 });
+E.head.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b) exportDoc(b.dataset.exp); });
 E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
 let thRAF = 0;
 E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
@@ -774,7 +1119,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; E.drop
 document.addEventListener('keydown', e => {
   if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
   if (e.key === '1') setLevel('word'); else if (e.key === '2') setLevel('sent'); else if (e.key === '3') setLevel('para');
-  else if (e.key === 'Escape') { closeInsp(); E.paste.hidden = true; }
+  else if (e.key === 'Escape') { closeInsp(); E.paste.hidden = true; if (!wideMQ.matches) setSpec(false); }
 });
 function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); }
 new ResizeObserver(syncBar).observe(E.bar);
@@ -786,6 +1131,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
 
 loadSample();
+setSpec(wideMQ.matches);
 syncBar();
 //</app>
 </script>
