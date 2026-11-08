@@ -176,6 +176,24 @@ const spR = C.buildSpec(Object.assign(mini({}), strongest));
 ok(spR.pos[0].share <= 3 / 7 + 1e-9 || true, 'share computed');
 ok(C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Hello there.', score: 0.1 }] }] })) === null, 'no word scores -> no spectrum');
 
+// item 8: spectrum groups by (word, sign)
+const gs = C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Good start. Not good end.', words: [{ text: 'Good', score: 2 }, { text: 'good', score: -1.2 }] }] }] }));
+ok(gs.pos.length === 1 && gs.neg.length === 1 && gs.pos[0].score === 2 && gs.neg[0].score === -1.2, 'good / not good kept apart in spectrum');
+const shr = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-3, -2, -1, 1, 2, 3, 4, 5], examples: [] } }));
+ok(Math.abs(shr.pos[0].share - 2 / 8) < 1e-9 && Math.abs(shr.pos[1].share - 5 / 8) < 1e-9 && C.rankText(shr.pos[0], false) === '最正面的 25%', 'share = same-side at-least-as-extreme / all reference words');
+// item 10: scale mismatch warning
+const sw1 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-40, -20, 10, 20, 40], examples: [] } }));
+const sw2 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-4, -2, 1, 2, 4], examples: [] } }));
+ok(sw1.scaleWarn && !sw2.scaleWarn && !C.buildSpec(Object.assign(mini({}), { ref: null })).scaleWarn, 'scale mismatch flagged only when ratio is far off');
+// item 11: colour scale shown with its source
+ok(/来自文件/.test(C.scaleText(d2)) && /±3/.test(C.scaleText(d2)), 'scale text (file): ' + C.scaleText(d2).replace(/<[^>]+>/g, ''));
+ok(/自动/.test(C.scaleText(mini({}))) && /内置/.test(C.scaleText(doc)), 'scale text (auto / built-in)');
+ok(/句.*来自文件/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mixed scale sources labelled per level');
+// items 6 / 7: app wiring (checked in the source; the UI itself is checked with Playwright)
+ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:1360px\)/.test(html) && !/min-width:1520px/.test(html), 'wide breakpoint is 1360px in CSS and JS');
+ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
+ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
+
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
 console.log(fail ? `\n${fail} FAILED` : '\nALL OK');
