@@ -79,7 +79,8 @@ const fs2 = require('fs');
 const exDir = process.env.EXAMPLES || require('path').join(__dirname, '..', 'examples');
 const pyJson = JSON.parse(fs2.readFileSync(exDir + '/launch-week.scored.json', 'utf8'));
 let d2 = C.docFromScored(pyJson);
-ok(d2.warn.unmatched === 0 && d2.warn.skipped === 0, 'python JSON loads with no warnings');
+const noWarn = d => Object.values(d.warn).every(v => v === 0);
+ok(noWarn(d2), 'python JSON loads with no warnings: ' + JSON.stringify(d2.warn));
 ok(d2.has.word && d2.has.sent && d2.has.para, 'python JSON has all levels');
 ok(d2.ref && d2.ref.scores.length > 1000, 'reference parsed: ' + (d2.ref && d2.ref.scores.length));
 ok(d2.sents.every((s, i) => s.id === i) && d2.words.every((t, i) => t.wid === i), 'ids sequential');
@@ -109,6 +110,59 @@ const um = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Fine day.', wor
 ok(um.warn.unmatched === 2 && um.words.length === 1, 'unmatched / bad words counted: ' + um.warn.unmatched);
 const onlySent = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.' }] });
 ok(onlySent.sents.length === 2 && !onlySent.has.word, 'text-only paragraph is split, no word level');
+// item 1: code-point offsets (Python str indices) vs UTF-16
+const emo = '🎉 Great launch, awful bug.';
+const pyOff = (t, w) => { const cps = [...t], wc = [...w]; for (let i = 0; i + wc.length <= cps.length; i++) if (cps.slice(i, i + wc.length).join('') === w) return [i, i + wc.length]; return null; };
+const [g0, g1] = pyOff(emo, 'Great'), [a0, a1] = pyOff(emo, 'awful');
+ok(g0 === 2 && a0 === 16, 'python-style offsets are code points: ' + g0 + ',' + a0);
+const de = C.docFromScored({ paragraphs: [{ sentences: [{ text: emo, words: [{ text: 'Great', score: 2, start: g0, end: g1 }, { text: 'awful', score: -3, start: a0, end: a1 }] }] }] });
+ok(de.words.map(t => t.text).join() === 'Great,awful' && de.warn.misaligned === 0 && de.warn.unmatched === 0, 'emoji sentence: code-point offsets highlight the right words: ' + de.words.map(t => t.text).join());
+const ej = C.docToJSON(de).paragraphs[0].sentences[0].words;
+ok(ej[0].start === g0 && ej[0].end === g1 && ej[1].start === a0, 'export writes code-point offsets');
+const ec = C.docToCSV(de).split('\n').filter(l => l.startsWith('word,'));
+ok(ec[0].split(',')[6] === String(g0) && ec[1].split(',')[6] === String(a0), 'CSV export writes code-point offsets');
+const wrong = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Great food, awful service.', words: [{ text: 'awful', score: -3, start: 0, end: 5 }] }] }] });
+ok(wrong.words[0].text === 'awful' && wrong.warn.misaligned === 1, 'wrong-but-in-range offset is relocated, not highlighted on the wrong text');
+const wrong2 = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Great food.', words: [{ text: 'awful', score: -3, start: 0, end: 5 }] }] }] });
+ok(wrong2.words.length === 0 && wrong2.warn.unmatched === 1, 'wrong offset for a word that is not in the sentence -> unmatched');
+const nfc = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Café is GOOD.', words: [{ text: 'Café', score: 1, start: 0, end: 5 }, { text: 'good', score: 2, start: 9, end: 13 }] }] }] });
+ok(nfc.warn.misaligned === 0 && nfc.words.length === 2, 'offset check is NFC-normalised and case-insensitive');
+// item 2: paragraph-only input
+const po = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.', score: 0.4, sentences: [] }] });
+ok(po.sents.length === 2 && po.blocks[0].score === 0.4, 'sentences: [] falls back to splitting p.text');
+const pcsv = C.docFromScored(C.csvToScored('level,paragraph,sentence,text,score\nparagraph,0,,Good news. Bad news.,0.3\nparagraph,1,,,0.5\n'));
+ok(pcsv.sents.length === 2 && pcsv.has.para && pcsv.warn.skipped === 1, 'CSV paragraph rows with text work; score-only paragraph skipped and counted');
+// item 4: CSV orphans / empty sentence text
+const orph = C.csvToScored('level,paragraph,sentence,text,score\nsentence,0,0,Fine day.,0.2\nsentence,0,1,,0.1\nword,0,1,x,1\nword,0,2,good,1\nword,0,0,Fine,1\n');
+ok(orph._bad === 3, 'CSV: empty sentence row + orphan word rows counted as bad: ' + orph._bad);
+ok(C.docFromScored(orph).warn.bad === 3, 'bad rows reach warn');
+ok(C.parseCSV('a,b\r\n"x\r\ny",2\r\n')[1][0] === 'x\ny', 'parseCSV normalises \\r\\n inside quoted fields');
+// item 5: unordered keyword lists, ## subwords
+const uo = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Bad start, good end, good mood.', words: [{ text: 'good', score: 2 }, { text: 'bad', score: -2 }, { text: 'good', score: 2 }, { text: '##mood', score: 1 }] }] }] });
+ok(uo.words.map(t => t.text).join() === 'Bad,good,good,mood' && uo.warn.unmatched === 0, 'unordered words found from sentence start, each occurrence once; ## stripped: ' + uo.words.map(t => t.text).join() + ' ' + uo.warn.unmatched);
+// item 9: per-level center
+const pc = C.docFromScored({ center: { word: 3, sentence: 0.5, paragraph: 0 }, reference: { scores: [1, 2, 4, 5, 5, 1] }, paragraphs: [{ score: 0.2, sentences: [{ text: 'Great food.', score: 0.9, words: [{ text: 'Great', score: 5 }] }] }] });
+ok(pc.words[0].score === 2 && Math.abs(pc.sents[0].score - 0.4) < 1e-9 && pc.blocks[0].score === 0.2 && pc.ref.scores[0] === -2, 'center object applies per level; reference uses word center');
+ok(C.docFromScored({ center: 3, paragraphs: [{ score: 4, sentences: [{ text: 'x y.', score: 4 }] }] }).blocks[0].score === 1, 'plain number center still works');
+// item 10: derived flags
+const dv = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Good.', score: 0.5 }, { text: 'Bad.', words: [{ text: 'Bad', score: -2 }] }] }] });
+ok(!dv.sents[0].derived && dv.sents[1].derived && dv.blocks[0].derived && dv.mixedSent, 'derived sentence / paragraph scores flagged; mixed doc detected');
+
+// item 3: export -> import keeps scale, reference and the file's own scale (center)
+const capEq = (x, y) => ['word', 'sent', 'para'].every(k => Math.abs(x.cap[k] - y.cap[k]) < 1e-3);
+const rt2 = C.docFromScored(C.docToJSON(d2));
+ok(capEq(rt2, d2) && rt2.ref && rt2.ref.scores.length === d2.ref.scores.length && rt2.ref.examples.length === d2.ref.examples.length, 'JSON export keeps scale + reference');
+const autoDoc = mini({});
+const rt3 = C.docFromScored(C.docToJSON(autoDoc));
+ok(capEq(rt3, autoDoc) && rt3.capSrc.word === 'file' && autoDoc.capSrc.word === 'auto', 'auto caps exported as scale and re-imported unchanged');
+const cdoc = C.docFromScored({ center: { word: 3, sentence: 0, paragraph: 0 }, reference: { name: 'stars', scores: [1, 2, 2, 4, 5, 5] }, paragraphs: [{ sentences: [{ text: 'Great food.', words: [{ text: 'Great', score: 5 }] }] }] });
+const cj = C.docToJSON(cdoc);
+ok(cj.paragraphs[0].sentences[0].words[0].score === 5 && cj.reference.scores[0] === 1 && cj.center.word === 3, 'export undoes center and writes it back');
+const cr = C.docFromScored(cj);
+ok(cr.words[0].score === cdoc.words[0].score && cr.ref.scores.join() === cdoc.ref.scores.join() && capEq(cr, cdoc), 'centered export -> import is stable');
+const bj = C.docToJSON(C.buildDoc('t', blocks));
+ok(bj.scale && bj.reference && bj.reference.scores.length > 100 && C.buildSpec(C.docFromScored(bj)).own === false, 'built-in doc export carries scale + reference (spectrum kept)');
+
 // spectrum
 const spc = C.buildSpec(d2);
 ok(spc && !spc.own && spc.refN === d2.ref.scores.length && spc.docN === d2.words.length, 'spectrum with reference');
@@ -122,6 +176,34 @@ const strongest = { ref: { name: 'r', scores: [-3, -2, -1, 1, 2, 3, 0.5], exampl
 const spR = C.buildSpec(Object.assign(mini({}), strongest));
 ok(spR.pos[0].share <= 3 / 7 + 1e-9 || true, 'share computed');
 ok(C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Hello there.', score: 0.1 }] }] })) === null, 'no word scores -> no spectrum');
+
+// item 8: spectrum groups by (word, sign)
+const gs = C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Good start. Not good end.', words: [{ text: 'Good', score: 2 }, { text: 'good', score: -1.2 }] }] }] }));
+ok(gs.pos.length === 1 && gs.neg.length === 1 && gs.pos[0].score === 2 && gs.neg[0].score === -1.2, 'good / not good kept apart in spectrum');
+const shr = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-3, -2, -1, 1, 2, 3, 4, 5], examples: [] } }));
+ok(Math.abs(shr.pos[0].share - 2 / 8) < 1e-9 && Math.abs(shr.pos[1].share - 5 / 8) < 1e-9 && C.rankText(shr.pos[0], false) === '最正面的 25%', 'share = same-side at-least-as-extreme / all reference words');
+// item 10: scale mismatch warning
+const sw1 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-40, -20, 10, 20, 40], examples: [] } }));
+const sw2 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-4, -2, 1, 2, 4], examples: [] } }));
+ok(sw1.scaleWarn && !sw2.scaleWarn && !C.buildSpec(Object.assign(mini({}), { ref: null })).scaleWarn, 'scale mismatch flagged only when ratio is far off');
+// item 11: colour scale shown with its source
+ok(/来自文件/.test(C.scaleText(d2)) && /±3/.test(C.scaleText(d2)), 'scale text (file): ' + C.scaleText(d2).replace(/<[^>]+>/g, ''));
+ok(/自动/.test(C.scaleText(mini({}))) && /内置/.test(C.scaleText(doc)), 'scale text (auto / built-in)');
+ok(/句.*来自文件/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mixed scale sources labelled per level');
+// items 6 / 7: app wiring (checked in the source; the UI itself is checked with Playwright)
+ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:1360px\)/.test(html) && !/min-width:1520px/.test(html), 'wide breakpoint is 1360px in CSS and JS');
+ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
+ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
+
+// item 12: the examples in docs/FORMAT.md load cleanly
+const fmd = fs2.readFileSync(require('path').join(__dirname, '..', 'docs', 'FORMAT.md'), 'utf8');
+const fcsv = C.docFromScored(C.csvToScored(fmd.split('```csv\n')[1].split('```')[0]));
+ok(noWarn(fcsv) && fcsv.blocks[0].type === 'h' && fcsv.words.map(t => t.text).join() === 'better,feared', 'FORMAT.md CSV example loads with no warnings');
+const fjson = JSON.parse(fmd.split('```json\n')[1].split('```')[0]);
+fjson.reference.scores = fjson.reference.scores.filter(v => typeof v === 'number');
+const fj = C.docFromScored(fjson);
+ok(noWarn(fj) && fj.words[0].text === 'better', 'FORMAT.md JSON example offsets are right');
+ok(noWarn(csvDoc), 'python CSV loads with no warnings');
 
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
