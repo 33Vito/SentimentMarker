@@ -1481,7 +1481,7 @@ btnTop.id = 'btnTop';
 btnTop.type = 'button';
 btnTop.textContent = '回到顶部';
 btnTop.title = '回到页面顶部';
-btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: scrollBehavior() }); });
 $('.actions').appendChild(btnTop);
 
 $('#btnOpen').addEventListener('click', () => E.file.click());
