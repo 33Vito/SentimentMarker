@@ -936,7 +936,7 @@ function renderHead() {
   ];
   const pills = extremes.map(s => {
     const chars = [...s.text], preview = chars.length > 36 ? chars.slice(0, 36).join('') + '…' : s.text;
-    return `<button type="button" class="chip ${sg(s.score)}" data-sent="${s.id}" title="${esc(s.text)}" style="max-width:100%;overflow:hidden;text-overflow:ellipsis">${fmt(s.score)} · ${esc(preview)}</button>`;
+    return `<button type="button" class="chip ${sg(s.score)}" data-sent="${s.id}" title="${esc(s.text)}" style="max-width:100%">${fmt(s.score)} · <span style="overflow:hidden;text-overflow:ellipsis;min-width:0">${esc(preview)}</span></button>`;
   }).join('');
   E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">导出 JSON</button><button class="lnk" type="button" data-exp="csv">导出 CSV</button></span></p>
     <h1>${esc(D.title)}</h1>
