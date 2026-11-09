@@ -1,4 +1,4 @@
-## Operational resilience (Source: Domestic and Global)
+## Operational resilience (Domestic and global)
 
 Vulnerabilities: More complex and interconnected financial system; Reliance on common material service providers.
 
@@ -6,7 +6,7 @@ Associated risks: Cyber-attack or operational outage disrupts critical services;
 
 Resilience considerations: Governance, risk culture and risk management practices; Regulatory coordination arrangements; Information sharing across financial institutions, regulators, and security authorities (including business continuity plans).
 
-## Global equity and credit markets (Source: Global)
+## Global equity and credit markets (Global)
 
 Vulnerabilities: Compressed risk premia and elevated prices; Concentrated and opaque exposures to the AI investment cycle; Material participation in markets by leveraged non-bank financial institutions.
 
@@ -14,7 +14,7 @@ Associated risks: Sharp and disorderly price adjustments; Forced deleveraging an
 
 Resilience considerations: Liquidity preparedness; Enhanced data collection; Capital to absorb losses.
 
-## Sovereign debt markets (Source: Global)
+## Sovereign debt markets (Global)
 
 Vulnerabilities: High and rising government debt; Greater reliance on leveraged and price-sensitive investors.
 
@@ -22,7 +22,7 @@ Associated risks: Shifts in investor confidence, sharp repricing; Forced delever
 
 Resilience considerations: Liquidity preparedness; Central bank liquidity facilities.
 
-## Households and businesses (Source: Domestic)
+## Households and businesses (Domestic)
 
 Vulnerabilities: High household leverage and asset prices.
 
@@ -30,7 +30,7 @@ Associated risks: Labour market shock; Challenges to debt serviceability; Extend
 
 Resilience considerations: Sound lending standards; Household equity and liquidity buffers; Bank capital and loan loss provisioning.
 
-## System liquidity (Source: Domestic)
+## System liquidity (Domestic)
 
 Vulnerabilities: Concentrated holdings of liquid assets in markets that may not perform well in stress; Growing role of the superannuation industry in the Australian financial system.
 
