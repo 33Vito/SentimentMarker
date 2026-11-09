@@ -1,0 +1,16 @@
+# Pin line endings so a checkout is the same on every machine.
+#
+# Without this file, a clone made under Git for Windows' system default
+# (core.autocrlf=true, set in <git install>/etc/gitconfig) rewrites every LF
+# to CRLF on checkout -- and git still reports the tree as clean, so nothing
+# warns you. docs/FORMAT.md then gets a \r inside its ```csv fence line, and
+# test/core.test.js, which splits on '```csv\n', dies on item 12 with
+# "TypeError: Cannot read properties of undefined (reading 'split')".
+#
+# Blobs in this repo are LF already, so this changes nothing for existing
+# working trees; it only stops a fresh clone (or a Windows CI runner) from
+# producing a red suite that no commit caused.
+* text=auto eol=lf
+
+# Never rewrite bytes inside assets.
+*.pdf binary
