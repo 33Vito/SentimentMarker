@@ -153,7 +153,7 @@ button{cursor:pointer}
 .spec h3{margin:1rem 0 .4rem;font:600 .78rem var(--font-ui);color:var(--muted);letter-spacing:.02em}
 .spec svg{display:block;width:100%;height:auto;overflow:visible}
 /* outline: bottom sheet like the spectrum when narrow, right rail when wide.
-   It shares the inspector's rectangle; syncPanels shows only one of the two. right stays >= 24px so the 14px heat strip keeps its margin. */
+   It shares the rail with the inspector; when both are open the inspector docks under the outline (syncPanels). right stays >= 24px so the 14px heat strip keeps its margin. */
 .toc{position:fixed;z-index:34;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));margin-inline:auto;max-width:42rem;
   bottom:max(12px,env(safe-area-inset-bottom,0px));background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);
   padding:.85rem 1rem 1rem;max-height:min(62vh,30rem);overflow:auto;font-family:var(--font-ui)}
@@ -201,7 +201,7 @@ button{cursor:pointer}
 @media (min-width:1360px){
   .spec{left:max(20px,env(safe-area-inset-left,0px));right:auto;margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:calc(100vh - var(--bar-h) - 48px)}
   .insp{left:auto;right:max(24px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:calc(100vh - var(--bar-h) - 48px)}
-  .toc{left:auto;right:max(24px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:calc(100vh - var(--bar-h) - 48px)}
+  .toc{left:auto;right:max(24px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:min(50vh,calc(100vh - var(--bar-h) - 48px))}
   body.spec-on .insp .mini{display:none}
 }
 .insp .mini{margin:.7rem 0 0;padding-top:.6rem;border-top:1px solid var(--line)}
@@ -1340,10 +1340,17 @@ const tocOn = () => !!S.doc && S.doc.blocks.some(b => b.type === 'h') && (S.tocW
 function syncPanels() {
   const wide = wideMQ.matches, on = specOn(), sel = !!S.sel, ton = tocOn();
   const showSpec = on && (wide || !sel || panelFront === 'spec');
-  const showToc = ton && !sel && (wide || panelFront === 'toc');
+  const showToc = ton && (wide || (!sel && panelFront === 'toc'));
   const showInsp = sel && (wide || !on || panelFront === 'insp');
   const wasHidden = E.spec.hidden;
   E.spec.hidden = !showSpec; E.insp.hidden = !showInsp; E.toc.hidden = !showToc;
+  /* wide: the outline stays when a sentence is selected - the inspector docks under its real bottom edge
+     (the outline auto-sizes up to 50vh, so no reserved gap on short documents, no overlap on long ones) */
+  if (wide && !E.toc.hidden && !E.insp.hidden) {
+    const bottom = E.toc.getBoundingClientRect().bottom;
+    E.insp.style.top = (bottom + 12) + 'px';
+    E.insp.style.maxHeight = Math.max(120, window.innerHeight - bottom - 24) + 'px';
+  } else { E.insp.style.top = ''; E.insp.style.maxHeight = ''; }
   E.btnSpec.setAttribute('aria-pressed', String(on));
   E.btnToc.setAttribute('aria-pressed', String(ton));
   document.body.classList.toggle('spec-on', showSpec);
@@ -1695,10 +1702,10 @@ document.addEventListener('keydown', e => {
     else if (S.sel) closeInsp();
   }
 });
-function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); }
+function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); syncPanels(); }
 new ResizeObserver(syncBar).observe(E.bar);
 let rz = 0;
-window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawMinimap(); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawMinimap(); syncPanels(); }, 120); });
 let scRAF = 0;
 window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', window.scrollY > 4); cancelAnimationFrame(scRAF); scRAF = requestAnimationFrame(() => { updateVP(); updateTocActive(); }); }, { passive: true });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
