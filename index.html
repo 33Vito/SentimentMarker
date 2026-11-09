@@ -51,6 +51,7 @@ button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .pos{--hue:var(--pos)} .neg{--hue:var(--neg)}
+.chip.pos::before,.chip.neg::before{content:"";width:.5rem;height:.5rem;border-radius:99px;background:var(--hue);flex:none}
 
 /* toolbar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);display:grid;gap:.6rem;padding-block:.75rem .65rem;max-width:60rem;margin-inline:auto;border-bottom:1px solid transparent}
@@ -853,10 +854,62 @@ const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), t
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
-const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
+const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
 const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
+/* prefs in localStorage: theme, level, threshold, spectrum. Topics are not stored. */
+const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec' };
+function prefGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function prefSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
+const THEME_CYCLE = ['system', 'light', 'dark'];
+const THEME_LABEL = { system: '跟随系统', light: '浅色', dark: '深色' };
+function themeMode() {
+  const a = document.documentElement.getAttribute('data-theme');
+  return a === 'light' || a === 'dark' ? a : 'system';
+}
+function applyTheme(mode, persist) {
+  const m = mode === 'light' || mode === 'dark' ? mode : 'system';
+  if (m === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', m);
+  if (E.btnTheme) {
+    E.btnTheme.textContent = THEME_LABEL[m];
+    E.btnTheme.setAttribute('aria-label', '主题：' + THEME_LABEL[m]);
+    E.btnTheme.title = '点击切换主题，当前为' + THEME_LABEL[m];
+  }
+  if (persist) prefSet(PREF_KEY.theme, m);
+  drawMinimap();
+}
+function mountThemeButton() {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.id = 'btnTheme'; b.type = 'button';
+  E.bar.querySelector('.actions').appendChild(b);
+  E.btnTheme = b;
+  b.addEventListener('click', () => {
+    const i = THEME_CYCLE.indexOf(themeMode());
+    applyTheme(THEME_CYCLE[(i + 1) % THEME_CYCLE.length], true);
+  });
+}
+function rememberSpec() {
+  prefSet(PREF_KEY.spec, S.specWanted === null ? null : S.specWanted ? '1' : '0');
+}
+function restorePrefs() {
+  const theme = prefGet(PREF_KEY.theme);
+  applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system', false);
+  const lv = prefGet(PREF_KEY.level);
+  if (lv === 'word' || lv === 'sent' || lv === 'para') S.level = lv;
+  const raw = prefGet(PREF_KEY.th);
+  const n = raw == null || raw === '' ? NaN : Number(raw);
+  if (Number.isFinite(n)) {
+    S.th = Math.min(0.9, Math.max(0, Math.round(n * 100) / 100));
+    E.th.value = String(S.th);
+    E.thOut.textContent = Math.round(S.th * 100) + '%';
+  }
+  const spec = prefGet(PREF_KEY.spec);
+  if (spec === '1') S.specWanted = true;
+  else if (spec === '0') S.specWanted = false;
+  syncSeg();
+}
 
 const fmt = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
 const sg = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
@@ -878,11 +931,20 @@ function renderHead() {
   const neu = n - pos - neg; S.avg = n ? sum / n : 0;
   const pct = v => Math.round(v / n * 100) + '%';
   const paras = D.blocks.filter(b => b.type === 'p').length;
+  const extremes = [
+    ...D.sents.filter(s => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 3),
+    ...D.sents.filter(s => s.score < 0).sort((a, b) => a.score - b.score).slice(0, 3)
+  ];
+  const pills = extremes.map(s => {
+    const chars = [...s.text], preview = chars.length > 36 ? chars.slice(0, 36).join('') + '…' : s.text;
+    return `<button type="button" class="chip ${sg(s.score)}" data-sent="${s.id}" title="${esc(s.text)}" style="max-width:100%">${fmt(s.score)} · <span style="overflow:hidden;text-overflow:ellipsis;min-width:0">${esc(preview)}</span></button>`;
+  }).join('');
   E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">导出 JSON</button><button class="lnk" type="button" data-exp="csv">导出 CSV</button></span></p>
     <h1>${esc(D.title)}</h1>
     <p class="meta">${paras} 段 · ${n} 句 · ${D.words.length} 个情感词 · 全文均值 ${fmt(S.avg)}</p>
     <div class="dist" role="img" aria-label="负面 ${pct(neg)}，中性 ${pct(neu)}，正面 ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
     <p class="dlg"><span>负面 ${pct(neg)}</span><span>中性 ${pct(neu)}</span><span>正面 ${pct(pos)}</span></p>
+    ${pills ? `<div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0" aria-label="情感极值句">${pills}</div>` : ''}
     <p class="scl" title="分数的绝对值达到这个数时颜色最深">${scaleText(D)}</p>
     ${D.mixedSent ? '<p class="scl">注意：部分句分来自文件，部分由词分推出（S / √(S² + 15)），两者不一定在同一尺度上。</p>' : ''}`;
 }
@@ -905,8 +967,9 @@ function renderDoc() {
   els = { w: [...E.doc.querySelectorAll('.w')], s: [...E.doc.querySelectorAll('.s')], b: [...E.doc.querySelectorAll('.blk')] };
 }
 
-/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold */
-const isOn = it => it.k > 0 && it.k >= S.th;
+/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold and polarity filter */
+const polMatch = it => S.pol === 'all' || (S.pol === 'pos' ? it.score > 0 : it.score < 0);
+const isOn = it => it.k > 0 && it.k >= S.th && polMatch(it);
 function refresh() {
   E.doc.className = 'doc lv-' + S.level;
   const [E_, D_] = S.level === 'word' ? [els.w, S.doc.words] : S.level === 'sent' ? [els.s, S.doc.sents] : [els.b, S.doc.blocks];
@@ -952,10 +1015,41 @@ function syncSeg() {
     b.setAttribute('aria-checked', String(b.dataset.level === S.level));
   });
 }
-function setLevel(l) {
+function setLevel(l, persist = true) {
+  if (l !== 'word' && l !== 'sent' && l !== 'para') return;
   if (S.doc && !S.doc.has[l]) return;
   S.level = l; syncSeg(); closeInsp(); refresh();
+  if (persist) prefSet(PREF_KEY.level, l);   /* only user-driven switches persist; jumpWord's auto-switch must not rewrite the remembered level */
 }
+
+const segPol = document.createElement('div');
+segPol.className = 'seg';
+segPol.id = 'segPol';
+segPol.setAttribute('role', 'radiogroup');
+segPol.setAttribute('aria-label', '极性筛选');
+segPol.innerHTML = `
+  <button type="button" role="radio" aria-checked="true" data-pol="all" title="全部">全部</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="neg" title="只看负面">负</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="pos" title="只看正面">正</button>
+`;
+E.seg.after(segPol);
+
+function syncSegPol() {
+  segPol.querySelectorAll('button').forEach(b => {
+    const act = b.dataset.pol === S.pol;
+    b.setAttribute('aria-checked', String(act));
+  });
+}
+function setPol(p) {
+  if (p === S.pol) return;
+  S.pol = p;
+  syncSegPol();
+  refresh();
+}
+segPol.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && b.dataset.pol) setPol(b.dataset.pol);
+});
 
 /* topic chips */
 function renderChips() {
@@ -1048,10 +1142,38 @@ function updateVP() {
 }
 let drag = false;
 const jump = e => { const r = E.mm.getBoundingClientRect(); window.scrollTo({ top: (e.clientY - r.top) / r.height * document.documentElement.scrollHeight - window.innerHeight / 2 }); };
-E.mm.addEventListener('pointerdown', e => { drag = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
-E.mm.addEventListener('pointermove', e => { if (drag) jump(e); });
+E.mm.addEventListener('pointerdown', e => { drag = true; E.tip.hidden = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
+E.mm.addEventListener('pointermove', e => {
+  if (drag) { jump(e); E.tip.hidden = true; return; }
+  const para = S.level === 'para';
+  const list = para ? (S.doc && S.doc.blocks) : (S.doc && S.doc.sents);
+  const P = para ? pos.b : pos.s, vis = para ? visB : visS;
+  if (!list || !P.length) return;
+  const r = E.mm.getBoundingClientRect();
+  const total = document.documentElement.scrollHeight;
+  const targetY = (e.clientY - r.top) / r.height * total;
+  let bestIdx = -1, minD = Infinity;
+  for (let i = 0; i < P.length; i++) {
+    if (!P[i]) continue;
+    const d = Math.abs(P[i].top - targetY);
+    if (d < minD) { minD = d; bestIdx = i; }
+    else if (P[i].top > targetY && d > minD) break;
+  }
+  /* tip only the item the heat strip actually drew: it must pass isOn() (threshold + polarity) and survive topic dimming */
+  const it = bestIdx >= 0 ? list[bestIdx] : null;
+  if (!it || !isOn(it) || vis[bestIdx] === false) { E.tip.hidden = true; return; }
+  const body = it.text != null ? it.text : it.sents.map(x => x.text + x.gap).join('');
+  const chars40 = [...body];
+  const text40 = chars40.length > 40 ? chars40.slice(0, 40).join('') + '…' : body;
+  E.tip.innerHTML = `<span class="${sg(it.score)}"><i class="dot"></i>${para ? '段' : '句'} <b>${fmt(it.score)}</b></span><span class="m">${esc(text40)}</span>`;
+  E.tip.hidden = false;
+  const tr = E.tip.getBoundingClientRect();
+  E.tip.style.left = (r.left - tr.width - 10) + 'px';
+  E.tip.style.top = Math.max(8, Math.min(window.innerHeight - tr.height - 8, e.clientY - tr.height / 2)) + 'px';
+});
+E.mm.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 E.mm.addEventListener('pointerup', () => { drag = false; });
-E.mm.addEventListener('pointercancel', () => { drag = false; });
+E.mm.addEventListener('pointercancel', () => { drag = false; E.tip.hidden = true; });
 
 /* inspector */
 function inspSent(s, wid) {
@@ -1059,7 +1181,7 @@ function inspSent(s, wid) {
   const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
     `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}" data-wid="${t.wid}" title="在正文中定位" style="cursor:pointer"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
   const drv = s.derived && !S.doc.builtin ? '<span class="drv" title="文件没有给这句的分数，按 S / √(S² + 15) 由词分推出">由词分推出</span>' : '';
-  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="x" type="button" data-close aria-label="关闭">×</button></div>
+  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <p class="itx">${esc(s.text)}</p>
     ${rows ? `<ul class="cl">${rows}</ul>` : '<p class="none">这句没有命中情感词。</p>'}
     <p class="ctx">所在段落 <b>${fmt(b.score)}</b> · 全文均值 <b>${fmt(S.avg)}</b></p>${miniSpec(s.scored.map(t => t.score))}`;
@@ -1068,7 +1190,7 @@ function inspBlock(b) {
   const rows = b.sents.map(s => `<li class="${sg(s.score)}"><span class="sn">${fmt(s.score)}</span><span class="nt">${esc(s.text.length > 70 ? s.text.slice(0, 70) + '…' : s.text)}</span></li>`).join('');
   const drv = b.derived && !S.doc.builtin ? '<span class="drv">由句分推出</span>' : '';
   const how = b.derived ? `段内 ${b.sents.length} 句的平均值` : `段分来自文件 · 段内 ${b.sents.length} 句`;
-  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="x" type="button" data-close aria-label="关闭">×</button></div>
+  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <p class="ctx" style="margin:0 0 .6rem">${how}</p><ul class="cl bl">${rows}</ul>${miniSpec(b.sents.flatMap(x => x.scored).map(t => t.score))}`;
 }
 function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
@@ -1094,7 +1216,7 @@ function jumpTo(kind, id, wid, el) {
 const elW = wid => { const e = els.w[wid]; return e && +e.dataset.w === wid ? e : E.doc.querySelector(`.w[data-w="${wid}"]`); };
 function jumpWord(wid) {
   if (!S.doc || !S.doc.words[wid]) return;
-  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word');
+  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word', false);
   const el = elW(wid), sEl = el && el.closest('.s'); if (!sEl) return;
   jumpTo('s', +sEl.dataset.s, wid, el);
 }
@@ -1213,16 +1335,28 @@ function renderSpec() {
 E.btnSpec.addEventListener('click', () => {
   const on = specOn();
   if (on && E.spec.hidden) panelFront = 'spec';      /* narrow: tucked behind the inspector -> bring it forward */
-  else { S.specWanted = !on; if (!on) panelFront = 'spec'; }
+  else { S.specWanted = !on; rememberSpec(); if (!on) panelFront = 'spec'; }
   syncPanels();
 });
 wideMQ.addEventListener('change', () => syncPanels());   /* auto-toggles only while specWanted is null */
 E.spec.addEventListener('click', e => {
-  if (e.target.closest('[data-spec-close]')) { S.specWanted = false; syncPanels(); return; }
+  if (e.target.closest('[data-spec-close]')) { S.specWanted = false; rememberSpec(); syncPanels(); return; }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);
 });
-E.insp.addEventListener('click', e => {
+E.insp.addEventListener('click', async e => {
   if (e.target.closest('[data-close]')) { closeInsp(); return; }
+  if (e.target.closest('[data-copy-quote]') && S.sel) {
+    const { kind, id } = S.sel;
+    const item = kind === 'b' ? S.doc.blocks[id] : S.doc.sents[id];
+    const body = kind === 'b' ? item.sents.map(s => s.text + s.gap).join('').trimEnd() : item.text;
+    const quoted = body.replace(/\r\n?/g, '\n').split('\n').map(line => `> ${line}`).join('\n');
+    const label = item.score > 0 ? '正面' : item.score < 0 ? '负面' : '中性';
+    try {
+      await navigator.clipboard.writeText(`${quoted}\n> —— 情感分：${fmt(item.score)}（${label}）`);
+      toast('引用已复制');
+    } catch (_) { toast('复制失败，请检查剪贴板权限'); }
+    return;
+  }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);   /* word list -> the word in the text */
 });
 E.doc.addEventListener('click', e => {
@@ -1347,6 +1481,15 @@ function initDemoSel() {
 }
 
 /* wiring */
+const btnTop = document.createElement('button');
+btnTop.className = 'btn';
+btnTop.id = 'btnTop';
+btnTop.type = 'button';
+btnTop.textContent = '回到顶部';
+btnTop.title = '回到页面顶部';
+btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: scrollBehavior() }); });
+$('.actions').appendChild(btnTop);
+
 $('#btnOpen').addEventListener('click', () => E.file.click());
 E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
 $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
@@ -1360,10 +1503,16 @@ $('#pasteGo').addEventListener('click', () => {
     E.paste.hidden = true;
   } catch (err) { toast('分析失败：' + err.message, 6000); }
 });
-E.head.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b) exportDoc(b.dataset.exp); });
+E.head.addEventListener('click', e => {
+  const b = e.target.closest('[data-exp]'); if (b) { exportDoc(b.dataset.exp); return; }
+  const pill = e.target.closest('[data-sent]'); if (!pill || !S.doc) return;
+  const id = +pill.dataset.sent;
+  if (S.level === 'para') jumpTo('b', S.doc.sents[id].block, undefined, els.s[id]);   /* paragraph view: select the block, scroll to the sentence */
+  else jumpTo('s', id);
+});
 E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
 let thRAF = 0;
-E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
+E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; prefSet(PREF_KEY.th, S.th); cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
 let dragDepth = 0;
 window.addEventListener('dragenter', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { dragDepth++; E.drop.hidden = false; } });
 window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) E.drop.hidden = true; });
@@ -1377,7 +1526,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') {           /* close the panel in front: inspector first; narrow spectrum sheet next */
     E.paste.hidden = true;
     if (S.sel && !E.insp.hidden) closeInsp();
-    else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; syncPanels(); }
+    else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; rememberSpec(); syncPanels(); }
     else if (S.sel) closeInsp();
   }
 });
@@ -1390,6 +1539,8 @@ window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', win
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
 
+mountThemeButton();
+restorePrefs();
 initDemoSel();
 syncBar();
 //</app>
