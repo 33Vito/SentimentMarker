@@ -934,7 +934,14 @@ function applyTopics() {
   const nOn = act.length;
   E.btnTopics.textContent = nOn ? `主题词 · ${nOn}` : '主题词';
   drawMinimap();
-  if (!hadHits && S.hits.length) gotoHit(0);     /* matches went from none to some: show the first one */
+  /* matches went from none to some: show the first one, but only if nothing is selected and it is off screen */
+  if (!hadHits && S.hits.length && !S.sel && !inView(els.s[S.hits[0]])) gotoHit(0);
+}
+/* any part of the element is on screen below the sticky toolbar */
+function inView(el) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return r.bottom > E.bar.getBoundingClientRect().bottom && r.top < window.innerHeight;
 }
 function syncSeg() {
   const tips = { word: '词（按 1）', sent: '句（按 2）', para: '段（按 3）' };
@@ -1334,7 +1341,8 @@ function initDemoSel() {
   const sel = $('#selDemo'), list = window.DEMOS || [];
   list.forEach((d, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = d.label; sel.appendChild(o); });
   if (!list.length) { const o = document.createElement('option'); o.value = ''; o.textContent = '缺少 examples/demos.js'; o.disabled = true; sel.appendChild(o); return; }
-  sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); });
+  /* blur afterwards: a focused <select> is excluded from the reading shortcuts (1/2/3, j/k) */
+  sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); sel.blur(); });
   if (loadDemo(0)) sel.value = '0';
 }
 
