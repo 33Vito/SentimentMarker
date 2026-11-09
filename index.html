@@ -1014,11 +1014,11 @@ function syncSeg() {
     b.setAttribute('aria-checked', String(b.dataset.level === S.level));
   });
 }
-function setLevel(l) {
+function setLevel(l, persist = true) {
   if (l !== 'word' && l !== 'sent' && l !== 'para') return;
   if (S.doc && !S.doc.has[l]) return;
   S.level = l; syncSeg(); closeInsp(); refresh();
-  prefSet(PREF_KEY.level, l);
+  if (persist) prefSet(PREF_KEY.level, l);   /* only user-driven switches persist; jumpWord's auto-switch must not rewrite the remembered level */
 }
 
 const segPol = document.createElement('div');
@@ -1215,7 +1215,7 @@ function jumpTo(kind, id, wid, el) {
 const elW = wid => { const e = els.w[wid]; return e && +e.dataset.w === wid ? e : E.doc.querySelector(`.w[data-w="${wid}"]`); };
 function jumpWord(wid) {
   if (!S.doc || !S.doc.words[wid]) return;
-  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word');
+  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word', false);
   const el = elW(wid), sEl = el && el.closest('.s'); if (!sEl) return;
   jumpTo('s', +sEl.dataset.s, wid, el);
 }
