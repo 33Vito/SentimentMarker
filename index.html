@@ -1048,10 +1048,32 @@ function updateVP() {
 }
 let drag = false;
 const jump = e => { const r = E.mm.getBoundingClientRect(); window.scrollTo({ top: (e.clientY - r.top) / r.height * document.documentElement.scrollHeight - window.innerHeight / 2 }); };
-E.mm.addEventListener('pointerdown', e => { drag = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
-E.mm.addEventListener('pointermove', e => { if (drag) jump(e); });
+E.mm.addEventListener('pointerdown', e => { drag = true; E.tip.hidden = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
+E.mm.addEventListener('pointermove', e => {
+  if (drag) { jump(e); E.tip.hidden = true; return; }
+  if (!S.doc || !pos.s.length) return;
+  const r = E.mm.getBoundingClientRect();
+  const total = document.documentElement.scrollHeight;
+  const targetY = (e.clientY - r.top) / r.height * total;
+  let bestIdx = 0, minD = Infinity;
+  for (let i = 0; i < pos.s.length; i++) {
+    if (!pos.s[i]) continue;
+    const d = Math.abs(pos.s[i].top - targetY);
+    if (d < minD) { minD = d; bestIdx = i; }
+    else if (pos.s[i].top > targetY && d > minD) break;
+  }
+  const s = S.doc.sents[bestIdx];
+  if (!s) { E.tip.hidden = true; return; }
+  const text40 = s.text.length > 40 ? s.text.slice(0, 40) + '…' : s.text;
+  E.tip.innerHTML = `<span class="${sg(s.score)}"><i class="dot"></i>句 <b>${fmt(s.score)}</b></span><span class="m">${esc(text40)}</span>`;
+  E.tip.hidden = false;
+  const tr = E.tip.getBoundingClientRect();
+  E.tip.style.left = (r.left - tr.width - 10) + 'px';
+  E.tip.style.top = Math.max(8, Math.min(window.innerHeight - tr.height - 8, e.clientY - tr.height / 2)) + 'px';
+});
+E.mm.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 E.mm.addEventListener('pointerup', () => { drag = false; });
-E.mm.addEventListener('pointercancel', () => { drag = false; });
+E.mm.addEventListener('pointercancel', () => { drag = false; E.tip.hidden = true; });
 
 /* inspector */
 function inspSent(s, wid) {
