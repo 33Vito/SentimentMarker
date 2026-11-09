@@ -73,6 +73,91 @@ ok(pb.some(b => b.text === 'A new paragraph starts after a bigger gap.'), 'parag
 ok(pb.filter(b => b.type === 'p').length >= 6, 'paragraphs per page: ' + pb.filter(b => b.type === 'p').length);
 ok(pb.some(b => b.text.includes('interesting hyphenated word')), 'dehyphenated');
 ok(!pb.some(b => /^Hello$/.test(b.text) || b.text === '1'), 'header/footer dropped');
+const supItems = [
+  mk('risks ', 50, 400, 36, 10.8),
+  mk('7', 90, 404, 6, 7.3),
+  mk('to stability.', 100, 400, 80, 10.8),
+];
+const supLines = C.itemsToLines(supItems);
+ok(supLines.length === 1 && supLines[0].text === 'risks to stability.', 'superscript not joined: ' + JSON.stringify(supLines.map(l => l.text)));
+const sameBase = [
+  mk('• ', 50, 400, 12, 18),
+  mk('Vulnerabilities persist.', 70, 400, 160, 11.5),
+];
+const sbLines = C.itemsToLines(sameBase);
+ok(sbLines.length === 1 && sbLines[0].text.includes('Vulnerabilities persist.') && sbLines[0].size === 11.5, 'same-baseline small text is kept and sets the line size: ' + JSON.stringify(sbLines.map(l => ({ text: l.text, size: l.size }))));
+const leadPage = [{ height: 800, lines: C.itemsToLines([
+  mk('• ', 50, 400, 12, 18),
+  mk('Operational vulnerabilities have continued to grow.', 70, 400, 280, 11.5),
+  mk('The next sentence stays with them.', 50, 386, 220, 11.5),
+]) }];
+const leadBlocks = C.linesToBlocks(leadPage);
+ok(leadBlocks.length === 1 && leadBlocks[0].type === 'p' && leadBlocks[0].text.includes('Operational vulnerabilities') && leadBlocks[0].text.includes('next sentence'), 'a bullet lead stays one paragraph: ' + JSON.stringify(leadBlocks));
+const noteItems = [
+  mk('vulnerable to external shocks.', 50, 400, 160, 11),
+  mk('1 ', 50, 386, 12, 8),
+  mk('Conflicts in the Middle East remain.', 64, 386, 200, 11),
+];
+const noteLines = C.itemsToLines(noteItems);
+ok(noteLines.length === 2 && noteLines[1].text.startsWith('1 ') && noteLines[1].text.includes('Conflicts'), 'a smaller note marker on the next line is kept: ' + JSON.stringify(noteLines.map(l => l.text)));
+const edgePage = [{ height: 842, lines: [
+  { y: 820, x: 40, size: 9, text: 'Financial Stability Review | October 2026' },
+  { y: 400, x: 80, size: 11, text: 'The body sentence stays on the only page.' },
+  { y: 30, x: 40, size: 8, text: 'R e s e r v e B a n k o f A u s t r a l i a' },
+]}];
+const eb = C.linesToBlocks(edgePage);
+ok(eb.some(b => b.text.includes('body sentence')) && !eb.some(b => /financial stability review/i.test(b.text)) && !eb.some(b => /\be\b/.test(b.text) && /Reserve/.test(b.text)), 'publication header and letterspaced footer drop on one page');
+const keptBody = C.linesToBlocks([{ height: 842, lines: [
+  { y: 400, x: 80, size: 11, text: 'A sentence about the Financial Stability Review stays when it is not in the margin.' },
+]}]);
+ok(keptBody.some(b => /Financial Stability Review/.test(b.text)), 'the publication name in body text is kept');
+const banner = 'Chapter 1 | ' + 'The Global Macro-financial Environment'.repeat(4);
+const up = [{ height: 800, lines: [
+  { y: 400, x: 50, size: 11, text: 'exposures to' },
+  { y: 780, x: 300, size: 8.5, text: banner },
+  { y: 386, x: 50, size: 11, text: 'NBFIs have continued.' },
+]}];
+const ub = C.linesToBlocks(up);
+ok(ub.length === 1 && ub[0].text === 'exposures to NBFIs have continued.', 'repeated edge banner dropped and the sentence rejoins: ' + JSON.stringify(ub));
+const jump = [{ height: 800, lines: [
+  { y: 400, x: 50, size: 11, text: 'First column ends here.' },
+  { y: 386, x: 50, size: 11, text: 'Still the first column.' },
+  { y: 700, x: 50, size: 11, text: 'Second column starts up here.' },
+  { y: 686, x: 50, size: 11, text: 'And continues downward.' },
+]}];
+const jb = C.linesToBlocks(jump);
+ok(jb.length === 2 && jb[0].text === 'First column ends here. Still the first column.' && jb[1].text === 'Second column starts up here. And continues downward.', 'an upward jump starts a new block: ' + JSON.stringify(jb));
+
+// 4c. heading levels for the outline: absolute size cut, markdown hashes, section sums
+const lvPage = [{ height: 800, lines: C.itemsToLines([
+  mk('Body line one of the paragraph runs long enough to be body text.', 50, 400, 320, 11),
+  mk('Body line two continues below it.', 50, 386, 200, 11),
+  mk('Chapter title is twenty-two pt.', 50, 340, 260, 22),
+  mk('A section head is sixteen pt.', 50, 300, 240, 16),
+  mk('Body after the section head also runs a full line of text here.', 50, 260, 330, 11),
+]) }];
+const lvH = C.linesToBlocks(lvPage).filter(b => b.type === 'h');
+ok(lvH.length === 2 && lvH[0].level === 1 && lvH[1].level === 2, 'level by absolute size: 22pt -> 1, 16pt -> 2: ' + JSON.stringify(lvH));
+const mdH = C.parseMarkdown('# One\n\ntext one\n\n## Two\n\ntext two\n\n### Three\n').filter(b => b.type === 'h');
+ok(mdH.length === 3 && mdH[0].level === 1 && mdH[1].level === 2 && mdH[2].level === 2, 'markdown hashes map to levels 1 / 2 / 2: ' + JSON.stringify(mdH.map(b => b.level)));
+const secDoc = C.buildDoc('T', C.parseMarkdown('# Alpha\n\nGreat work here.\n\n## Beta\n\nAwful luck.\n\n## Gamma\n\nFine.\n\n# Delta\n\nTerrible.\n'));
+const secs = C.sectionScores(secDoc);
+const bsum = i => secDoc.blocks[i].sents.reduce((x, s) => x + s.score, 0);
+const rsum = (i0, i1) => Math.round(Array.from({ length: i1 - i0 }, (_, k) => bsum(i0 + k)).reduce((x, y) => x + y, 0) * 100) / 100;
+ok(secs.length === 4 && secs.map(r => r.blockId).join() === '0,2,4,6' && secs.map(r => r.level).join() === '1,2,2,1', 'one outline row per heading, levels survive buildDoc: ' + JSON.stringify(secs.map(r => [r.blockId, r.level])));
+ok(secs[1].score === rsum(2, 4) && secs[1].count === 2, 'an h2 section is its heading plus the paragraphs until the next heading');
+ok(secs[0].score === rsum(0, 6) && secs[0].count === 6, 'an h1 section runs through its nested h2s until the next h1');
+ok(secs[3].score === rsum(6, 8) && secs[3].count === 2, 'the last h1 owns only its own block');
+const lvlDoc = C.docFromScored({ version: 1, title: 't', paragraphs: [
+  { type: 'h', sentences: [{ text: 'Head one' }] },
+  { type: 'h', level: 2, sentences: [{ text: 'Head two' }] },
+  { type: 'h', level: 9, sentences: [{ text: 'Head nine' }] },
+  { type: 'h', level: '2', sentences: [{ text: 'Head string two' }] },
+  { type: 'p', sentences: [{ text: 'Body.' }] },
+] });
+ok(lvlDoc.blocks.slice(0, 4).map(b => b.level).join() === '1,2,2,2' && lvlDoc.blocks[4].level === undefined, 'level reads: default 1, 2 kept, 9 clamps to 2, "2" coerces; paragraphs carry none: ' + lvlDoc.blocks.map(b => b.level));
+const rtLv = C.docToJSON(lvlDoc);
+ok(rtLv.paragraphs[1].level === 2 && rtLv.paragraphs[0].level === undefined && rtLv.paragraphs[2].level === 2, 'docToJSON writes level 2 (clamped 9 included), omits the default 1');
 
 // 5. external scored files
 const fs2 = require('fs');
@@ -195,13 +280,36 @@ ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:13
 ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
 ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
 
-// article picker: two embedded demo docs served from examples/demos.js (window.DEMOS)
+// article picker: Assessment and the synthetic sample are inline; the full review is a classic script
 ok(/<select[^>]*id="selDemo"/.test(html) && !/id="btnSample"/.test(html), 'sample button replaced by an article picker');
 ok(/window\.DEMOS/.test(appSrc) && /loadDemo/.test(appSrc) && /initDemoSel\(\);/.test(appSrc), 'picker wired to window.DEMOS at boot');
 const djs = fs2.readFileSync(exDir + '/demos.js', 'utf8');
 const dlist = JSON.parse(djs.slice(djs.indexOf('window.DEMOS =') + 'window.DEMOS ='.length).replace(/;\s*$/, ''));
-ok(dlist.length === 2 && dlist.every(d => d.label && d.file && d.scored && d.scored.title), 'demos.js bundles exactly two labelled scored articles');
-dlist.forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
+ok(dlist.length === 3 && dlist[0].file.includes('fsr-assessment') && dlist[0].scored && dlist[0].scored.title, 'start-up demo stays the Assessment');
+ok(dlist[1].label && dlist[1].file && dlist[1].src && !dlist[1].scored, 'full review is a lazy script stub');
+ok(/demoScriptLoads\[d\.src\] === load\) delete demoScriptLoads/.test(appSrc), 'a failed demo script is not cached');
+ok(/gen === demoOpenGen/.test(appSrc) && /if \(!current\(\)\) return ''/.test(appSrc), 'a late demo load does not replace the article now open');
+ok(dlist[2].scored && dlist[2].scored.title, 'synthetic demo stays inline');
+ok(dlist[0].scored.paragraphs.some(p => p.type === 'h' && p.level === 2) && dlist[0].scored.paragraphs[0].level === undefined, 'packed Assessment carries level 2 on section heads, default 1 elsewhere');
+ok(/id="btnToc"/.test(html) && /class="toc" id="toc"/.test(html), 'Outline toggle and outline aside exist');
+ok(/S\.tocRows = sectionScores\(S\.doc\)/.test(appSrc) && /renderToc\(\);/.test(appSrc), 'the outline is built from the opened document inside openDoc');
+ok(/const showToc = ton && \(wide \|\| panelFront === 'toc'\)/.test(appSrc) && /const showSpec = on && \(wide \|\| \(!sel && panelFront !== 'toc'\) \|\| panelFront === 'spec'\)/.test(appSrc) && /const showInsp = sel && \(wide \|\| \(panelFront !== 'toc' && !on\) \|\| panelFront === 'insp'\)/.test(appSrc), 'narrow: exactly one sheet - inspector, spectrum or outline, front token decides');
+ok(/E\.insp\.style\.top = \(bottom \+ 12\)/.test(appSrc) && /else \{ E\.toc\.style\.maxHeight = ''; E\.insp\.style\.top = ''; E\.insp\.style\.maxHeight = ''; \}/.test(appSrc) && /Math\.min\(window\.innerHeight \* 0\.5, window\.innerHeight - t - 156\)/.test(appSrc), 'the inspector docks under the outline, the outline gives room back on short windows, and both revert when either closes');
+ok(/el\.scrollIntoView\(\{ block: 'start', behavior: scrollBehavior\(\) \}\)/.test(appSrc) && !/jumpTo\(|select\(/.test(appSrc.slice(appSrc.indexOf('E.toc.addEventListener'), appSrc.indexOf('\n});', appSrc.indexOf('E.toc.addEventListener')))), 'an outline row scrolls without opening the inspector');
+const awDoc = { blocks: [] };
+for (let i = 0; i < 11; i++) awDoc.blocks.push({ type: i < 4 ? 'h' : 'p', id: i, level: 1, sents: [{ score: 0 }], score: 0, k: 0 });
+for (let i = 0; i < 3; i++) awDoc.blocks.push({ type: 'p', id: 11 + i, sents: [{ score: 0 }], score: 0, k: 0 });
+ok(C.outlineWorthy(secDoc) === false, 'outlineWorthy: 8 blocks with 4 headings is below the floor');
+ok(C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 12) }) === true && C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 11) }) === false, 'outlineWorthy: the block floor is exactly 12');
+awDoc.blocks[3].type = 'p';
+ok(C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 12) }) === false, 'outlineWorthy: 12 blocks with only 3 headings is below the heading floor');
+[dlist[0], dlist[2]].forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
+const side = fs2.readFileSync(exDir + '/fsr-2026-10.demo.js', 'utf8');
+const marker = "window.DEMO_FILES['fsr-2026-10.scored.json'] = ";
+const fullObj = JSON.parse(side.slice(side.indexOf(marker) + marker.length).replace(/;\s*$/, ''));
+const full = C.docFromScored(fullObj);
+ok(fullObj.title === 'RBA Financial Stability Review (Oct 2026)' && noWarn(full) && full.has.word && full.has.sent && full.has.para, 'full review loads with all levels, no warnings');
+ok(full.sents.length > 400 && full.words.length > 400, 'full review is not truncated: ' + full.sents.length + ' sentences, ' + full.words.length + ' words');
 
 // item 12: the examples in docs/FORMAT.md load cleanly
 const fmd = fs2.readFileSync(require('path').join(__dirname, '..', 'docs', 'FORMAT.md'), 'utf8');

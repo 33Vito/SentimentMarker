@@ -103,7 +103,7 @@ button{cursor:pointer}
 .dlg{display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin:.5rem 0 0;font:400 .75rem var(--font-num);color:var(--muted)}
 
 .doc{font-family:var(--font-read);font-size:1.0625rem;line-height:1.85;color:var(--ink);overflow-wrap:break-word;hyphens:auto}
-.blk{margin:0 -.8rem 1.1rem;padding:.3rem .8rem;border-radius:.6rem;transition:background-color .2s,opacity .2s,box-shadow .2s}
+.blk{margin:0 -.8rem 1.1rem;padding:.3rem .8rem;border-radius:.6rem;transition:background-color .2s,opacity .2s,box-shadow .2s;scroll-margin-top:calc(var(--bar-h) + 18px)}
 .blk.hd{margin-top:2.1rem;margin-bottom:.4rem;font:650 1.25rem/1.4 var(--font-ui);letter-spacing:-.01em;text-wrap:balance}
 .blk.hd:first-child{margin-top:0}
 .s,.w{transition:opacity .2s}
@@ -152,6 +152,24 @@ button{cursor:pointer}
 .spec .sumline b{font:600 .8rem var(--font-num)}
 .spec h3{margin:1rem 0 .4rem;font:600 .78rem var(--font-ui);color:var(--muted);letter-spacing:.02em}
 .spec svg{display:block;width:100%;height:auto;overflow:visible}
+/* outline: bottom sheet like the spectrum when narrow, right rail when wide.
+   It shares the rail with the inspector; when both are open the inspector docks under the outline (syncPanels). right stays >= 24px so the 14px heat strip keeps its margin. */
+.toc{position:fixed;z-index:34;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));margin-inline:auto;max-width:42rem;
+  bottom:max(12px,env(safe-area-inset-bottom,0px));background:var(--paper);border:1px solid var(--line);border-radius:1rem;box-shadow:var(--shadow);
+  padding:.85rem 1rem 1rem;max-height:min(62vh,30rem);overflow:auto;font-family:var(--font-ui)}
+.toc h3{margin:.1rem 0 .3rem;font:600 .78rem var(--font-ui);color:var(--muted);letter-spacing:.02em}
+.toc ol{list-style:none;margin:.25rem 0 0;padding:0;display:grid;gap:1px}
+.toc li.lv2{padding-left:.9rem}
+.toc .te{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.18rem .5rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;
+  padding:.32rem .45rem;border-radius:.45rem;cursor:pointer;font:inherit;color:inherit}
+.toc .te:hover{background:var(--chip)}
+.toc .te.on{background:var(--chip-on);color:var(--chip-on-ink)}
+.toc .tt{font:500 .78rem/1.4 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc li.lv2 .tt{font-weight:400}
+.toc li.lv2 .te:not(.on) .tt{color:var(--muted)}
+.toc .tv{font:600 .72rem var(--font-num);padding:.05rem .4rem;border-radius:.3rem;background:color-mix(in srgb,var(--hue) 30%,transparent);white-space:nowrap}
+.toc .tb{grid-column:1/-1;height:3px;border-radius:2px;background:color-mix(in srgb,var(--hue) 85%,transparent)}
+.toc .tb.n{justify-self:end}
 .sp-t{font:400 10px var(--font-num);fill:var(--muted)}
 .sp-ax{stroke:var(--line);stroke-width:1}
 .sp-zero{stroke:var(--ink);stroke-width:1;opacity:.35;stroke-dasharray:2 3}
@@ -178,11 +196,13 @@ button{cursor:pointer}
 .lnk:hover{color:var(--ink)}
 .seg button:disabled{opacity:.35;cursor:not-allowed}
 .btn[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.btn[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
 /* wide: two side rails beside the centred 44rem page. Rail width = the space left beside the page minus
    gutters, capped at 20rem (at 1360px: 680 - 352 - 48 = 280px, leaving >=16px to the page even with a scrollbar) */
 @media (min-width:1360px){
   .spec{left:max(20px,env(safe-area-inset-left,0px));right:auto;margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:calc(100vh - var(--bar-h) - 48px)}
   .insp{left:auto;right:max(24px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:calc(100vh - var(--bar-h) - 48px)}
+  .toc{left:auto;right:max(24px,env(safe-area-inset-right,0px));margin:0;top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 16px);bottom:auto;width:min(20rem,calc(50vw - 22rem - 48px));max-height:min(50vh,calc(100vh - var(--bar-h) - 48px))}
   body.spec-on .insp .mini{display:none}
 }
 .insp .mini{margin:.7rem 0 0;padding-top:.6rem;border-top:1px solid var(--line)}
@@ -254,6 +274,7 @@ button{cursor:pointer}
       <button type="button" role="radio" aria-checked="false" data-level="para" title="Paragraph (press 3)">Paragraph</button>
     </div>
     <button class="btn" id="btnSpec" type="button" aria-pressed="false" aria-controls="spec">Sentiment spectrum</button>
+    <button class="btn" id="btnToc" type="button" aria-pressed="false" aria-controls="toc">Outline</button>
     <span class="legend" aria-hidden="true"><span>Negative</span><i class="ramp"></i><span>Positive</span></span>
     <label class="slider" for="th">Weak-signal filter<input id="th" type="range" min="0" max="0.9" step="0.01" value="0.15"><output id="thOut" for="th">15%</output></label>
     <button class="btn only-m" id="btnTopics" type="button" aria-expanded="false">Topics</button>
@@ -276,6 +297,7 @@ button{cursor:pointer}
 <aside class="mm" id="mm" title="Sentiment heat bar for the whole article — click or drag to jump"><canvas id="mmCanvas"></canvas><div class="vp" id="vp"></div></aside>
 <aside class="spec" id="spec" hidden aria-label="Sentiment spectrum"></aside>
 <aside class="insp" id="insp" hidden></aside>
+<aside class="toc" id="toc" hidden aria-label="Document outline"></aside>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="drop" id="drop" hidden><span>Drop to open PDF / Markdown / text / scored JSON·CSV</span></div>
@@ -372,6 +394,29 @@ function lookup(lower) {
 }
 const strength = (level, score, cap = CAP) => Math.min(1, Math.abs(score) / cap[level]);
 
+/* outline rows (pure): true when the document is long enough for the outline to auto-open */
+function outlineWorthy(doc) {
+  return !!doc && doc.blocks.length >= 12 && doc.blocks.filter(b => b.type === 'h').length >= 4;
+}
+/* outline rows (pure): every heading block owns the blocks that follow it until the next heading
+   whose level is <= its own (an h2 ends the previous h2; only an h1 ends an h1). The section score
+   is the plain sum of its sentence scores, the heading's own included: addition for now, the
+   display squashes the sum before colouring so long sections do not saturate. */
+function sectionScores(doc) {
+  const B = doc.blocks, out = [];
+  B.forEach((h, i) => {
+    if (h.type !== 'h') return;
+    const lv = h.level >= 2 ? 2 : 1;
+    let sum = 0, n = 0;
+    for (let j = i; j < B.length; j++) {
+      if (j > i && B[j].type === 'h' && (B[j].level >= 2 ? 2 : 1) <= lv) break;
+      B[j].sents.forEach(s => { sum += s.score; n++; });
+    }
+    out.push({ blockId: h.id, level: lv, text: h.sents.map(s => s.text).join(' ').trim(), score: Math.round(sum * 100) / 100, count: n });
+  });
+  return out;
+}
+
 function analyzeSentence(text) {
   const toks = rawTokens(text);
   const wi = [];
@@ -440,6 +485,7 @@ function buildDoc(title, blocks) {
   let sid = 0, wid = 0;
   blocks.forEach((b, bi) => {
     const blk = { id: bi, type: b.type, sents: [], score: 0, k: 0, derived: false };
+    if (b.type === 'h') blk.level = b.level >= 2 ? 2 : 1;
     for (const st of splitSentences(b.text)) {
       const a = analyzeSentence(st.text);
       a.gap = st.gap; a.id = sid++; a.block = bi;
@@ -499,7 +545,7 @@ function parseMarkdown(raw) {
     if (/^\s*```/.test(line)) { flush(); code = !code; continue; }
     if (code) continue;
     const h = line.match(/^(#{1,6})\s+(.*)$/);
-    if (h) { flush(); const t = mdClean(h[2]); if (t) blocks.push({ type: 'h', text: t }); continue; }
+    if (h) { flush(); const t = mdClean(h[2]); if (t) blocks.push({ type: 'h', text: t, level: h[1].length >= 2 ? 2 : 1 }); continue; }
     if (!line.trim()) { flush(); continue; }
     if (/^\s*\|/.test(line) || /^\s*[-*_]{3,}\s*$/.test(line)) { flush(); continue; }
     const li = line.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
@@ -516,19 +562,37 @@ function itemsToLines(items) {
     if (typeof it.str !== 'string' || it.str === '') continue;
     const tr = it.transform, x = tr[4], y = tr[5];
     const size = Math.abs(it.height) || Math.hypot(tr[2], tr[3]) || 10;
-    if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x }; }
+    /* A footnote digit is smaller and raised by more than 2pt ("risks 7"). Skip that.
+       A smaller glyph on the same baseline is real text (a bullet's bold lead) and stays.
+       Line size follows the longest run, so the bullet does not make that lead a heading. */
+    if (cur && size < cur.size * 0.75 && y - cur.y > 2) continue;
+    if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x, span: 0 }; }
     if (cur.text && x - cur.endX > size * 0.2 && !/\s$/.test(cur.text) && !/^\s/.test(it.str)) cur.text += ' ';
-    cur.text += it.str; cur.endX = x + (it.width || 0); cur.size = Math.max(cur.size, size);
+    cur.text += it.str; cur.endX = x + (it.width || 0);
+    const span = it.str.trim().length;
+    if (span >= cur.span) { cur.size = size; cur.span = span; }
   }
   if (cur) lines.push(cur);
-  return lines.map(l => ({ ...l, text: l.text.replace(/\s+/g, ' ').trim() })).filter(l => l.text);
+  return lines.map(l => ({ y: l.y, x: l.x, size: l.size, text: l.text.replace(/\s+/g, ' ').trim() })).filter(l => l.text);
 }
 function linesToBlocks(pages) {
   const n = pages.length, freq = new Map();
   const key = l => l.text.replace(/\d+/g, '#').trim().toLowerCase();
   const edge = (l, p) => { const H = p.height || 800; return l.y > H * 0.92 || l.y < H * 0.08; };
   pages.forEach(p => { const seen = new Set(); p.lines.forEach(l => { if (edge(l, p)) { const k = key(l); if (!seen.has(k)) { seen.add(k); freq.set(k, (freq.get(k) || 0) + 1); } } }); });
-  const drop = (l, p) => edge(l, p) && ((n >= 3 && freq.get(key(l)) >= Math.max(3, n * 0.4)) || /^(page\s*)?\d{1,4}(\s*(of|\/)\s*\d{1,4})?$/i.test(l.text.trim()));
+  /* A publication running header such as "Financial Stability Review" changes section
+     wording often enough to miss the 40% repeat test on a long document. The same
+     banner is also painted several times on one baseline ("AssessmentAssessment…").
+     Drop that edge line, and its letterspaced twin, even on a single page. Do not
+     lower the 8% band: a real last line can sit just inside it. */
+  const letterspaced = text => { const parts = text.trim().split(/\s+/).filter(Boolean); return parts.length >= 8 && parts.filter(p => p.length === 1).length / parts.length >= 0.6; };
+  const repeatedBanner = text => {
+    const raw = text.replace(/\s+/g, '');
+    for (let k = 3; k <= 8; k++) { if (raw.length % k) continue; const chunk = raw.slice(0, raw.length / k); if (chunk.length >= 12 && chunk.repeat(k) === raw) return true; }
+    /* "Chapter 1 | TitleTitleTitle" — the first copy carries a prefix, the rest tile. */
+    return /(.{20,}?)\1{2,}/.test(text);
+  };
+  const drop = (l, p) => edge(l, p) && ((n >= 3 && freq.get(key(l)) >= Math.max(3, n * 0.4)) || /^(page\s*)?\d{1,4}(\s*(of|\/)\s*\d{1,4})?$/i.test(l.text.trim()) || key(l).includes('financial stability review') || letterspaced(l.text) || repeatedBanner(l.text));
   const kept = pages.map(p => p.lines.filter(l => !drop(l, p)));
   const hist = new Map();
   kept.forEach(ls => ls.forEach(l => { const k = Math.round(l.size); hist.set(k, (hist.get(k) || 0) + l.text.length); }));
@@ -543,15 +607,20 @@ function linesToBlocks(pages) {
       const prev = i > 0 ? ls[i - 1] : null, gap = prev ? prev.y - l.y : null;
       const isHead = l.size >= body * 1.18 && l.text.length <= 140 && !/[,;]$/.test(l.text);
       if (isHead) {
+        /* outline level by absolute size, not a ratio of the body mode: the mode flips between
+           slices of one document (11 vs 12), the font roles do not (22pt+ = chapter, 13-16 = section) */
+        const lv = l.size >= 20 ? 1 : 2;
         if (curH && prevHead && gap != null && gap < l.size * 1.8 && Math.abs(prev.size - l.size) < 0.6) curH.text += ' ' + l.text;
-        else { closeP(); curH = { type: 'h', text: l.text }; blocks.push(curH); }
+        else { closeP(); curH = { type: 'h', text: l.text, level: lv }; blocks.push(curH); }
         prevHead = true; return;
       }
       curH = null; prevHead = false;
       let fresh;
       if (!curP) fresh = true;
       else if (!prev) fresh = /[.!?:”"')\]。！？]$/.test(curP.text.trim());
-      else fresh = gap > typical * 1.45 || (l.x > prev.x + l.size * 1.2 && /[.!?”"')]$/.test(curP.text.trim()));
+      /* A line that jumps upward is the next column or a banner that arrived late in
+         the content stream, not the next wrapped line. Do not glue it onto the sentence. */
+      else fresh = gap > typical * 1.45 || gap < -(l.size || 10) * 0.8 || (l.x > prev.x + l.size * 1.2 && /[.!?”"')]$/.test(curP.text.trim()));
       if (fresh) { closeP(); curP = { text: l.text }; }
       else if (/[A-Za-z]-$/.test(curP.text) && /^[a-z]/.test(l.text)) curP.text = curP.text.slice(0, -1) + l.text;
       else curP.text += ' ' + l.text;
@@ -603,6 +672,7 @@ function docFromScored(obj) {
     if (!sentsIn || !sentsIn.length) { warn.skipped++; return; }
     const bi = doc.blocks.length;
     const blk = { id: bi, type: p.type === 'h' ? 'h' : 'p', sents: [], score: 0, k: 0, derived: false };
+    if (blk.type === 'h') blk.level = Number(p.level) >= 2 ? 2 : 1;   /* optional paragraphs[].level; anything else defaults to 1 */
     sentsIn.forEach((s, si) => {
       const text = String(typeof s === 'string' ? s : (s && s.text != null ? s.text : ''));
       if (!text.trim()) { warn.bad++; return; }
@@ -691,7 +761,7 @@ function docToJSON(doc) {
   if (doc.ref) out.reference = { name: doc.ref.name, scores: doc.ref.scores.map(v => r4(v + c.word)),
     examples: (doc.ref.examples || []).filter(e => isNum(e.score)).map(e => ({ text: e.text, score: r4(e.score + c.word) })) };
   out.paragraphs = doc.blocks.map(b => ({
-    type: b.type, score: r4(b.score + c.para),
+    type: b.type, ...(b.type === 'h' && b.level === 2 ? { level: 2 } : {}), score: r4(b.score + c.para),
     sentences: b.sents.map(s => {
       let off = 0; const words = [];
       for (const t of s.toks) {
@@ -825,7 +895,7 @@ function scaleText(doc) {
   return 'Colour scale ' + parts.join(' · ') + (same ? ' (' + (CAP_SRC[src[lv[0][0]]] || '?') + ')' : '');
 }
 const rankText = (it, own) => (it.score > 0 ? 'most positive ' : 'most negative ') + Math.max(1, Math.round(it.share * 100)) + '%' + (own ? ' here' : '');
-if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText, scaleText };
+if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText, scaleText, sectionScores, outlineWorthy };
 //</core>
 
 //<app>
@@ -850,16 +920,16 @@ Thanks to the whole team for an exhausting, difficult, and ultimately encouragin
 const MAX_PAGES = 200;
 
 const $ = s => document.querySelector(s);
-const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec') };
+const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), toc: $('#toc'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec'), btnToc: $('#btnToc') };
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
-const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
+const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, tocWanted: null, tocRows: [], tocClick: null, hits: [], hitCur: -1, hitKey: '' };
 const BADGE_TIP = { 'Sample': 'Built-in example text, scored by the simple in-browser dictionary', 'Built-in': 'Scored by the simple in-browser dictionary — demo only', 'External': 'Scores come from the JSON / CSV file you provided' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
 /* prefs in localStorage: theme, level, threshold, spectrum. Topics are not stored. */
-const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec' };
+const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec', toc: 'sm.toc' };
 function prefGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function prefSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
 const THEME_CYCLE = ['system', 'light', 'dark'];
@@ -893,6 +963,9 @@ function mountThemeButton() {
 function rememberSpec() {
   prefSet(PREF_KEY.spec, S.specWanted === null ? null : S.specWanted ? '1' : '0');
 }
+function rememberToc() {
+  prefSet(PREF_KEY.toc, S.tocWanted === null ? null : S.tocWanted ? '1' : '0');
+}
 function restorePrefs() {
   const theme = prefGet(PREF_KEY.theme);
   applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system', false);
@@ -908,6 +981,9 @@ function restorePrefs() {
   const spec = prefGet(PREF_KEY.spec);
   if (spec === '1') S.specWanted = true;
   else if (spec === '0') S.specWanted = false;
+  const toc = prefGet(PREF_KEY.toc);
+  if (toc === '1') S.tocWanted = true;
+  else if (toc === '0') S.tocWanted = false;
   syncSeg();
 }
 
@@ -1114,6 +1190,7 @@ function layout() {
   if (!S.doc) return;
   const sy = window.scrollY, f = e => { const r = e.getBoundingClientRect(); return { top: r.top + sy, h: r.height }; };
   pos = { s: els.s.map(f), b: els.b.map(f) };
+  updateTocActive();
 }
 function drawMinimap() {
   const W = E.mm.clientWidth, H = E.mm.clientHeight;
@@ -1262,15 +1339,36 @@ function patrol(d) {
    with the ▲ marks while the full panel is tucked behind it. */
 let panelFront = 'insp';
 const specOn = () => !!S.doc && (S.specWanted === null ? wideMQ.matches : S.specWanted);
+/* the outline auto-opens only on long documents, and only on wide screens; the button always works */
+const tocLongDoc = outlineWorthy;
+const tocOn = () => !!S.doc && S.doc.blocks.some(b => b.type === 'h') && (S.tocWanted === null ? wideMQ.matches && tocLongDoc(S.doc) : S.tocWanted);
 function syncPanels() {
-  const wide = wideMQ.matches, on = specOn(), sel = !!S.sel;
-  const showSpec = on && (wide || !sel || panelFront === 'spec');
-  const showInsp = sel && (wide || !on || panelFront === 'insp');
+  const wide = wideMQ.matches, on = specOn(), sel = !!S.sel, ton = tocOn();
+  /* narrow: exactly one sheet. The front token wins; while selected the inspector is front unless the
+     outline was explicitly brought up; the spectrum returns on its own once nothing is selected */
+  const showSpec = on && (wide || (!sel && panelFront !== 'toc') || panelFront === 'spec');
+  const showToc = ton && (wide || panelFront === 'toc');
+  const showInsp = sel && (wide || (panelFront !== 'toc' && !on) || panelFront === 'insp');
   const wasHidden = E.spec.hidden;
-  E.spec.hidden = !showSpec; E.insp.hidden = !showInsp;
+  E.spec.hidden = !showSpec; E.insp.hidden = !showInsp; E.toc.hidden = !showToc;
+  /* keep the button focusable: Chromium shows no title on a truly disabled control, so aria-disabled + early return */
+  const noHeads = !(S.doc && S.doc.blocks.some(b => b.type === 'h'));
+  E.btnToc.setAttribute('aria-disabled', String(noHeads));
+  E.btnToc.title = noHeads ? 'No headings in this document' : 'Outline of the article';
+  /* wide: the outline stays when a sentence is selected - the inspector docks under the outline's real
+     bottom edge; on short windows the outline gives room back so the inspector keeps a usable height */
+  if (wide && !E.toc.hidden && !E.insp.hidden) {
+    const t = E.toc.getBoundingClientRect().top;
+    E.toc.style.maxHeight = Math.max(140, Math.min(window.innerHeight * 0.5, window.innerHeight - t - 156)) + 'px';
+    const bottom = E.toc.getBoundingClientRect().bottom;
+    E.insp.style.top = (bottom + 12) + 'px';
+    E.insp.style.maxHeight = Math.max(132, window.innerHeight - bottom - 24) + 'px';
+  } else { E.toc.style.maxHeight = ''; E.insp.style.top = ''; E.insp.style.maxHeight = ''; }
   E.btnSpec.setAttribute('aria-pressed', String(on));
+  E.btnToc.setAttribute('aria-pressed', String(ton));
   document.body.classList.toggle('spec-on', showSpec);
   if (showSpec) { if (wasHidden || !E.spec.firstChild) renderSpec(); else updateSpecChart(); }
+  if (showToc) updateTocActive();
 }
 const getSpec = () => { if (S.spec === undefined) S.spec = S.doc ? buildSpec(S.doc) : null; return S.spec; };
 function miniSpec(marks) {
@@ -1339,6 +1437,53 @@ E.btnSpec.addEventListener('click', () => {
   syncPanels();
 });
 wideMQ.addEventListener('change', () => syncPanels());   /* auto-toggles only while specWanted is null */
+/* ---------- outline: rows come from sectionScores; the bar colour squashes the raw sum back into sentence range ---------- */
+function renderToc() {
+  if (!S.doc) { E.toc.innerHTML = ''; return; }
+  S.tocClick = null;
+  const rows = S.tocRows = sectionScores(S.doc);
+  if (!rows.length) { E.toc.innerHTML = '<p class="none">This document has no headings.</p>'; return; }
+  E.toc.innerHTML = `<h3>Outline</h3><ol>${rows.map(r => {
+    const q = r.score / Math.sqrt(r.score * r.score + 15);   /* same squash as derived sentence scores, so bars across documents compare */
+    const w = Math.max(4, Math.round(Math.abs(q) * 100));
+    return `<li class="lv${r.level}" style="--hue:var(--${q > 0 ? 'pos' : q < 0 ? 'neg' : 'muted'})">` +
+      `<button class="te" type="button" data-goto="${r.blockId}" title="${esc(r.text)} · ${r.count} sentences · sum ${fmt(r.score, 1)}">` +
+      `<span class="tt">${esc(r.text)}</span><span class="tv">${fmt(r.score, 1)}</span>` +
+      `<i class="tb${q < 0 ? ' n' : ''}" style="width:${w}%"></i></button></li>`;
+  }).join('')}</ol>`;
+  updateTocActive();
+}
+/* the active row = the last heading whose top is at or above the reading line (the line sits below
+   scroll-margin-top so a clicked heading counts as reached); a row the user just clicked stays active
+   until real user input (wheel / touch / key) or a document switch */
+function updateTocActive() {
+  if (E.toc.hidden || !S.tocRows.length) return;
+  const y = window.scrollY + E.bar.offsetHeight + 24;
+  let act = -1;
+  for (const r of S.tocRows) { const p = pos.b[r.blockId]; if (p && p.top <= y) act = r.blockId; else break; }
+  if (S.tocClick != null) {
+    const p = pos.b[S.tocClick];
+    if (p && Math.abs(p.top - window.scrollY) < window.innerHeight) act = S.tocClick;   /* out of range: ignored this frame (mid-smooth-scroll), cleared by user input or a document switch */
+  }
+  if (act < 0) act = S.tocRows[0].blockId;
+  E.toc.querySelectorAll('.te').forEach(b => b.classList.toggle('on', +b.dataset.goto === act));
+}
+window.addEventListener('wheel', () => { S.tocClick = null; }, { passive: true });
+window.addEventListener('touchmove', () => { S.tocClick = null; }, { passive: true });
+E.btnToc.addEventListener('click', () => {
+  if (E.btnToc.getAttribute('aria-disabled') === 'true') return;   /* before rememberToc: a dead click must not persist a preference */
+  const on = tocOn();
+  if (on && E.toc.hidden) panelFront = 'toc';               /* narrow sheet tucked behind another panel -> bring it forward */
+  else { S.tocWanted = !on; rememberToc(); panelFront = S.tocWanted ? 'toc' : 'spec'; }
+  syncPanels();
+});
+E.toc.addEventListener('click', e => {
+  const btn = e.target.closest('[data-goto]'); if (!btn) return;
+  const el = els.b[+btn.dataset.goto]; if (!el) return;
+  S.tocClick = +btn.dataset.goto;
+  el.scrollIntoView({ block: 'start', behavior: scrollBehavior() });   /* no selection here: selecting would open the inspector over the outline */
+  updateTocActive();
+});
 E.spec.addEventListener('click', e => {
   if (e.target.closest('[data-spec-close]')) { S.specWanted = false; rememberSpec(); syncPanels(); return; }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);
@@ -1393,6 +1538,7 @@ function openDoc(title, blocks, meta) {
   syncSeg();
   E.spec.innerHTML = '';
   renderHead(); renderDoc(); renderChips(); refresh();
+  renderToc();
   syncPanels();
   window.scrollTo(0, 0);
   requestAnimationFrame(() => { layout(); drawMinimap(); });
@@ -1464,12 +1610,54 @@ async function loadFile(file) {
     else if (toastBusy) toast('');
   } catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 6000); }
 }
-/* article picker: demo docs embedded in examples/demos.js (window.DEMOS = [{label, file, scored}, …]) */
+/* article picker. Small demos are inline on window.DEMOS. The full review is a classic
+   script (d.src) assigned onto window.DEMO_FILES, inserted the first time it is opened.
+   fetch() is not used: file:// blocks it. loadDemo(0) stays synchronous. */
+const demoScriptLoads = {};
+let demoOpenGen = 0;
 function loadDemo(i) {
   const d = (window.DEMOS || [])[i];
   if (!d) return false;
-  try { openDoc(null, null, { name: d.file, scored: d.scored, badge: 'External' }); return true; }
-  catch (err) { toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000); return false; }
+  const gen = ++demoOpenGen;
+  const current = () => gen === demoOpenGen;
+  const open = scored => {
+    if (!current()) return '';
+    return openDoc(null, null, { name: d.file, scored, badge: 'External' });
+  };
+  const fail = err => {
+    if (!current()) return false;
+    const sel = $('#selDemo');
+    if (sel && sel.value === String(i)) sel.value = '';
+    toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000);
+    return false;
+  };
+  const cached = d.scored || (window.DEMO_FILES && window.DEMO_FILES[d.file]);
+  if (cached) {
+    try { const msg = open(cached); if (!msg && toastBusy) toast(''); return true; }
+    catch (err) { return fail(err); }
+  }
+  if (!d.src) return fail(new Error('missing scores'));
+  toast('Opening the full review…', 0, true);
+  if (!demoScriptLoads[d.src]) {
+    const load = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = d.src;
+      s.onload = () => {
+        const obj = window.DEMO_FILES && window.DEMO_FILES[d.file];
+        if (obj) resolve(obj); else reject(new Error('demo script did not publish ' + d.file));
+      };
+      s.onerror = () => reject(new Error('could not load ' + d.src));
+      document.head.appendChild(s);
+    });
+    /* A rejected load must not stick: the next choice inserts the script again. */
+    demoScriptLoads[d.src] = load;
+    load.catch(() => { if (demoScriptLoads[d.src] === load) delete demoScriptLoads[d.src]; });
+  }
+  demoScriptLoads[d.src].then(scored => {
+    const msg = open(scored);
+    if (current() && !msg && toastBusy) toast('');
+  }).catch(fail);
+  return true;
 }
 function initDemoSel() {
   const sel = $('#selDemo'), list = window.DEMOS || [];
@@ -1521,21 +1709,23 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; E.drop
 document.addEventListener('keydown', e => {
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  S.tocClick = null;                                       /* keyboard navigation is real user input for the outline */
   if (e.key === 'j' || e.key === 'k') { if (E.paste.hidden) { e.preventDefault(); patrol(e.key === 'j' ? 1 : -1); } return; }   /* not behind the paste dialog */
   if (e.key === '1') setLevel('word'); else if (e.key === '2') setLevel('sent'); else if (e.key === '3') setLevel('para');
   else if (e.key === 'Escape') {           /* close the panel in front: inspector first; narrow spectrum sheet next */
     E.paste.hidden = true;
     if (S.sel && !E.insp.hidden) closeInsp();
     else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; rememberSpec(); syncPanels(); }
+    else if (!wideMQ.matches && !E.toc.hidden) { S.tocWanted = false; rememberToc(); panelFront = 'spec'; syncPanels(); }   /* hand the front back like the button's close path, or every sheet stays hidden */
     else if (S.sel) closeInsp();
   }
 });
-function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); }
+function syncBar() { document.documentElement.style.setProperty('--bar-h', E.bar.offsetHeight + 'px'); drawMinimap(); syncPanels(); }
 new ResizeObserver(syncBar).observe(E.bar);
 let rz = 0;
-window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawMinimap(); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawMinimap(); syncPanels(); }, 120); });
 let scRAF = 0;
-window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', window.scrollY > 4); cancelAnimationFrame(scRAF); scRAF = requestAnimationFrame(updateVP); }, { passive: true });
+window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', window.scrollY > 4); cancelAnimationFrame(scRAF); scRAF = requestAnimationFrame(() => { updateVP(); updateTocActive(); }); }, { passive: true });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
 
