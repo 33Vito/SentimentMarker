@@ -21,7 +21,7 @@ try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
     import pysentiment2, importlib.util
 except ImportError:
-    sys.exit("Missing dependencies: pip install vaderSentiment pysentiment2"
+    sys.exit("Missing dependencies: pip install vaderSentiment pysentiment2")
 
 VADER = SentimentIntensityAnalyzer().lexicon
 LM_CSV = os.path.join(os.path.dirname(pysentiment2.__file__), "static", "LM.csv")

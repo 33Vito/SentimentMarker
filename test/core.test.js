@@ -73,6 +73,32 @@ ok(pb.some(b => b.text === 'A new paragraph starts after a bigger gap.'), 'parag
 ok(pb.filter(b => b.type === 'p').length >= 6, 'paragraphs per page: ' + pb.filter(b => b.type === 'p').length);
 ok(pb.some(b => b.text.includes('interesting hyphenated word')), 'dehyphenated');
 ok(!pb.some(b => /^Hello$/.test(b.text) || b.text === '1'), 'header/footer dropped');
+const supItems = [
+  mk('risks ', 50, 400, 36, 10.8),
+  mk('7', 90, 404, 6, 7.3),
+  mk('to stability.', 100, 400, 80, 10.8),
+];
+const supLines = C.itemsToLines(supItems);
+ok(supLines.length === 1 && supLines[0].text === 'risks to stability.', 'superscript not joined: ' + JSON.stringify(supLines.map(l => l.text)));
+const edgePage = [{ height: 842, lines: [
+  { y: 820, x: 40, size: 9, text: 'Financial Stability Review | October 2026' },
+  { y: 400, x: 80, size: 11, text: 'The body sentence stays on the only page.' },
+  { y: 30, x: 40, size: 8, text: 'R e s e r v e B a n k o f A u s t r a l i a' },
+]}];
+const eb = C.linesToBlocks(edgePage);
+ok(eb.some(b => b.text.includes('body sentence')) && !eb.some(b => /financial stability review/i.test(b.text)) && !eb.some(b => /\be\b/.test(b.text) && /Reserve/.test(b.text)), 'publication header and letterspaced footer drop on one page');
+const keptBody = C.linesToBlocks([{ height: 842, lines: [
+  { y: 400, x: 80, size: 11, text: 'A sentence about the Financial Stability Review stays when it is not in the margin.' },
+]}]);
+ok(keptBody.some(b => /Financial Stability Review/.test(b.text)), 'the publication name in body text is kept');
+const banner = 'Chapter 1 | ' + 'The Global Macro-financial Environment'.repeat(4);
+const up = [{ height: 800, lines: [
+  { y: 400, x: 50, size: 11, text: 'exposures to' },
+  { y: 780, x: 300, size: 8.5, text: banner },
+  { y: 386, x: 50, size: 11, text: 'NBFIs have continued.' },
+]}];
+const ub = C.linesToBlocks(up);
+ok(ub.length === 1 && ub[0].text === 'exposures to NBFIs have continued.', 'repeated edge banner dropped and the sentence rejoins: ' + JSON.stringify(ub));
 
 // 5. external scored files
 const fs2 = require('fs');
@@ -195,13 +221,21 @@ ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:13
 ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
 ok(!/\/读取\/\.test/.test(appSrc) && /toastBusy/.test(appSrc), 'PDF truncation toast not cleared by a text regex');
 
-// article picker: two embedded demo docs served from examples/demos.js (window.DEMOS)
+// article picker: Assessment and the synthetic sample are inline; the full review is a classic script
 ok(/<select[^>]*id="selDemo"/.test(html) && !/id="btnSample"/.test(html), 'sample button replaced by an article picker');
 ok(/window\.DEMOS/.test(appSrc) && /loadDemo/.test(appSrc) && /initDemoSel\(\);/.test(appSrc), 'picker wired to window.DEMOS at boot');
 const djs = fs2.readFileSync(exDir + '/demos.js', 'utf8');
 const dlist = JSON.parse(djs.slice(djs.indexOf('window.DEMOS =') + 'window.DEMOS ='.length).replace(/;\s*$/, ''));
-ok(dlist.length === 2 && dlist.every(d => d.label && d.file && d.scored && d.scored.title), 'demos.js bundles exactly two labelled scored articles');
-dlist.forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
+ok(dlist.length === 3 && dlist[0].file.includes('fsr-assessment') && dlist[0].scored && dlist[0].scored.title, 'start-up demo stays the Assessment');
+ok(dlist[1].label && dlist[1].file && dlist[1].src && !dlist[1].scored, 'full review is a lazy script stub');
+ok(dlist[2].scored && dlist[2].scored.title, 'synthetic demo stays inline');
+[dlist[0], dlist[2]].forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
+const side = fs2.readFileSync(exDir + '/fsr-2026-10.demo.js', 'utf8');
+const marker = "window.DEMO_FILES['fsr-2026-10.scored.json'] = ";
+const fullObj = JSON.parse(side.slice(side.indexOf(marker) + marker.length).replace(/;\s*$/, ''));
+const full = C.docFromScored(fullObj);
+ok(fullObj.title === 'RBA Financial Stability Review (Oct 2026)' && noWarn(full) && full.has.word && full.has.sent && full.has.para, 'full review loads with all levels, no warnings');
+ok(full.sents.length > 400 && full.words.length > 400, 'full review is not truncated: ' + full.sents.length + ' sentences, ' + full.words.length + ' words');
 
 // item 12: the examples in docs/FORMAT.md load cleanly
 const fmd = fs2.readFileSync(require('path').join(__dirname, '..', 'docs', 'FORMAT.md'), 'utf8');

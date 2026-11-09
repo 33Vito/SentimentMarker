@@ -516,6 +516,14 @@ function itemsToLines(items) {
     if (typeof it.str !== 'string' || it.str === '') continue;
     const tr = it.transform, x = tr[4], y = tr[5];
     const size = Math.abs(it.height) || Math.hypot(tr[2], tr[3]) || 10;
+    /* Footnote superscripts sit a few points above the baseline and are clearly smaller.
+       The line-break test uses max(2, size * 0.5), which is about 5pt on body text, so a
+       digit raised by ~4pt would otherwise be glued on ("risks 7"). Skip it instead. */
+    if (cur && size < cur.size * 0.75) {
+      const dy = y - cur.y;
+      const close = Math.abs(dy) <= Math.max(2, Math.max(size, cur.size) * 0.5);
+      if (dy > 2 || close) continue;
+    }
     if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x }; }
     if (cur.text && x - cur.endX > size * 0.2 && !/\s$/.test(cur.text) && !/^\s/.test(it.str)) cur.text += ' ';
     cur.text += it.str; cur.endX = x + (it.width || 0); cur.size = Math.max(cur.size, size);
@@ -528,7 +536,19 @@ function linesToBlocks(pages) {
   const key = l => l.text.replace(/\d+/g, '#').trim().toLowerCase();
   const edge = (l, p) => { const H = p.height || 800; return l.y > H * 0.92 || l.y < H * 0.08; };
   pages.forEach(p => { const seen = new Set(); p.lines.forEach(l => { if (edge(l, p)) { const k = key(l); if (!seen.has(k)) { seen.add(k); freq.set(k, (freq.get(k) || 0) + 1); } } }); });
-  const drop = (l, p) => edge(l, p) && ((n >= 3 && freq.get(key(l)) >= Math.max(3, n * 0.4)) || /^(page\s*)?\d{1,4}(\s*(of|\/)\s*\d{1,4})?$/i.test(l.text.trim()));
+  /* A publication running header such as "Financial Stability Review" changes section
+     wording often enough to miss the 40% repeat test on a long document. The same
+     banner is also painted several times on one baseline ("AssessmentAssessment…").
+     Drop that edge line, and its letterspaced twin, even on a single page. Do not
+     lower the 8% band: a real last line can sit just inside it. */
+  const letterspaced = text => { const parts = text.trim().split(/\s+/).filter(Boolean); return parts.length >= 8 && parts.filter(p => p.length === 1).length / parts.length >= 0.6; };
+  const repeatedBanner = text => {
+    const raw = text.replace(/\s+/g, '');
+    for (let k = 3; k <= 8; k++) { if (raw.length % k) continue; const chunk = raw.slice(0, raw.length / k); if (chunk.length >= 12 && chunk.repeat(k) === raw) return true; }
+    /* "Chapter 1 | TitleTitleTitle" — the first copy carries a prefix, the rest tile. */
+    return /(.{20,}?)\1{2,}/.test(text);
+  };
+  const drop = (l, p) => edge(l, p) && ((n >= 3 && freq.get(key(l)) >= Math.max(3, n * 0.4)) || /^(page\s*)?\d{1,4}(\s*(of|\/)\s*\d{1,4})?$/i.test(l.text.trim()) || key(l).includes('financial stability review') || letterspaced(l.text) || repeatedBanner(l.text));
   const kept = pages.map(p => p.lines.filter(l => !drop(l, p)));
   const hist = new Map();
   kept.forEach(ls => ls.forEach(l => { const k = Math.round(l.size); hist.set(k, (hist.get(k) || 0) + l.text.length); }));
@@ -551,7 +571,9 @@ function linesToBlocks(pages) {
       let fresh;
       if (!curP) fresh = true;
       else if (!prev) fresh = /[.!?:”"')\]。！？]$/.test(curP.text.trim());
-      else fresh = gap > typical * 1.45 || (l.x > prev.x + l.size * 1.2 && /[.!?”"')]$/.test(curP.text.trim()));
+      /* A line that jumps upward is the next column or a banner that arrived late in
+         the content stream, not the next wrapped line. Do not glue it onto the sentence. */
+      else fresh = gap > typical * 1.45 || gap < -(l.size || 10) * 0.8 || (l.x > prev.x + l.size * 1.2 && /[.!?”"')]$/.test(curP.text.trim()));
       if (fresh) { closeP(); curP = { text: l.text }; }
       else if (/[A-Za-z]-$/.test(curP.text) && /^[a-z]/.test(l.text)) curP.text = curP.text.slice(0, -1) + l.text;
       else curP.text += ' ' + l.text;
@@ -1464,12 +1486,33 @@ async function loadFile(file) {
     else if (toastBusy) toast('');
   } catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 6000); }
 }
-/* article picker: demo docs embedded in examples/demos.js (window.DEMOS = [{label, file, scored}, …]) */
+/* article picker. Small demos are inline on window.DEMOS. The full review is a classic
+   script (d.src) assigned onto window.DEMO_FILES, inserted the first time it is opened.
+   fetch() is not used: file:// blocks it. loadDemo(0) stays synchronous. */
+const demoScriptLoads = {};
 function loadDemo(i) {
   const d = (window.DEMOS || [])[i];
   if (!d) return false;
-  try { openDoc(null, null, { name: d.file, scored: d.scored, badge: 'External' }); return true; }
-  catch (err) { toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000); return false; }
+  const open = scored => openDoc(null, null, { name: d.file, scored, badge: 'External' });
+  const fail = err => { toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000); return false; };
+  const cached = d.scored || (window.DEMO_FILES && window.DEMO_FILES[d.file]);
+  if (cached) { try { open(cached); return true; } catch (err) { return fail(err); } }
+  if (!d.src) return fail(new Error('missing scores'));
+  toast('Opening the full review…', 0, true);
+  if (!demoScriptLoads[d.src]) {
+    demoScriptLoads[d.src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = d.src;
+      s.onload = () => {
+        const obj = window.DEMO_FILES && window.DEMO_FILES[d.file];
+        if (obj) resolve(obj); else reject(new Error('demo script did not publish ' + d.file));
+      };
+      s.onerror = () => reject(new Error('could not load ' + d.src));
+      document.head.appendChild(s);
+    });
+  }
+  demoScriptLoads[d.src].then(scored => { const msg = open(scored); if (!msg && toastBusy) toast(''); }).catch(fail);
+  return true;
 }
 function initDemoSel() {
   const sel = $('#selDemo'), list = window.DEMOS || [];
