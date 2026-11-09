@@ -878,11 +878,20 @@ function renderHead() {
   const neu = n - pos - neg; S.avg = n ? sum / n : 0;
   const pct = v => Math.round(v / n * 100) + '%';
   const paras = D.blocks.filter(b => b.type === 'p').length;
+  const extremes = [
+    ...D.sents.filter(s => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 3),
+    ...D.sents.filter(s => s.score < 0).sort((a, b) => a.score - b.score).slice(0, 3)
+  ];
+  const pills = extremes.map(s => {
+    const chars = [...s.text], preview = chars.length > 36 ? chars.slice(0, 36).join('') + '…' : s.text;
+    return `<button type="button" class="chip ${sg(s.score)}" data-sent="${s.id}" title="${esc(s.text)}" style="max-width:100%;overflow:hidden;text-overflow:ellipsis">${fmt(s.score)} · ${esc(preview)}</button>`;
+  }).join('');
   E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">导出 JSON</button><button class="lnk" type="button" data-exp="csv">导出 CSV</button></span></p>
     <h1>${esc(D.title)}</h1>
     <p class="meta">${paras} 段 · ${n} 句 · ${D.words.length} 个情感词 · 全文均值 ${fmt(S.avg)}</p>
     <div class="dist" role="img" aria-label="负面 ${pct(neg)}，中性 ${pct(neu)}，正面 ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
     <p class="dlg"><span>负面 ${pct(neg)}</span><span>中性 ${pct(neu)}</span><span>正面 ${pct(pos)}</span></p>
+    ${pills ? `<div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0" aria-label="情感极值句">${pills}</div>` : ''}
     <p class="scl" title="分数的绝对值达到这个数时颜色最深">${scaleText(D)}</p>
     ${D.mixedSent ? '<p class="scl">注意：部分句分来自文件，部分由词分推出（S / √(S² + 15)），两者不一定在同一尺度上。</p>' : ''}`;
 }
@@ -1059,7 +1068,7 @@ function inspSent(s, wid) {
   const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
     `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}" data-wid="${t.wid}" title="在正文中定位" style="cursor:pointer"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
   const drv = s.derived && !S.doc.builtin ? '<span class="drv" title="文件没有给这句的分数，按 S / √(S² + 15) 由词分推出">由词分推出</span>' : '';
-  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="x" type="button" data-close aria-label="关闭">×</button></div>
+  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <p class="itx">${esc(s.text)}</p>
     ${rows ? `<ul class="cl">${rows}</ul>` : '<p class="none">这句没有命中情感词。</p>'}
     <p class="ctx">所在段落 <b>${fmt(b.score)}</b> · 全文均值 <b>${fmt(S.avg)}</b></p>${miniSpec(s.scored.map(t => t.score))}`;
@@ -1068,7 +1077,7 @@ function inspBlock(b) {
   const rows = b.sents.map(s => `<li class="${sg(s.score)}"><span class="sn">${fmt(s.score)}</span><span class="nt">${esc(s.text.length > 70 ? s.text.slice(0, 70) + '…' : s.text)}</span></li>`).join('');
   const drv = b.derived && !S.doc.builtin ? '<span class="drv">由句分推出</span>' : '';
   const how = b.derived ? `段内 ${b.sents.length} 句的平均值` : `段分来自文件 · 段内 ${b.sents.length} 句`;
-  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="x" type="button" data-close aria-label="关闭">×</button></div>
+  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <p class="ctx" style="margin:0 0 .6rem">${how}</p><ul class="cl bl">${rows}</ul>${miniSpec(b.sents.flatMap(x => x.scored).map(t => t.score))}`;
 }
 function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
@@ -1221,8 +1230,20 @@ E.spec.addEventListener('click', e => {
   if (e.target.closest('[data-spec-close]')) { S.specWanted = false; syncPanels(); return; }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);
 });
-E.insp.addEventListener('click', e => {
+E.insp.addEventListener('click', async e => {
   if (e.target.closest('[data-close]')) { closeInsp(); return; }
+  if (e.target.closest('[data-copy-quote]') && S.sel) {
+    const { kind, id } = S.sel;
+    const item = kind === 'b' ? S.doc.blocks[id] : S.doc.sents[id];
+    const body = kind === 'b' ? item.sents.map(s => s.text + s.gap).join('') : item.text;
+    const quoted = body.replace(/\r\n?/g, '\n').split('\n').map(line => `> ${line}`).join('\n');
+    const label = item.score > 0 ? '正面' : item.score < 0 ? '负面' : '中性';
+    try {
+      await navigator.clipboard.writeText(`${quoted}\n> —— 情感分：${fmt(item.score)}（${label}）`);
+      toast('引用已复制');
+    } catch (_) { toast('复制失败，请检查剪贴板权限'); }
+    return;
+  }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);   /* word list -> the word in the text */
 });
 E.doc.addEventListener('click', e => {
@@ -1360,7 +1381,11 @@ $('#pasteGo').addEventListener('click', () => {
     E.paste.hidden = true;
   } catch (err) { toast('分析失败：' + err.message, 6000); }
 });
-E.head.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b) exportDoc(b.dataset.exp); });
+E.head.addEventListener('click', e => {
+  const b = e.target.closest('[data-exp]'); if (b) { exportDoc(b.dataset.exp); return; }
+  const pill = e.target.closest('[data-sent]'); if (!pill || !S.doc) return;
+  jumpTo('s', +pill.dataset.sent);
+});
 E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
 let thRAF = 0;
 E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
