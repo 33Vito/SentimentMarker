@@ -10,9 +10,11 @@
    PDFJS_DIST may be an absolute path. Otherwise the script requires
    pdfjs-dist from node_modules.
 
-   Assessment is PDF pages 4–11 (page 12 is Endnotes, not part of that demo).
+   Assessment is PDF pages 4–12 (printed pages 1–9, including Endnotes).
+   Its Figure 1 has no text layer: fsr-assessment-supplement.md transcribes the RBA-authored
+   vector figure and corrects the Endnotes numbering lost by PDF text extraction.
    node examples/pack_fsr.js --heads
-   node examples/pack_fsr.js --from 4 --to 11 --txt examples/fsr-assessment-2026-10.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
+   node examples/pack_fsr.js --from 4 --to 12 --txt examples/fsr-assessment-2026-10.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
    node examples/pack_fsr.js --from 1 --to 79 --txt examples/fsr-2026-10.txt --title "RBA Financial Stability Review (Oct 2026)" --side examples/fsr-2026-10.demo.js
    node examples/pack_fsr.js --repack-demos
 */
@@ -28,6 +30,7 @@ const ATTR = [
   'Text is reproduced under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/).',
   "Sentiment scores were added by SentimentMarker and are not the Reserve Bank's. The Reserve Bank does not endorse this project.",
   'Graphs, tables, and series drawn from third parties (including the HILDA and BLADE material noted at the back of the Review) are not covered by that licence and are not part of the text demo.',
+  'The Assessment includes a text-only transcription of Figure 1, credited to the RBA in the figure.',
 ].join(' ');
 
 function loadCore() {
@@ -66,6 +69,22 @@ function keepBlock(b) {
 function blocksToText(blocks) {
   const body = blocks.filter(keepBlock).map(b => (b.type === 'h' ? (b.level === 2 ? '## ' : '# ') : '') + b.text.trim()).join('\n\n');
   return body + (body.endsWith('\n') ? '' : '\n');
+}
+
+/* Assessment only. The vector Figure 1 has no PDF text layer, and pdf.js attaches some
+   Endnote numbers to the preceding note. Keep the verified transcription separate from
+   generated text so a rerun cannot silently discard or scramble either section. */
+function supplementAssessment(txt) {
+  const broken = 'Recent developments related to global sovereign bond markets,\n\n## the AI investment boom, low market risk premia and operational resilience are also reinforcing risks to international financial system stability.';
+  const joined = '## Recent developments related to global sovereign bond markets, the AI investment boom, low market risk premia and operational resilience are also reinforcing risks to international financial system stability.';
+  if (!txt.includes(broken)) throw new Error('Assessment split heading changed; update the Assessment-only repair');
+  txt = txt.replace(broken, joined);
+  const caption = 'Figure 1: Key Global and Domestic Vulnerabilities of the Financial System';
+  const at = txt.indexOf(caption), endnotes = txt.indexOf('\n\n## Endnotes', at);
+  if (at < 0 || endnotes < 0 || txt.slice(at + caption.length, endnotes).trim()) throw new Error('Assessment Figure 1 / Endnotes boundary changed');
+  const supplement = fs.readFileSync(path.join(__dirname, 'fsr-assessment-supplement.md'), 'utf8').trim();
+  if (!supplement.includes('## Endnotes') || (supplement.match(/^Endnote [1-8]:/gm) || []).length !== 8) throw new Error('Assessment supplement is incomplete');
+  return txt.slice(0, at + caption.length) + '\n\n' + supplement + '\n';
 }
 
 async function readPages(pdfjs, from, to) {
@@ -117,12 +136,13 @@ function repackDemos() {
   const demos = [
     { label: 'RBA Financial Stability Review · Oct 2026 (Assessment)', file: 'fsr-assessment-2026-10.scored.json', scored: assessment },
     { label: 'RBA Financial Stability Review · Oct 2026 (full)', file: 'fsr-2026-10.scored.json', src: 'examples/fsr-2026-10.demo.js' },
-    { label: 'Synthetic demo · Financial Stability Review (LM scoring)', file: 'financial-stability-review.scored.json', scored: synthetic },
+    { label: 'Synthetic demo · Meridian stress review', file: 'financial-stability-review.scored.json', scored: synthetic },
   ];
   const head = [
     '// Built-in demo articles (the data source of the article picker). Packed by examples/pack_fsr.js.',
-    '// Regenerate: node examples/pack_fsr.js --from 4 --to 11 --txt examples/fsr-assessment-2026-10.txt --title "..."',
-    '// then the full review with --from 1 --to 79 --side examples/fsr-2026-10.demo.js, then --repack-demos.',
+    '// Regenerate Assessment: node examples/pack_fsr.js --from 4 --to 12 --txt examples/fsr-assessment-2026-10.txt --title "..."',
+    '// Its Figure 1 and corrected Endnotes come from examples/fsr-assessment-supplement.md. Repack with --repack-demos.',
+    '// The full review remains a separate lazy script; regenerate it only when its source changes.',
     '// Needs pdfjs-dist 3.11.174 (PDFJS_DIST or node_modules). The full review is a second classic script, not fetch().',
     '// ' + ATTR,
     'window.DEMOS = ' + JSON.stringify(demos) + ';\n',
@@ -151,8 +171,12 @@ async function main() {
     return;
   }
   const blocks = C.linesToBlocks(pages.map(p => ({ height: p.height, lines: p.lines })));
-  const txt = blocksToText(blocks);
+  let txt = blocksToText(blocks);
   const txtPath = path.resolve(root, arg('--txt'));
+  if (path.basename(txtPath) === 'fsr-assessment-2026-10.txt') {
+    if (from !== 4 || to !== 12) throw new Error('Assessment generation requires PDF pages 4–12');
+    txt = supplementAssessment(txt);
+  }
   fs.writeFileSync(txtPath, txt);
   console.log('wrote ' + txtPath + ' (' + txt.length + ' chars, ' + blocks.filter(keepBlock).length + ' blocks)');
   const title = arg('--title');

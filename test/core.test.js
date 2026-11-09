@@ -290,6 +290,16 @@ ok(dlist[1].label && dlist[1].file && dlist[1].src && !dlist[1].scored, 'full re
 ok(/demoScriptLoads\[d\.src\] === load\) delete demoScriptLoads/.test(appSrc), 'a failed demo script is not cached');
 ok(/gen === demoOpenGen/.test(appSrc) && /if \(!current\(\)\) return ''/.test(appSrc), 'a late demo load does not replace the article now open');
 ok(dlist[2].scored && dlist[2].scored.title, 'synthetic demo stays inline');
+const assessmentText = fs2.readFileSync(exDir + '/fsr-assessment-2026-10.txt', 'utf8');
+const figureThemes = ['Operational resilience', 'Global equity and credit markets', 'Sovereign debt markets', 'Households and businesses', 'System liquidity'];
+ok(figureThemes.every(t => assessmentText.includes('## ' + t) && dlist[0].scored.paragraphs.some(p => p.type === 'h' && p.level === 2 && p.sentences[0].text.startsWith(t))), 'Figure 1 has five readable, outlined themes');
+ok(Array.from({ length: 8 }, (_, i) => 'Endnote ' + (i + 1) + ':').every((n, i, a) => assessmentText.indexOf(n) >= 0 && (i === 0 || assessmentText.indexOf(n) > assessmentText.indexOf(a[i - 1]))), 'Assessment includes correctly ordered Endnotes 1–8');
+const syntheticSections = dlist[2].scored.paragraphs.reduce((sections, p) => {
+  if (p.type === 'h' && p.level === 2) sections.push({ pos: 0, neg: 0 });
+  else if (p.type !== 'h' && sections.length) for (const s of p.sentences) for (const w of s.words) sections.at(-1)[w.score > 0 ? 'pos' : 'neg']++;
+  return sections;
+}, []);
+ok(syntheticSections.length >= 9 && syntheticSections.every(s => s.pos && s.neg) && C.outlineWorthy(C.docFromScored(dlist[2].scored)), 'synthetic chapters each contain scored positive and negative words and open the outline');
 ok(dlist[0].scored.paragraphs.some(p => p.type === 'h' && p.level === 2) && dlist[0].scored.paragraphs[0].level === undefined, 'packed Assessment carries level 2 on section heads, default 1 elsewhere');
 ok(/id="btnToc"/.test(html) && /class="toc" id="toc"/.test(html), 'Outline toggle and outline aside exist');
 ok(/S\.tocRows = sectionScores\(S\.doc\)/.test(appSrc) && /renderToc\(\);/.test(appSrc), 'the outline is built from the opened document inside openDoc');

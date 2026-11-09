@@ -1,6 +1,6 @@
 {
  "version": 1,
- "title": "Financial Stability Review — Demonstration Excerpt",
+ "title": "Meridian Financial Stability Review (Fictional Demonstration)",
  "scale": {
   "word": 2.5
  },
@@ -39,7 +39,7 @@
    "type": "h",
    "sentences": [
     {
-     "text": "Financial Stability Review — Demonstration Excerpt",
+     "text": "Meridian Financial Stability Review — Fictional Demonstration",
      "words": []
     }
    ]
@@ -48,69 +48,118 @@
    "type": "p",
    "sentences": [
     {
-     "text": "This is a synthetic passage written in the style of a central-bank financial\nstability assessment, provided as a demonstration for the finance scorer\n(`score_financial.py`).",
+     "text": "This is a deliberately exaggerated synthetic review for testing sentiment, topics and article structure.",
+     "words": [
+      {
+       "text": "deliberately",
+       "score": -1.5,
+       "start": 10,
+       "end": 22
+      },
+      {
+       "text": "exaggerated",
+       "score": -0.4,
+       "start": 23,
+       "end": 34
+      }
+     ]
+    },
+    {
+     "text": "Meridian is fictional.",
      "words": []
     },
     {
-     "text": "It is not a real report and quotes no institution's\nfindings.",
-     "words": []
-    }
-   ]
-  },
-  {
-   "type": "p",
-   "sentences": [
-    {
-     "text": "## Assessment",
-     "words": []
-    }
-   ]
-  },
-  {
-   "type": "p",
-   "sentences": [
-    {
-     "text": "The financial system has proved resilient through a demanding period, but\nvulnerabilities remain elevated and the outlook is cloudy.",
+     "text": "The events, institutions and judgements below are invented and do not describe the Reserve Bank of Australia or any real financial system.",
      "words": [
       {
-       "text": "vulnerabilities",
-       "score": -0.6,
-       "start": 74,
+       "text": "invented",
+       "score": 1.5,
+       "start": 50,
+       "end": 58
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Households: a confident start, a painful squeeze",
+     "words": [
+      {
+       "text": "confident",
+       "score": 2.2,
+       "start": 14,
+       "end": 23
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Households entered the year with remarkable resilience.",
+     "words": [
+      {
+       "text": "remarkable",
+       "score": 2.6,
+       "start": 33,
+       "end": 43
+      }
+     ]
+    },
+    {
+     "text": "Employment was strong, savings were healthy, and many families felt secure enough to repair their homes or start a small business.",
+     "words": [
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 15,
+       "end": 21
+      }
+     ]
+    },
+    {
+     "text": "The first survey was wonderfully optimistic: borrowers reported stable incomes, improving confidence and welcome relief from earlier price shocks.",
+     "words": [
+      {
+       "text": "wonderfully",
+       "score": 2.9,
+       "start": 21,
+       "end": 32
+      },
+      {
+       "text": "optimistic",
+       "score": 1.3,
+       "start": 33,
+       "end": 43
+      },
+      {
+       "text": "stable",
+       "score": 1.2,
+       "start": 64,
+       "end": 70
+      },
+      {
+       "text": "improving",
+       "score": 1.8,
+       "start": 80,
        "end": 89
       }
      ]
     },
     {
-     "text": "Household\nincomes have weakened as higher borrowing costs squeeze budgets, and a\nsmall but rising share of borrowers are falling behind on repayments.",
+     "text": "Even cautious analysts called the recovery encouraging.",
      "words": [
       {
-       "text": "weakened",
-       "score": -1.3,
-       "start": 23,
-       "end": 31
-      }
-     ]
-    },
-    {
-     "text": "Delinquencies on consumer credit have crept upward from historic lows,\nthough arrears rates remain well below the levels seen during the global\nfinancial crisis.",
-     "words": [
-      {
-       "text": "Delinquencies",
-       "score": -1.5,
-       "start": 0,
-       "end": 13
-      },
-      {
-       "text": "arrears",
-       "score": -1.5,
-       "start": 78,
-       "end": 85
-      },
-      {
-       "text": "crisis",
-       "score": -3.1,
-       "start": 154,
-       "end": 160
+       "text": "encouraging",
+       "score": 2.4,
+       "start": 43,
+       "end": 54
       }
      ]
     }
@@ -120,91 +169,276 @@
    "type": "p",
    "sentences": [
     {
-     "text": "Lending standards have tightened sharply for mortgage borrowers, and banks\nreport a marked deterioration in credit appetite among small firms.",
-     "words": [
-      {
-       "text": "sharply",
-       "score": -1.5,
-       "start": 33,
-       "end": 40
-      },
-      {
-       "text": "deterioration",
-       "score": -1.5,
-       "start": 91,
-       "end": 104
-      }
-     ]
+     "text": "That confidence turned fragile when energy bills surged and variable mortgage payments rose again.",
+     "words": []
     },
     {
-     "text": "Several\nhighly leveraged commercial property funds have struggled to refinance\nmaturing debts, and forced asset sales have depressed valuations across the\noffice sector.",
+     "text": "Struggling households described an exhausting, stressful choice between groceries, rent and debt service.",
      "words": [
       {
-       "text": "forced",
-       "score": -2.0,
-       "start": 99,
-       "end": 105
-      },
-      {
-       "text": "depressed",
+       "text": "stressful",
        "score": -2.3,
-       "start": 123,
-       "end": 132
+       "start": 47,
+       "end": 56
       }
      ]
     },
     {
-     "text": "Losses on commercial real estate exposures are expected to\ncontinue, but they are manageable within banks' capital buffers.",
+     "text": "Missed repayments climbed, emergency savings vanished, and the most vulnerable borrowers faced severe hardship.",
      "words": [
       {
-       "text": "Losses",
-       "score": -1.7,
+       "text": "Missed",
+       "score": -1.2,
        "start": 0,
        "end": 6
+      },
+      {
+       "text": "vulnerable",
+       "score": -0.9,
+       "start": 68,
+       "end": 78
+      },
+      {
+       "text": "severe",
+       "score": -1.6,
+       "start": 95,
+       "end": 101
+      },
+      {
+       "text": "hardship",
+       "score": -1.3,
+       "start": 102,
+       "end": 110
+      }
+     ]
+    },
+    {
+     "text": "The cheerful national average concealed a disturbing concentration of distress among younger families.",
+     "words": [
+      {
+       "text": "cheerful",
+       "score": 2.5,
+       "start": 4,
+       "end": 12
+      },
+      {
+       "text": "concealed",
+       "score": -1.5,
+       "start": 30,
+       "end": 39
+      },
+      {
+       "text": "disturbing",
+       "score": -2.3,
+       "start": 42,
+       "end": 52
+      },
+      {
+       "text": "distress",
+       "score": -2.4,
+       "start": 70,
+       "end": 78
       }
      ]
     }
    ]
   },
   {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Housing: bright neighbourhoods and a brutal correction",
+     "words": [
+      {
+       "text": "brutal",
+       "score": -3.1,
+       "start": 37,
+       "end": 43
+      },
+      {
+       "text": "correction",
+       "score": -1.5,
+       "start": 44,
+       "end": 54
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
    "type": "p",
    "sentences": [
     {
-     "text": "Banks themselves are in a position of strength.",
+     "text": "New construction initially looked excellent.",
      "words": [
       {
-       "text": "strength",
-       "score": 2.2,
-       "start": 38,
-       "end": 46
+       "text": "excellent",
+       "score": 2.7,
+       "start": 34,
+       "end": 43
       }
      ]
     },
     {
-     "text": "Profitability improved as\nhigher interest margins more than offset modest growth in loan-loss\nprovisions, and return on equity reached its best level in a decade.",
+     "text": "Builders completed long-delayed homes, rental supply improved and several neighbourhoods enjoyed a genuine revival.",
      "words": [
-      {
-       "text": "Profitability",
-       "score": 1.1,
-       "start": 0,
-       "end": 13
-      },
       {
        "text": "improved",
        "score": 2.1,
-       "start": 14,
-       "end": 22
+       "start": 53,
+       "end": 61
       },
       {
-       "text": "best",
-       "score": 3.2,
-       "start": 139,
-       "end": 143
+       "text": "enjoyed",
+       "score": 2.3,
+       "start": 89,
+       "end": 96
       }
      ]
     },
     {
-     "text": "Capital ratios are sound, funding is stable, and liquidity coverage is\ncomfortably above regulatory minimums.",
+     "text": "Prudent lending standards and generous equity buffers protected many owners.",
+     "words": []
+    },
+    {
+     "text": "In those areas, the housing market stayed orderly and surprisingly strong.",
+     "words": [
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 67,
+       "end": 73
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Elsewhere the correction was brutal.",
+     "words": [
+      {
+       "text": "correction",
+       "score": -1.5,
+       "start": 14,
+       "end": 24
+      },
+      {
+       "text": "brutal",
+       "score": -3.1,
+       "start": 29,
+       "end": 35
+      }
+     ]
+    },
+    {
+     "text": "Overvalued apartments lost value rapidly, weak sales forced distressed developers to abandon projects, and empty offices became costly liabilities.",
+     "words": [
+      {
+       "text": "Overvalued",
+       "score": -1.5,
+       "start": 0,
+       "end": 10
+      },
+      {
+       "text": "lost",
+       "score": -1.3,
+       "start": 22,
+       "end": 26
+      },
+      {
+       "text": "weak",
+       "score": -1.9,
+       "start": 42,
+       "end": 46
+      },
+      {
+       "text": "forced",
+       "score": -2.0,
+       "start": 53,
+       "end": 59
+      },
+      {
+       "text": "distressed",
+       "score": -1.8,
+       "start": 60,
+       "end": 70
+      },
+      {
+       "text": "abandon",
+       "score": -1.9,
+       "start": 85,
+       "end": 92
+      },
+      {
+       "text": "costly",
+       "score": -0.4,
+       "start": 128,
+       "end": 134
+      }
+     ]
+    },
+    {
+     "text": "A wave of delayed settlements threatened smaller lenders.",
+     "words": [
+      {
+       "text": "delayed",
+       "score": -0.9,
+       "start": 10,
+       "end": 17
+      },
+      {
+       "text": "threatened",
+       "score": -2.0,
+       "start": 30,
+       "end": 40
+      }
+     ]
+    },
+    {
+     "text": "The collapse was not universal, but the sharp losses and frightening uncertainty made the property outlook unusually uneven.",
+     "words": [
+      {
+       "text": "collapse",
+       "score": -2.2,
+       "start": 4,
+       "end": 12
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 46,
+       "end": 52
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Banks: exceptional buffers under an ugly test",
+     "words": [
+      {
+       "text": "exceptional",
+       "score": 1.5,
+       "start": 7,
+       "end": 18
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Major banks reported robust capital, stable funding and comfortable liquidity.",
      "words": [
       {
        "text": "stable",
@@ -215,37 +449,65 @@
      ]
     },
     {
-     "text": "Stress tests show that major\ninstitutions can withstand a severe downturn without breaching their\nminimum requirements, and none showed a material increase in failure\nprobability.",
+     "text": "Their stress tests were reassuring: even a severe recession left substantial reserves to absorb losses.",
      "words": [
       {
-       "text": "Stress",
+       "text": "stress",
        "score": -1.8,
-       "start": 0,
-       "end": 6
+       "start": 6,
+       "end": 12
       },
       {
        "text": "severe",
        "score": -1.6,
-       "start": 58,
-       "end": 64
+       "start": 43,
+       "end": 49
+      },
+      {
+       "text": "recession",
+       "score": -1.8,
+       "start": 50,
+       "end": 59
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 96,
+       "end": 102
+      }
+     ]
+    },
+    {
+     "text": "Strong governance and disciplined underwriting helped them support viable customers through the downturn.",
+     "words": [
+      {
+       "text": "Strong",
+       "score": 2.3,
+       "start": 0,
+       "end": 6
       },
       {
        "text": "downturn",
        "score": -1.5,
-       "start": 65,
-       "end": 73
+       "start": 96,
+       "end": 104
+      }
+     ]
+    },
+    {
+     "text": "This was a valuable and impressive source of resilience.",
+     "words": [
+      {
+       "text": "valuable",
+       "score": 2.1,
+       "start": 11,
+       "end": 19
       },
       {
-       "text": "breaching",
-       "score": -1.5,
-       "start": 82,
-       "end": 91
-      },
-      {
-       "text": "failure",
-       "score": -2.3,
-       "start": 159,
-       "end": 166
+       "text": "impressive",
+       "score": 2.3,
+       "start": 24,
+       "end": 34
       }
      ]
     }
@@ -255,40 +517,513 @@
    "type": "p",
    "sentences": [
     {
-     "text": "Markets have been more unsettled.",
-     "words": []
-    },
-    {
-     "text": "Bond yields rose abruptly, and volatile\ntrading in government debt exposed weaknesses in the way some leveraged\nfunds manage risk.",
+     "text": "The test still exposed alarming weaknesses.",
      "words": [
-      {
-       "text": "abruptly",
-       "score": -1.5,
-       "start": 17,
-       "end": 25
-      },
-      {
-       "text": "volatile",
-       "score": -1.5,
-       "start": 31,
-       "end": 39
-      },
       {
        "text": "exposed",
        "score": -0.3,
-       "start": 67,
-       "end": 74
+       "start": 15,
+       "end": 22
       },
       {
        "text": "weaknesses",
        "score": -1.5,
-       "start": 75,
-       "end": 85
+       "start": 32,
+       "end": 42
       }
      ]
     },
     {
-     "text": "A disorderly tightening in financing conditions remains\na plausible tail risk.",
+     "text": "One bank found that outdated systems had hidden a serious concentration of risky loans.",
+     "words": [
+      {
+       "text": "outdated",
+       "score": -1.5,
+       "start": 20,
+       "end": 28
+      },
+      {
+       "text": "serious",
+       "score": -0.3,
+       "start": 50,
+       "end": 57
+      },
+      {
+       "text": "risky",
+       "score": -0.8,
+       "start": 75,
+       "end": 80
+      }
+     ]
+    },
+    {
+     "text": "Another discovered that its supposedly reliable collateral records were incomplete.",
+     "words": [
+      {
+       "text": "incomplete",
+       "score": -1.5,
+       "start": 72,
+       "end": 82
+      }
+     ]
+    },
+    {
+     "text": "Fraud losses increased, provisions deteriorated and investor trust weakened.",
+     "words": [
+      {
+       "text": "Fraud",
+       "score": -2.8,
+       "start": 0,
+       "end": 5
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 6,
+       "end": 12
+      },
+      {
+       "text": "deteriorated",
+       "score": -1.5,
+       "start": 35,
+       "end": 47
+      },
+      {
+       "text": "weakened",
+       "score": -1.3,
+       "start": 67,
+       "end": 75
+      }
+     ]
+    },
+    {
+     "text": "The sector remained solvent, but complacency would have been a dangerous mistake.",
+     "words": [
+      {
+       "text": "dangerous",
+       "score": -2.1,
+       "start": 63,
+       "end": 72
+      },
+      {
+       "text": "mistake",
+       "score": -1.4,
+       "start": 73,
+       "end": 80
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Small businesses: inventive growth meets a credit freeze",
+     "words": [
+      {
+       "text": "inventive",
+       "score": 1.5,
+       "start": 18,
+       "end": 27
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Small firms supplied the most inspiring stories.",
+     "words": []
+    },
+    {
+     "text": "Local manufacturers won new orders, exporters opened promising markets and creative retailers rebuilt customer loyalty.",
+     "words": [
+      {
+       "text": "won",
+       "score": 2.7,
+       "start": 20,
+       "end": 23
+      },
+      {
+       "text": "creative",
+       "score": 1.9,
+       "start": 75,
+       "end": 83
+      },
+      {
+       "text": "loyalty",
+       "score": 2.5,
+       "start": 111,
+       "end": 118
+      }
+     ]
+    },
+    {
+     "text": "Profits improved for businesses with strong balance sheets, and patient lenders offered flexible support.",
+     "words": [
+      {
+       "text": "improved",
+       "score": 2.1,
+       "start": 8,
+       "end": 16
+      },
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 37,
+       "end": 43
+      }
+     ]
+    },
+    {
+     "text": "Their success showed how quickly confidence can return when finance reaches productive work.",
+     "words": [
+      {
+       "text": "success",
+       "score": 2.7,
+       "start": 6,
+       "end": 13
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "The weaker firms experienced the opposite.",
+     "words": [
+      {
+       "text": "weaker",
+       "score": -1.9,
+       "start": 4,
+       "end": 10
+      }
+     ]
+    },
+    {
+     "text": "Expensive refinancing, delayed invoices and sudden insurance costs crushed thin margins.",
+     "words": [
+      {
+       "text": "delayed",
+       "score": -0.9,
+       "start": 23,
+       "end": 30
+      }
+     ]
+    },
+    {
+     "text": "Restaurants failed, construction subcontractors suffered painful losses and suppliers feared that one bankruptcy would trigger another.",
+     "words": [
+      {
+       "text": "failed",
+       "score": -2.3,
+       "start": 12,
+       "end": 18
+      },
+      {
+       "text": "suffered",
+       "score": -2.2,
+       "start": 48,
+       "end": 56
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 65,
+       "end": 71
+      },
+      {
+       "text": "bankruptcy",
+       "score": -1.5,
+       "start": 102,
+       "end": 112
+      }
+     ]
+    },
+    {
+     "text": "A harsh credit freeze would destroy otherwise healthy firms, making this topic a serious warning rather than a minor blemish.",
+     "words": [
+      {
+       "text": "harsh",
+       "score": -1.9,
+       "start": 2,
+       "end": 7
+      },
+      {
+       "text": "destroy",
+       "score": -2.5,
+       "start": 28,
+       "end": 35
+      },
+      {
+       "text": "serious",
+       "score": -0.3,
+       "start": 81,
+       "end": 88
+      },
+      {
+       "text": "warning",
+       "score": -1.4,
+       "start": 89,
+       "end": 96
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Sovereign bonds: calm funding, then a violent repricing",
+     "words": [
+      {
+       "text": "violent",
+       "score": -2.9,
+       "start": 38,
+       "end": 45
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Government bond markets began with deep liquidity and dependable auctions.",
+     "words": [
+      {
+       "text": "dependable",
+       "score": 1.5,
+       "start": 54,
+       "end": 64
+      }
+     ]
+    },
+    {
+     "text": "Orderly trading allowed pensions, banks and insurers to hedge their exposures.",
+     "words": []
+    },
+    {
+     "text": "Investors welcomed clear communication, and a modest decline in yields offered welcome breathing room to borrowers.",
+     "words": [
+      {
+       "text": "decline",
+       "score": -1.5,
+       "start": 53,
+       "end": 60
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Then an unexpected fiscal announcement triggered a violent repricing.",
+     "words": [
+      {
+       "text": "unexpected",
+       "score": -1.5,
+       "start": 8,
+       "end": 18
+      },
+      {
+       "text": "violent",
+       "score": -2.9,
+       "start": 51,
+       "end": 58
+      }
+     ]
+    },
+    {
+     "text": "Leveraged funds scrambled to sell, bid depth collapsed and volatile yields produced severe margin calls.",
+     "words": [
+      {
+       "text": "collapsed",
+       "score": -1.1,
+       "start": 45,
+       "end": 54
+      },
+      {
+       "text": "volatile",
+       "score": -1.5,
+       "start": 59,
+       "end": 67
+      },
+      {
+       "text": "severe",
+       "score": -1.6,
+       "start": 84,
+       "end": 90
+      }
+     ]
+    },
+    {
+     "text": "What had seemed a safe market briefly became a source of contagion.",
+     "words": []
+    },
+    {
+     "text": "Emergency liquidity restored some stability, but the episode exposed dangerous leverage and a fragile dependence on uninterrupted market functioning.",
+     "words": [
+      {
+       "text": "stability",
+       "score": 1.5,
+       "start": 34,
+       "end": 43
+      },
+      {
+       "text": "exposed",
+       "score": -0.3,
+       "start": 61,
+       "end": 68
+      },
+      {
+       "text": "dangerous",
+       "score": -2.1,
+       "start": 69,
+       "end": 78
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Private credit: useful capital with opaque risks",
+     "words": []
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Private credit funded innovative companies that traditional banks had overlooked.",
+     "words": [
+      {
+       "text": "innovative",
+       "score": 1.9,
+       "start": 22,
+       "end": 32
+      },
+      {
+       "text": "overlooked",
+       "score": -0.1,
+       "start": 70,
+       "end": 80
+      }
+     ]
+    },
+    {
+     "text": "Several funds behaved responsibly, disclosed their exposures clearly and delivered strong returns without excessive leverage.",
+     "words": [
+      {
+       "text": "disclosed",
+       "score": -1.5,
+       "start": 35,
+       "end": 44
+      },
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 83,
+       "end": 89
+      },
+      {
+       "text": "excessive",
+       "score": -1.5,
+       "start": 106,
+       "end": 115
+      }
+     ]
+    },
+    {
+     "text": "For well-run borrowers, this alternative finance was genuinely helpful.",
+     "words": []
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Other funds offered a grim contrast.",
+     "words": [
+      {
+       "text": "grim",
+       "score": -2.7,
+       "start": 22,
+       "end": 26
+      }
+     ]
+    },
+    {
+     "text": "Opaque valuations hid deteriorating loans, optimistic appraisals delayed recognition of losses and redemption limits trapped disappointed investors.",
+     "words": [
+      {
+       "text": "deteriorating",
+       "score": -1.5,
+       "start": 22,
+       "end": 35
+      },
+      {
+       "text": "optimistic",
+       "score": 1.3,
+       "start": 43,
+       "end": 53
+      },
+      {
+       "text": "delayed",
+       "score": -0.9,
+       "start": 65,
+       "end": 72
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 88,
+       "end": 94
+      },
+      {
+       "text": "disappointed",
+       "score": -2.1,
+       "start": 125,
+       "end": 137
+      }
+     ]
+    },
+    {
+     "text": "Conflicts of interest became harder to ignore.",
+     "words": [
+      {
+       "text": "Conflicts",
+       "score": -1.6,
+       "start": 0,
+       "end": 9
+      },
+      {
+       "text": "ignore",
+       "score": -1.5,
+       "start": 39,
+       "end": 45
+      }
+     ]
+    },
+    {
+     "text": "A disorderly failure in this market could damage confidence far beyond the original borrowers, even if direct bank exposures remained limited.",
      "words": [
       {
        "text": "disorderly",
@@ -297,107 +1032,107 @@
        "end": 12
       },
       {
-       "text": "tightening",
-       "score": -1.5,
+       "text": "failure",
+       "score": -2.3,
        "start": 13,
-       "end": 23
-      }
-     ]
-    },
-    {
-     "text": "Corporate refinancing challenges are growing, with a\nnotable volume of debt maturing over the next two years at materially\nhigher rates; downgrades have accelerated for speculative-grade issuers,\nand bankruptcy filings among overextended retailers and builders have\nclimbed.",
-     "words": [
-      {
-       "text": "challenges",
-       "score": -1.5,
-       "start": 22,
-       "end": 32
+       "end": 20
       },
       {
-       "text": "downgrades",
-       "score": -1.5,
-       "start": 137,
-       "end": 147
-      },
-      {
-       "text": "bankruptcy",
-       "score": -1.5,
-       "start": 200,
-       "end": 210
+       "text": "damage",
+       "score": -2.2,
+       "start": 42,
+       "end": 48
       }
      ]
     }
    ]
   },
   {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Cyber operations: an excellent recovery after a frightening outage",
+     "words": [
+      {
+       "text": "excellent",
+       "score": 2.7,
+       "start": 21,
+       "end": 30
+      },
+      {
+       "text": "outage",
+       "score": -1.5,
+       "start": 60,
+       "end": 66
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
    "type": "p",
    "sentences": [
     {
-     "text": "Despite these headwinds, the labour market has remained surprisingly\nstrong, wage growth is easing gradually, and household balance sheets are\nin much better shape than a decade ago.",
+     "text": "A coordinated technology upgrade strengthened authentication, improved backups and made critical payment services more resilient.",
      "words": [
       {
-       "text": "Despite",
-       "score": 1.5,
-       "start": 0,
-       "end": 7
-      },
-      {
-       "text": "strong",
-       "score": 2.3,
-       "start": 69,
-       "end": 75
-      },
-      {
-       "text": "easing",
-       "score": -1.5,
-       "start": 92,
-       "end": 98
-      },
-      {
-       "text": "better",
-       "score": 1.9,
-       "start": 151,
-       "end": 157
-      }
-     ]
-    },
-    {
-     "text": "Housing prices have declined from\ntheir peak but the correction has been orderly, and a severe crash is not\nthe central expectation.",
-     "words": [
-      {
-       "text": "declined",
-       "score": -1.5,
-       "start": 20,
-       "end": 28
-      },
-      {
-       "text": "correction",
-       "score": -1.5,
-       "start": 53,
-       "end": 63
-      },
-      {
-       "text": "severe",
-       "score": -1.6,
-       "start": 88,
-       "end": 94
-      }
-     ]
-    },
-    {
-     "text": "Consumer confidence, though weak, has improved\nmodestly from its lows.",
-     "words": [
-      {
-       "text": "weak",
-       "score": -1.9,
-       "start": 28,
-       "end": 32
+       "text": "strengthened",
+       "score": 1.8,
+       "start": 33,
+       "end": 45
       },
       {
        "text": "improved",
        "score": 2.1,
-       "start": 38,
-       "end": 46
+       "start": 62,
+       "end": 70
+      },
+      {
+       "text": "critical",
+       "score": -1.3,
+       "start": 88,
+       "end": 96
+      }
+     ]
+    },
+    {
+     "text": "Teams practised disaster recovery repeatedly; their fast, disciplined response to a small incident was exemplary.",
+     "words": [
+      {
+       "text": "disaster",
+       "score": -3.1,
+       "start": 16,
+       "end": 24
+      },
+      {
+       "text": "incident",
+       "score": -1.5,
+       "start": 90,
+       "end": 98
+      },
+      {
+       "text": "exemplary",
+       "score": 1.5,
+       "start": 103,
+       "end": 112
+      }
+     ]
+    },
+    {
+     "text": "Customers saw only a brief delay, and the successful recovery built confidence.",
+     "words": [
+      {
+       "text": "delay",
+       "score": -1.3,
+       "start": 27,
+       "end": 32
+      },
+      {
+       "text": "successful",
+       "score": 2.8,
+       "start": 42,
+       "end": 52
       }
      ]
     }
@@ -407,53 +1142,360 @@
    "type": "p",
    "sentences": [
     {
-     "text": "Overall, the system is stable but strained.",
+     "text": "Weeks later, a common provider suffered a devastating cyber attack.",
      "words": [
       {
-       "text": "stable",
-       "score": 1.2,
-       "start": 23,
-       "end": 29
+       "text": "suffered",
+       "score": -2.2,
+       "start": 31,
+       "end": 39
       },
       {
-       "text": "strained",
-       "score": -1.7,
-       "start": 34,
-       "end": 42
+       "text": "devastating",
+       "score": -3.3,
+       "start": 42,
+       "end": 53
       }
      ]
     },
     {
-     "text": "Some weakness is likely to\ndeepen before the cycle turns, yet the buffers that institutions built in\nprosperity are being tested and are holding.",
+     "text": "Payments stalled, call centres failed and frightened customers could not access reliable information.",
      "words": [
       {
-       "text": "weakness",
-       "score": -1.8,
-       "start": 5,
-       "end": 13
-      },
-      {
-       "text": "prosperity",
-       "score": 1.5,
-       "start": 101,
-       "end": 111
+       "text": "failed",
+       "score": -2.3,
+       "start": 31,
+       "end": 37
       }
      ]
     },
     {
-     "text": "The balance of risks is\ntilted toward the downside, and policymakers should remain alert to a\ndeterioration in financing conditions among the most exposed borrowers.",
+     "text": "The outage revealed weak contingency plans at several firms and a dangerous concentration in shared infrastructure.",
      "words": [
       {
-       "text": "deterioration",
+       "text": "outage",
        "score": -1.5,
-       "start": 94,
-       "end": 107
+       "start": 4,
+       "end": 10
+      },
+      {
+       "text": "weak",
+       "score": -1.9,
+       "start": 20,
+       "end": 24
+      },
+      {
+       "text": "dangerous",
+       "score": -2.1,
+       "start": 66,
+       "end": 75
+      }
+     ]
+    },
+    {
+     "text": "The eventual restoration was impressive, but the disruption showed how operational failures can become financial stress.",
+     "words": [
+      {
+       "text": "impressive",
+       "score": 2.3,
+       "start": 29,
+       "end": 39
+      },
+      {
+       "text": "disruption",
+       "score": -1.5,
+       "start": 49,
+       "end": 59
+      },
+      {
+       "text": "failures",
+       "score": -2.0,
+       "start": 83,
+       "end": 91
+      },
+      {
+       "text": "stress",
+       "score": -1.8,
+       "start": 113,
+       "end": 119
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Jobs and wages: welcome strength, uneven pain",
+     "words": [
+      {
+       "text": "strength",
+       "score": 2.2,
+       "start": 24,
+       "end": 32
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "The labour market stayed a powerful stabiliser.",
+     "words": []
+    },
+    {
+     "text": "New vacancies, steady wages and excellent training programs helped workers move into growing industries.",
+     "words": [
+      {
+       "text": "excellent",
+       "score": 2.7,
+       "start": 32,
+       "end": 41
+      }
+     ]
+    },
+    {
+     "text": "Strong employment supported loan repayments and kept many local businesses alive.",
+     "words": [
+      {
+       "text": "Strong",
+       "score": 2.3,
+       "start": 0,
+       "end": 6
+      }
+     ]
+    },
+    {
+     "text": "This was the review's clearest positive signal.",
+     "words": [
+      {
+       "text": "positive",
+       "score": 2.6,
+       "start": 31,
+       "end": 39
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "Yet the benefits were uneven.",
+     "words": []
+    },
+    {
+     "text": "Workers in declining regions faced layoffs, uncertain hours and persistent anxiety.",
+     "words": [
+      {
+       "text": "declining",
+       "score": -1.5,
+       "start": 11,
+       "end": 20
+      },
+      {
+       "text": "layoffs",
+       "score": -1.5,
+       "start": 35,
+       "end": 42
+      },
+      {
+       "text": "persistent",
+       "score": -1.5,
+       "start": 64,
+       "end": 74
+      }
+     ]
+    },
+    {
+     "text": "A sharp loss of income would quickly overwhelm households already carrying heavy debt.",
+     "words": [
+      {
+       "text": "loss",
+       "score": -1.3,
+       "start": 8,
+       "end": 12
+      }
+     ]
+    },
+    {
+     "text": "The strong headline figures were encouraging, but ignoring the exposed communities would leave a serious vulnerability unresolved.",
+     "words": [
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 4,
+       "end": 10
+      },
+      {
+       "text": "encouraging",
+       "score": 2.4,
+       "start": 33,
+       "end": 44
+      },
+      {
+       "text": "ignoring",
+       "score": -1.7,
+       "start": 50,
+       "end": 58
       },
       {
        "text": "exposed",
        "score": -0.3,
-       "start": 147,
-       "end": 154
+       "start": 63,
+       "end": 70
+      },
+      {
+       "text": "serious",
+       "score": -0.3,
+       "start": 97,
+       "end": 104
+      },
+      {
+       "text": "vulnerability",
+       "score": -0.9,
+       "start": 105,
+       "end": 118
+      },
+      {
+       "text": "unresolved",
+       "score": -1.5,
+       "start": 119,
+       "end": 129
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "h",
+   "sentences": [
+    {
+     "text": "Outlook: a resilient system in a dangerous world",
+     "words": [
+      {
+       "text": "dangerous",
+       "score": -2.1,
+       "start": 33,
+       "end": 42
+      }
+     ]
+    }
+   ],
+   "level": 2
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "The fictional Meridian system has real strengths: sound capital, capable people, inventive businesses and a proven ability to recover.",
+     "words": [
+      {
+       "text": "strengths",
+       "score": 1.7,
+       "start": 39,
+       "end": 48
+      },
+      {
+       "text": "inventive",
+       "score": 1.5,
+       "start": 81,
+       "end": 90
+      }
+     ]
+    },
+    {
+     "text": "Those strengths deserve confidence.",
+     "words": [
+      {
+       "text": "strengths",
+       "score": 1.7,
+       "start": 6,
+       "end": 15
+      }
+     ]
+    },
+    {
+     "text": "A prudent response could preserve the recovery and create a more stable future.",
+     "words": [
+      {
+       "text": "stable",
+       "score": 1.2,
+       "start": 65,
+       "end": 71
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "p",
+   "sentences": [
+    {
+     "text": "It also faces severe threats from housing losses, fragile market liquidity, opaque private credit and disruptive cyber incidents.",
+     "words": [
+      {
+       "text": "severe",
+       "score": -1.6,
+       "start": 14,
+       "end": 20
+      },
+      {
+       "text": "threats",
+       "score": -1.8,
+       "start": 21,
+       "end": 28
+      },
+      {
+       "text": "losses",
+       "score": -1.7,
+       "start": 42,
+       "end": 48
+      },
+      {
+       "text": "disruptive",
+       "score": -1.3,
+       "start": 102,
+       "end": 112
+      },
+      {
+       "text": "incidents",
+       "score": -1.5,
+       "start": 119,
+       "end": 128
+      }
+     ]
+    },
+    {
+     "text": "These dangers could reinforce one another with frightening speed.",
+     "words": [
+      {
+       "text": "dangers",
+       "score": -2.2,
+       "start": 6,
+       "end": 13
+      }
+     ]
+    },
+    {
+     "text": "The outlook is hopeful only if institutions confront the weaknesses honestly, invest in robust safeguards and prepare for an ugly shock before it arrives.",
+     "words": [
+      {
+       "text": "confront",
+       "score": -0.7,
+       "start": 44,
+       "end": 52
+      },
+      {
+       "text": "weaknesses",
+       "score": -1.5,
+       "start": 57,
+       "end": 67
       }
      ]
     }
