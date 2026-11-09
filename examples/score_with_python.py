@@ -4,7 +4,7 @@
     pip install vaderSentiment
     python score_with_python.py launch-week.md                # -> launch-week.scored.json
     python score_with_python.py launch-week.md --csv          # -> launch-week.scored.csv
-    python score_with_python.py 笔记.md --lexicon my_zh.json   # Chinese words from your own lexicon
+    python score_with_python.py notes.md --lexicon my_zh.json   # Chinese words from your own lexicon
 
 This is a template: swap `score_word` / `score_sentence` / `score_paragraph` for your own
 model or API call. Everything else (splitting, offsets, file layout) can stay as is.
@@ -24,7 +24,7 @@ import argparse, csv, json, os, re, sys
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 except ImportError:
-    sys.exit("需要先安装：pip install vaderSentiment")
+    sys.exit("Missing dependency: pip install vaderSentiment"
 
 vader = SentimentIntensityAnalyzer()
 LEX = vader.lexicon                      # {word: valence in about -4 .. +4}
@@ -167,7 +167,7 @@ def build(path, lexicon=None):
         # |score| that gets full colour. Optional, but always write it: otherwise the reader
         # picks the 90th percentile of this file, so colours change from file to file.
         "scale": {"word": 3.0, "sentence": 0.6, "paragraph": 0.3},
-        "reference": {"name": "VADER 词典", "scores": ref,
+        "reference": {"name": "VADER dictionary", "scores": ref,
                       "examples": [{"text": w, "score": LEX[w]} for w in ("terrible", "bad", "okay", "good", "great", "excellent") if w in LEX]},
         "paragraphs": paragraphs,
     }
