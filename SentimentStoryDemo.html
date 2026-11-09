@@ -128,6 +128,15 @@ body.surge .atmo{animation:surge .9s ease-out}
 .ch-head.stuck::before{opacity:1;border-bottom:1px solid var(--line)}
 .ch-head.stuck h2{font-size:1rem;margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .ch-head.stuck .ch-kick,.ch-head.stuck .ch-mood{display:none}
+.ch-sub{display:none}
+.ch-head.stuck .ch-sub:not(:empty){display:block;font:500 .78rem/1.35 var(--font-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-head.stuck .ch-sub::before{content:"› ";color:var(--line)}
+/* level-2 headings: sections inside a chapter, part of the flow (only the chapter title sticks) */
+.sec-head{margin:3.2rem 0 1.1rem;scroll-margin-top:6.5rem}
+.sec-head h3{margin:0 0 .5rem;font:650 1.32rem/1.25 var(--font-ui);letter-spacing:-.015em;text-wrap:balance}
+.sec-head.long h3{font-size:1.08rem;line-height:1.4;font-weight:600}
+.sec-head .ch-mood{font-size:.75rem}
+.sec-head .ch-bar{width:4.5rem}
 
 .para{position:relative;margin:0 0 1.5rem;font:400 1.14rem/1.9 var(--font-read);overflow-wrap:break-word;hyphens:auto}
 /* paragraph mood rail grows in as the paragraph enters */
@@ -176,12 +185,42 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
   font:400 .95rem/1.6 var(--font-read);box-shadow:inset 3px 0 0 var(--hue);opacity:0;transform:translateY(16px);transition:opacity .7s,transform .7s,border-color .2s;transition-delay:calc(var(--i) * 110ms)}
 .card:hover{border-color:color-mix(in srgb,var(--hue) 60%,var(--line))}
 .card b{display:block;font:500 .75rem var(--font-num);color:var(--hue);margin-bottom:.25rem}
+.card small{display:block;margin-top:.45rem;font:500 .72rem/1.35 var(--font-ui);color:var(--muted)}
 .moments.go .card{opacity:1;transform:none}
 .again{display:block;margin:4rem auto 0;padding:.7rem 1.1rem;border-radius:.7rem;border:1px solid var(--line);background:var(--paper);font:500 .85rem var(--font-ui)}
 
 .toast{position:fixed;z-index:60;left:50%;bottom:1.2rem;transform:translateX(-50%);padding:.55rem .9rem;border-radius:.7rem;background:var(--ink);color:var(--bg);font:500 .82rem var(--font-ui)}
 .drop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(4px);font:600 1.1rem var(--font-ui)}
 .drop span{padding:2rem 2.4rem;border:2px dashed var(--ink);border-radius:1.2rem}
+
+/* outline: the two heading levels, each row with its section's sentiment (the sum of its sentence scores, as in
+   the analyzer's outline). Rows you have not reached yet are dimmed; the one you are in is filled.
+   Wide: a column between the seismograph and the text. Narrower: a popover from the top bar button. */
+.toc{position:fixed;z-index:20;left:112px;top:5.2rem;width:min(18rem,calc(50vw - 20rem - 136px));max-height:calc(100vh - 7.5rem);overflow:auto;overscroll-behavior:contain;
+  opacity:var(--railo,0);transition:opacity .3s;padding:.2rem .2rem .6rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.toc h3{margin:0 0 .4rem .45rem;font:600 .68rem var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.toc li.lv2{padding-left:.95rem}
+.toc .te{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .5rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;
+  padding:.34rem .45rem;border-radius:.5rem;transition:background-color .25s,opacity .3s}
+.toc .te:hover{background:var(--chip)}
+.toc .te.ahead{opacity:.5}
+.toc .te.on{background:color-mix(in srgb,var(--hue) 16%,var(--chip));opacity:1}
+.toc .tt{font:550 .78rem/1.35 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc .tt i{font:500 .68rem var(--font-num);font-style:normal;color:var(--muted);margin-right:.4rem}
+.toc li.lv2 .tt{font-weight:400}
+.toc li.lv2 .te:not(.on) .tt{color:var(--muted)}
+.toc .tv{font:500 .68rem var(--font-num);padding:.04rem .35rem;border-radius:.3rem;background:color-mix(in srgb,var(--hue) 24%,transparent);white-space:nowrap}
+.toc .tb{grid-column:1/-1;height:3px;border-radius:2px;background:color-mix(in srgb,var(--hue) 80%,transparent)}
+.toc .tb.n{justify-self:end}
+.tocBtn{display:none;align-items:center;gap:.4rem;font:500 .8rem/1 var(--font-ui);padding:.5rem .7rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);flex:none}
+.tocBtn[aria-expanded="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:1359px){
+  .tocBtn:not([hidden]){display:inline-flex}
+  .toc{z-index:40;left:auto;right:max(16px,env(safe-area-inset-right,0px));top:3.6rem;width:min(23rem,calc(100% - 32px));max-height:min(70vh,36rem);opacity:1;
+    padding:.8rem .6rem .8rem;border-radius:1rem;border:1px solid var(--line);background:var(--paper);box-shadow:0 18px 50px -18px rgba(0,0,0,.35)}
+  .toc:not(.open){display:none}
+}
 
 /* narrow: the seismograph lies down along the top, the rail becomes a pill at the bottom */
 .pill{display:none}
@@ -199,12 +238,17 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
   .spine .cur{top:0;bottom:0;left:0;right:auto;height:auto;width:0;border-top:0;border-left:2px solid var(--ink);transform:translateX(var(--x,0))}
   .spine .cur::after{display:none}
   .ch-head{top:5rem}
+  .sec-head{scroll-margin-top:8rem}
+  .sec-head h3{font-size:1.18rem}
+  .toc{top:5.4rem}
   .para{font-size:1.06rem}
   .para::before{left:-.8rem}
   .moments{grid-template-columns:1fr}
   .brand{margin-right:0}
   .top select{flex:1 1 auto;max-width:none}
   .top a{flex:none}
+  .tocBtn span{display:none}
+  .tocBtn{padding:.5rem .55rem}
 }
 @media (min-width:761px) and (max-width:1180px){ .story,.finale{padding-left:100px} }
 @media (prefers-reduced-motion:reduce){
@@ -218,6 +262,7 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
 <header class="top">
   <span class="brand">Sentiment<em>Marker</em><small>Story</small></span>
   <select id="pick" aria-label="Article"></select>
+  <button type="button" class="tocBtn" id="tocBtn" aria-expanded="false" aria-controls="toc" aria-label="Outline" title="Outline" hidden><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3.5h12M5 8h9M5 12.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg><span>Outline</span></button>
   <a href="index.html" id="toAnalyzer" title="Open the classic analyzer view">Analyzer</a>
   <i class="prog" aria-hidden="true"></i>
 </header>
@@ -232,7 +277,7 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
   </div>
 </section>
 
-<aside class="spine" id="spine" tabindex="0" role="slider" aria-label="Position in the article (arrow keys: sentence, Page Up/Down: chapter)" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="The whole article, sentence by sentence — click or drag to jump"><canvas id="spineCv"></canvas><div class="cur" id="cur"></div></aside>
+<aside class="spine" id="spine" tabindex="0" role="slider" aria-label="Position in the article (arrow keys: sentence, Page Up/Down: section)" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="The whole article, sentence by sentence — click or drag to jump"><canvas id="spineCv"></canvas><div class="cur" id="cur"></div></aside>
 <aside class="rail" id="rail" aria-label="Mood and topics">
   <h3>Mood here</h3>
   <div class="moodword" id="moodWord">—</div>
@@ -242,6 +287,7 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
   <ul class="tl" id="topics"></ul>
   <p class="hint">Bars lean the way each topic has felt so far. Click a topic to follow it to its next mention.</p>
 </aside>
+<nav class="toc" id="toc" aria-label="Outline" hidden></nav>
 <div class="pill" id="pill" aria-hidden="true"><b id="pillMood">—</b><span class="pt" id="pillTopics"></span></div>
 
 <main class="story" id="story" aria-label="Article"></main>
@@ -285,6 +331,7 @@ function build(scored) {
     ss = ss.map(s => (typeof s === 'string' ? { text: s } : s)).filter(s => s && typeof s.text === 'string' && s.text.trim());
     if (!ss.length) continue;
     const b = { type: p.type === 'h' ? 'h' : 'p', sents: [] };
+    if (b.type === 'h') b.level = Number(p.level) >= 2 ? 2 : 1;   /* FORMAT.md paragraphs[].level: >= 2 flattens to 2, anything else is 1 */
     for (const s of ss) {
       const words = (Array.isArray(s.words) ? s.words : []).filter(w => w && typeof w.text === 'string' && w.text && num(w.score) != null && w.score - cW !== 0).map(w => ({ ...w, score: w.score - cW }));
       let score = num(s.score);
@@ -304,18 +351,46 @@ function build(scored) {
   const pScale = lvl(scored.scale, 'paragraph') || p90(sents.filter(s => s.src === 'para').map(s => s.score));
   for (const s of sents) s.n = clamp(s.score / (s.src === 'para' ? pScale : sScale), -1, 1);
 
-  /* chapters: a heading opens one; consecutive headings fold into kicker + title */
-  const chapters = []; let kick = null, cur = null;
+  /* chapters and sections, from the two outline levels (FORMAT.md paragraphs[].level, as in the analyzer's outline):
+     a level-1 heading opens a chapter, a level-2 heading a section inside it. A run of level-1 headings folds into
+     kicker + title ("Chapter 1" / "The Global …"); a run of level-2 headings is one heading split across lines. */
+  const chapters = [], secs = []; let kick = null, kickH = [], cur = null, sec = null, run = null;
+  const chapter = (title, hs) => { cur = { id: chapters.length, title, kick, items: [], secs: [], hs: hs || [] }; kick = null; kickH = []; sec = null; chapters.push(cur); };
   blocks.forEach((b, i) => {
     if (b.type === 'h') {
-      const t = b.sents.map(s => s.text).join(' ');
-      if (blocks[i + 1] && blocks[i + 1].type === 'h') { kick = kick ? kick + ' · ' + t : t; return; }
-      cur = { title: t, kick, paras: [] }; kick = null; chapters.push(cur); return;
+      const t = b.sents.map(s => s.text).join(' '), nx = blocks[i + 1];
+      if (b.level === 2 && run) { run.t += ' ' + t; run.hs.push(...b.sents); }
+      else run = { t, hs: [...b.sents] };
+      if (nx && nx.type === 'h' && nx.level === b.level) {
+        if (b.level === 1) { kick = kick ? kick + ' · ' + t : t; kickH.push(...b.sents); run = null; }
+        return;
+      }
+      if (b.level === 1) chapter(run.t, [...kickH, ...run.hs]);
+      else {
+        if (!cur) chapter(null);
+        sec = { id: secs.length, title: run.t, ch: cur.id, hs: run.hs, sents: [] };
+        secs.push(sec); cur.secs.push(sec); cur.items.push({ sec });
+      }
+      run = null; return;
     }
-    if (!cur) { cur = { title: null, kick, paras: [] }; kick = null; chapters.push(cur); }
-    cur.paras.push(b);
+    run = null;
+    if (!cur) chapter(null);
+    cur.items.push({ para: b });
+    for (const s of b.sents) { s.ch = cur.id; s.sec = sec ? sec.id : -1; if (sec) sec.sents.push(s); }
   });
-  chapters.forEach((c, i) => { c.id = i; c.sents = c.paras.flatMap(p => p.sents); c.n = c.sents.length ? c.sents.reduce((x, s) => x + s.n, 0) / c.sents.length : 0; for (const s of c.sents) s.ch = i; });
+  const mean = a => (a.length ? a.reduce((x, s) => x + s.n, 0) / a.length : 0);
+  for (const c of chapters) { c.sents = c.items.flatMap(it => (it.para ? it.para.sents : [])); c.n = mean(c.sents); }
+  for (const s of secs) s.n = mean(s.sents);
+
+  /* outline rows: a chapter spans to the next chapter, a section to the next heading. The value is the plain sum
+     of the sentence scores in that span, heading included, like the analyzer's sectionScores. */
+  const sum = a => Math.round(a.reduce((x, s) => x + s.score, 0) * 100) / 100;
+  const outline = []; let no = 0;
+  for (const c of chapters) {
+    if (c.title) c.no = String(++no).padStart(2, '0');
+    if (c.title) outline.push({ level: 1, title: c.title, kick: c.kick, no: c.no, ch: c.id, sec: -1, sum: sum([...c.hs, ...c.secs.flatMap(s => s.hs), ...c.sents]), count: c.sents.length, first: c.sents.length ? c.sents[0].id : null });
+    for (const s of c.secs) outline.push({ level: 2, title: s.title, ch: c.id, sec: s.id, sum: sum([...s.hs, ...s.sents]), count: s.sents.length, first: s.sents.length ? s.sents[0].id : null });
+  }
 
   /* topics: the most-mentioned content words, counted once per sentence */
   const cnt = new Map();
@@ -337,14 +412,14 @@ function build(scored) {
     sents.forEach((s, i) => { if (s.topics.includes(t.i)) { c++; x += s.n; } t.cnt[i] = c; t.sum[i] = x; });
     t.mean = c ? x / c : 0;
   }
-  return { title: scored.title || 'Untitled', sents, chapters, topics, tIndex, wScale, sScale };
+  return { title: scored.title || 'Untitled', sents, chapters, secs, outline, topics, tIndex, wScale, sScale };
 }
 
 const MOODS = [[-0.6, 'Alarmed'], [-0.32, 'Tense'], [-0.1, 'Uneasy'], [0.1, 'Measured'], [0.32, 'Steady'], [0.6, 'Hopeful'], [Infinity, 'Buoyant']];
 const moodWord = n => MOODS.find(([t]) => n <= t)[1];
 
 /* ---------- rendering ---------- */
-let D = null, els = [], chHeads = [], stickyTops = [], tops = [], cur = -2, storyTop = 0, storyH = 1;
+let D = null, els = [], chHeads = [], secHeads = [], stickyTops = [], tops = [], cur = -2, storyTop = 0, storyH = 1;
 
 /* word placement, as docs/FORMAT.md "Locating words": an offset counts only if the text there matches the word
    (NFC, case-insensitive); otherwise, or without offsets, search after the previous word, then from the start,
@@ -397,16 +472,21 @@ function render() {
   const nNeg = D.sents.filter(s => s.n < -0.05).length, nPos = D.sents.filter(s => s.n > 0.05).length, mean = D.sents.reduce((x, s) => x + s.n, 0) / D.sents.length;
   $('#stats').innerHTML = `<span><b>${D.sents.length}</b>sentences</span><span class="neg"><b>${Math.round(nNeg / D.sents.length * 100)}%</b>negative</span><span class="pos"><b>${Math.round(nPos / D.sents.length * 100)}%</b>positive</span><span class="${sg(mean)}"><b>${moodWord(mean)}</b>overall</span>`;
 
-  let n = 0;
+  const moodLine = (n, k) => `<p class="ch-mood"><b class="${sg(n)}">${moodWord(n)}</b><span class="ch-bar"><i style="${barStyle(n)}"></i></span><span>${k} sentence${k === 1 ? '' : 's'}</span></p>`;
   $('#story').innerHTML = D.chapters.map(c => {
-    const no = c.title ? String(++n).padStart(2, '0') : '';
-    const head = `<header class="ch-head${c.title && c.title.length > 70 ? ' long' : ''}" data-c="${c.id}">${c.kick ? `<span class="ch-kick">${esc(c.kick)}</span>` : ''}<h2>${no ? `<span class="ch-no">${no}</span>` : ''}${esc(c.title || 'Opening')}</h2>`
-      + (c.sents.length ? `<p class="ch-mood"><b class="${sg(c.n)}">${moodWord(c.n)}</b><span class="ch-bar"><i style="${barStyle(c.n)}"></i></span><span>${c.sents.length} sentences</span></p>` : '') + '</header>';
-    const paras = c.paras.map(p => { const m = p.sents.reduce((x, s) => x + s.n, 0) / p.sents.length; return `<p class="para ${sg(m)}" style="--pk:${Math.abs(m).toFixed(2)}">${p.sents.map(sentHTML).join(' ')}</p>`; }).join('');
-    return `<section class="chapter" data-c="${c.id}">${head}${paras}</section>`;
+    const head = `<header class="ch-head${c.title && c.title.length > 70 ? ' long' : ''}" data-c="${c.id}">${c.kick ? `<span class="ch-kick">${esc(c.kick)}</span>` : ''}<h2>${c.no ? `<span class="ch-no">${c.no}</span>` : ''}${esc(c.title || 'Opening')}</h2>`
+      + (c.sents.length ? moodLine(c.n, c.sents.length) : '') + '<span class="ch-sub"></span></header>';
+    const body = c.items.map(({ para: p, sec: s }) => {
+      if (s) return `<header class="sec-head${s.title.length > 90 ? ' long' : ''}" data-k="${s.id}"><h3>${esc(s.title)}</h3>${s.sents.length ? moodLine(s.n, s.sents.length) : ''}</header>`;
+      const m = p.sents.reduce((x, t) => x + t.n, 0) / p.sents.length;
+      return `<p class="para ${sg(m)}" style="--pk:${Math.abs(m).toFixed(2)}">${p.sents.map(sentHTML).join(' ')}</p>`;
+    }).join('');
+    return `<section class="chapter" data-c="${c.id}">${head}${body}</section>`;
   }).join('');
   els = [...document.querySelectorAll('.s')];
   chHeads = [...document.querySelectorAll('.ch-head')];
+  secHeads = [...document.querySelectorAll('.sec-head')];
+  renderToc();
 
   $('#topics').innerHTML = D.topics.map(t => `<li><button type="button" class="tp unseen" data-t="${t.i}" title="Follow “${esc(t.label)}” to its next mention"><span class="tn">${esc(t.label)}</span><span class="tc"><b>0</b>/${t.total}</span><span class="tm" aria-hidden="true"><i></i></span></button></li>`).join('');
   renderFinale();
@@ -414,13 +494,62 @@ function render() {
   cur = -2; measure(); window.scrollTo({ top: 0, behavior: 'instant' }); tick(true);
 }
 
+/* ---------- outline ---------- */
+const fmt1 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+let tocOn = -1;
+function renderToc() {
+  const T = $('#toc'), rows = D.outline;
+  T.hidden = $('#tocBtn').hidden = !rows.length; tocOn = -1; closeToc();
+  if (!rows.length) { T.innerHTML = ''; return; }
+  T.innerHTML = `<h3>Outline</h3><ol>${rows.map((r, i) => {
+    const q = r.sum / Math.sqrt(r.sum * r.sum + 15);   /* the analyzer's squash, so long sections do not saturate */
+    return `<li class="lv${r.level}" style="--hue:var(--${q > 0 ? 'pos' : q < 0 ? 'neg' : 'muted'})"><button type="button" class="te ahead" data-r="${i}" title="${esc((r.kick ? r.kick + ' · ' : '') + r.title)} · ${r.count} sentences · sum ${fmt1(r.sum)}">`
+      + `<span class="tt">${r.no ? `<i>${r.no}</i>` : ''}${esc(r.title)}</span><span class="tv">${fmt1(r.sum)}</span><i class="tb${q < 0 ? ' n' : ''}" style="width:${Math.max(4, Math.round(Math.abs(q) * 100))}%"></i></button></li>`;
+  }).join('')}</ol>`;
+}
+/* the row you are in: the section of the sentence at the reading line, else its chapter */
+function updateToc(i) {
+  const s = D.sents[i], rows = D.outline;
+  let on = -1;
+  if (s) on = rows.findIndex(r => (s.sec >= 0 ? r.sec === s.sec : r.level === 1 && r.ch === s.ch));
+  if (on === tocOn) return; tocOn = on;
+  const bs = $('#toc').querySelectorAll('.te');   /* rows are in document order: before "on" is read, after it is ahead */
+  bs.forEach((b, k) => { b.classList.toggle('on', k === on); b.classList.toggle('ahead', k > on); });
+  const b = bs[on], T = $('#toc');
+  if (b && T.scrollHeight > T.clientHeight) {   /* keep the row in view inside the outline (its offsetParent), without moving the page */
+    const y = b.offsetTop - T.scrollTop;
+    if (y < 30 || y > T.clientHeight - 40) T.scrollTo({ top: b.offsetTop - T.clientHeight * 0.35, behavior: reduced.matches ? 'auto' : 'smooth' });
+  }
+}
+function goRow(r) {
+  const el = r.sec >= 0 ? secHeads[r.sec] : document.querySelector(`.chapter[data-c="${r.ch}"]`); if (!el) return;
+  const y = el.getBoundingClientRect().top + scrollY - (r.sec >= 0 ? parseFloat(getComputedStyle(el).scrollMarginTop) || 0 : stickyTops[r.ch] || 0) - 6;
+  scrollTo({ top: Math.max(0, y), behavior: reduced.matches ? 'auto' : 'smooth' });
+}
+const tocNarrow = matchMedia('(max-width:1359px)');
+function closeToc() { $('#toc').classList.remove('open'); $('#tocBtn').setAttribute('aria-expanded', 'false'); }
+$('#tocBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('#toc').classList.contains('open');
+  $('#toc').classList.toggle('open', open); $('#tocBtn').setAttribute('aria-expanded', String(open));
+  if (open) { tocOn = -1; updateToc(cur); const b = $('#toc .te.on') || $('#toc .te'); if (b) b.focus({ preventScroll: true }); }
+});
+$('#toc').addEventListener('click', e => {
+  const b = e.target.closest('.te'); if (!b) return;
+  goRow(D.outline[+b.dataset.r]);
+  if (tocNarrow.matches) { closeToc(); $('#tocBtn').focus({ preventScroll: true }); }
+});
+document.addEventListener('click', e => { if ($('#toc').classList.contains('open') && !e.target.closest('#toc')) closeToc(); });
+tocNarrow.addEventListener('change', closeToc);
+
 function drawWave() {
   const W = 1000, H = 200, mid = 92, amp = 78, N = D.sents.length;
   const sm = D.sents.map((s, i) => { let x = 0, w = 0; for (let j = -2; j <= 2; j++) { const t = D.sents[i + j]; if (t) { const k = 3 - Math.abs(j); x += t.n * k; w += k; } } return x / w; });
   const X = i => (N === 1 ? W / 2 : i / (N - 1) * W), Y = v => mid - v * amp;
   let d = `M${X(0)},${Y(sm[0])}`; for (let i = 1; i < N; i++) { const x0 = X(i - 1), x1 = X(i); d += ` C${(x0 + x1) / 2},${Y(sm[i - 1])} ${(x0 + x1) / 2},${Y(sm[i])} ${x1},${Y(sm[i])}`; }
   const area = `${d} L${W},${mid} L0,${mid} Z`;
-  const ticks = []; let acc = 0; D.chapters.forEach((c, i) => { if (i && c.sents.length) ticks.push(`<line x1="${X(acc)}" x2="${X(acc)}" y1="${mid - 4}" y2="${mid + 4}" class="zero"/>`); acc += c.sents.length; });
+  /* a tick where each outline row starts: tall for chapters, short for sections */
+  const ticks = D.outline.filter(r => r.first).map(r => `<line x1="${X(r.first)}" x2="${X(r.first)}" y1="${mid - (r.level === 1 ? 7 : 3)}" y2="${mid + (r.level === 1 ? 7 : 3)}" class="zero"/>`);
   $('#wave').setAttribute('aria-label', 'Sentiment of the article from start to end: above the line positive, below negative');
   $('#wave').innerHTML = `<defs><clipPath id="cpU"><rect x="0" y="0" width="${W}" height="${mid}"/></clipPath><clipPath id="cpD"><rect x="0" y="${mid}" width="${W}" height="${H - mid}"/></clipPath></defs>
     <path class="fill fpos" d="${area}" clip-path="url(#cpU)"/><path class="fill fneg" d="${area}" clip-path="url(#cpD)"/>
@@ -468,7 +597,7 @@ function renderFinale() {
   $('#finSub').textContent = T.length ? `Each bubble is a topic, placed by the average mood of the sentences that mention it; size is how often it came up.` : 'This article has no recurring topic words.';
   layoutBubbles();
   const byN = [...D.sents].sort((a, b) => a.n - b.n), neg = byN.filter(s => s.n < 0).slice(0, 3), pos = byN.filter(s => s.n > 0).reverse().slice(0, 3);
-  const card = (s, i) => `<button type="button" class="card ${sg(s.n)}" data-s="${s.id}" style="--i:${i}"><b>${fmt(s.score)} · ${esc(moodWord(s.n))}</b>${esc(s.text.length > 220 ? s.text.slice(0, 220) + '…' : s.text)}</button>`;
+  const card = (s, i) => `<button type="button" class="card ${sg(s.n)}" data-s="${s.id}" style="--i:${i}"><b>${fmt(s.score)} · ${esc(moodWord(s.n))}</b>${esc(cut(s.text, 220))}<small>${esc(placeOf(s, 70))}</small></button>`;
   $('#moments').innerHTML = `<div><h3 class="neg">Sharpest negative moments</h3>${neg.map(card).join('') || '<p class="sub">None</p>'}</div><div><h3 class="pos">Brightest moments</h3>${pos.map(card).join('') || '<p class="sub">None</p>'}</div>`;
   field.classList.remove('go'); $('#moments').classList.remove('go');
 }
@@ -497,7 +626,10 @@ function drawSpine() {
   const along = horiz ? W : H, across = horiz ? H : W, c = across / 2;
   g.fillStyle = line; if (horiz) g.fillRect(0, c - 0.5, W, 1); else g.fillRect(c - 0.5, 0, 1, H);
   const pos = y => (y - storyTop) / storyH * along;
-  for (const h of chHeads) { const p = pos(h.parentElement.getBoundingClientRect().top + scrollY); g.globalAlpha = .6; g.fillStyle = line; if (horiz) g.fillRect(p, 0, 1, H); else g.fillRect(0, p, W, 1); }
+  /* full-width rules at chapters, half-width at sections */
+  g.fillStyle = line;
+  for (const h of chHeads) { const p = pos(h.parentElement.getBoundingClientRect().top + scrollY); g.globalAlpha = .6; if (horiz) g.fillRect(p, 0, 1, H); else g.fillRect(0, p, W, 1); }
+  for (const h of secHeads) { const p = pos(h.getBoundingClientRect().top + scrollY); g.globalAlpha = .45; if (horiz) g.fillRect(p, H * .25, 1, H * .5); else g.fillRect(W * .25, p, W * .5, 1); }
   D.sents.forEach((s, i) => {
     if (!s.n) return;
     const p = pos(tops[i]), len = Math.max(2, Math.abs(s.n) * (c - 2)), th = Math.max(1.5, along / D.sents.length * 0.7);
@@ -514,6 +646,7 @@ function setCurrent(i) {
   for (let k = Math.max(Math.min(prev, i) + 1, 0), hi = Math.max(prev, i); k <= hi && k < els.length; k++) els[k].classList.toggle('lit', k <= i);
   if (prev >= 0 && els[prev]) els[prev].classList.remove('now');
   const s = D.sents[i];
+  updateToc(i);
   if (!s) { moodT = 0; updateRail(-1); return; }
   els[i].classList.add('now');
   /* the room follows a short memory of the last few sentences, not just one */
@@ -521,14 +654,20 @@ function setCurrent(i) {
   if (Math.abs(s.n) >= 0.85 && i > prev && !reduced.matches) { document.body.classList.remove('surge'); void document.body.offsetWidth; document.body.classList.add('surge'); clearTimeout(surgeT); surgeT = setTimeout(() => document.body.classList.remove('surge'), 950); }
   updateRail(i, prev);
 }
+const cut = (t, n) => (t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t);
+/* "Chapter › Section" for a sentence */
+function placeOf(s, n = 80) {
+  const ch = D.chapters[s.ch], sec = s.sec >= 0 ? D.secs[s.sec] : null;
+  return cut(ch.title || 'Opening', sec ? 44 : n) + (sec ? ' › ' + cut(sec.title, n - 30) : '');
+}
 function updateRail(i, prev) {
   const s = D.sents[i], ch = s ? D.chapters[s.ch] : null;
   const mw = s ? moodWord(moodT) : '—', cls = 'moodword ' + (s ? sg(Math.abs(moodT) < 0.1 ? 0 : moodT) : '');
   const MW = $('#moodWord'); if (MW.textContent !== mw) MW.textContent = mw; MW.className = cls;
   $('#needle').style.setProperty('--m', s ? moodT.toFixed(3) : 0);
-  $('#where').textContent = s ? `${ch.title ? ch.title.slice(0, 80) + (ch.title.length > 80 ? '…' : '') : 'Opening'} · sentence ${i + 1} of ${D.sents.length}` : 'Scroll into the article to begin.';
+  $('#where').textContent = s ? `${placeOf(s)} · sentence ${i + 1} of ${D.sents.length}` : 'Scroll into the article to begin.';
   const PM = $('#pillMood'); PM.textContent = mw; PM.className = s ? sg(Math.abs(moodT) < 0.1 ? 0 : moodT) : '';
-  $('#pillTopics').textContent = s && s.topics.length ? s.topics.map(t => D.topics[t].label).join(' · ') : (ch && ch.title) || '';
+  $('#pillTopics').textContent = s && s.topics.length ? s.topics.map(t => D.topics[t].label).join(' · ') : s ? (s.sec >= 0 ? D.secs[s.sec].title : ch.title) || '' : '';
   document.querySelectorAll('#topics .tp').forEach(li => {
     const t = D.topics[+li.dataset.t], c = i >= 0 ? t.cnt[i] : 0, m = c ? t.sum[i] / c : 0;
     li.classList.toggle('unseen', !c);
@@ -550,12 +689,18 @@ function tick(force) {
   const fin = $('#finale').getBoundingClientRect().top, chrome = clamp((y - vh * 0.35) / (vh * 0.4), 0, 1);
   document.documentElement.style.setProperty('--railo', (chrome * clamp((fin - vh * 0.35) / (vh * 0.35), 0, 1)).toFixed(3));
   $('#rail').style.visibility = $('#pill').style.visibility = chrome * clamp((fin - vh * 0.35) / (vh * 0.35), 0, 1) < 0.02 ? 'hidden' : '';
+  $('#toc').style.visibility = !tocNarrow.matches && $('#rail').style.visibility ? 'hidden' : '';   /* the wide column fades with the rail; the popover is always clickable */
   document.documentElement.style.setProperty('--prog', clamp(y / Math.max(1, document.documentElement.scrollHeight - vh), 0, 1).toFixed(4));
   setCurrent(indexAt(y + readLine()));
   /* compact running head for the chapter that is stuck at the top */
   let stuck = -1;
   for (let k = 0; k < chHeads.length; k++) { const r = chHeads[k].getBoundingClientRect(), sec = chHeads[k].parentElement.getBoundingClientRect(); if (r.top <= stickyTops[k] + 1 && sec.top < r.top - 1 && sec.bottom > r.bottom + 40) stuck = k; }
   if (stuck !== lastStuck) { chHeads.forEach((h, k) => h.classList.toggle('stuck', k === stuck)); lastStuck = stuck; }
+  /* the running head also names the section you are in */
+  if (stuck >= 0) {
+    const s = D.sents[cur], sub = s && s.ch === +chHeads[stuck].dataset.c && s.sec >= 0 ? D.secs[s.sec].title : '', el = chHeads[stuck].querySelector('.ch-sub');
+    if (el.textContent !== sub) el.textContent = sub;
+  }
   /* spine cursor */
   const along = narrow.matches ? $('#spine').clientWidth : $('#spine').clientHeight, pc = clamp((y + readLine() - storyTop) / storyH, 0, 1);
   const curEl = $('#cur'); curEl.style.setProperty(narrow.matches ? '--x' : '--y', (pc * along).toFixed(1) + 'px'); curEl.dataset.pct = Math.round(pc * 100) + '%'; $('#spine').setAttribute('aria-valuenow', Math.round(pc * 100));
@@ -599,7 +744,7 @@ $('#topics').addEventListener('click', e => {
 $('#field').addEventListener('click', e => { const b = e.target.closest('.bub'); if (!b) return; const t = +b.dataset.t; document.body.classList.add('follow'); document.querySelectorAll('.tw').forEach(w => w.classList.toggle('tf', +w.dataset.t === t)); goSentence(D.sents.findIndex(s => s.topics.includes(t))); });
 $('#moments').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) goSentence(+c.dataset.s); });
 $('#again').addEventListener('click', () => scrollTo({ top: 0, behavior: reduced.matches ? 'auto' : 'smooth' }));
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.body.classList.remove('follow'); document.querySelectorAll('.tf').forEach(w => w.classList.remove('tf')); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#toc').classList.contains('open')) { closeToc(); $('#tocBtn').focus({ preventScroll: true }); return; } document.body.classList.remove('follow'); document.querySelectorAll('.tf').forEach(w => w.classList.remove('tf')); } });
 
 /* spine: click / drag to scrub through the article */
 let scrub = false;
@@ -609,12 +754,14 @@ $('#spine').addEventListener('pointermove', e => { if (scrub) scrubTo(e); });
 $('#spine').addEventListener('pointerup', () => { scrub = false; });
 $('#spine').addEventListener('keydown', e => {
   if (!D) return;
-  const here = Math.max(0, cur), ch = D.sents[here] ? D.sents[here].ch : 0, firstOf = c => D.chapters[c] && D.chapters[c].sents[0];
+  /* Page Up / Down step through the outline (chapters and sections), falling back to chapters without headings */
+  const here = Math.max(0, cur);
+  const starts = [...new Set([...D.outline.map(r => r.first), ...D.chapters.map(c => (c.sents[0] ? c.sents[0].id : null))].filter(v => v != null))].sort((a, b) => a - b);
   let to = null;
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') to = Math.min(D.sents.length - 1, cur + 1);
   else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') to = Math.max(0, cur - 1);
-  else if (e.key === 'PageDown') { for (let c = ch + 1; c < D.chapters.length; c++) if (firstOf(c)) { to = firstOf(c).id; break; } }
-  else if (e.key === 'PageUp') { const f = firstOf(ch); if (f && f.id < here) to = f.id; else for (let c = ch - 1; c >= 0; c--) if (firstOf(c)) { to = firstOf(c).id; break; } }
+  else if (e.key === 'PageDown') { const f = starts.find(v => v > here); if (f != null) to = f; }
+  else if (e.key === 'PageUp') { const f = starts.filter(v => v < here).pop(); if (f != null) to = f; }
   else if (e.key === 'Home') to = 0; else if (e.key === 'End') to = D.sents.length - 1;
   else return;
   e.preventDefault(); if (to != null) goSentence(to);
@@ -622,16 +769,38 @@ $('#spine').addEventListener('keydown', e => {
 $('#spine').addEventListener('pointercancel', () => { scrub = false; });
 
 let tt = 0;
-function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, ms); }
+function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); if (ms) tt = setTimeout(() => { t.hidden = true; }, ms); }   /* ms 0: stays until replaced */
 
 function open(scored, label) {
-  try { D = build(scored); render(); $('#kicker').textContent = label ? `A sentiment reading · ${label}` : 'A sentiment reading'; }
-  catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 5000); }
+  try { D = build(scored); render(); $('#kicker').textContent = label ? `A sentiment reading · ${label}` : 'A sentiment reading'; return true; }
+  catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 5000); return false; }
 }
 const DEMOS = window.DEMOS || [];
 const pick = $('#pick');
 DEMOS.forEach((d, i) => { const o = document.createElement('option'); o.value = i; o.textContent = d.label; pick.appendChild(o); });
-pick.addEventListener('change', () => { const d = DEMOS[+pick.value]; if (d) { open(d.scored, d.file); history.replaceState(null, '', '?demo=' + pick.value); } pick.blur(); });
+/* demos.js inlines the small articles; the full review is a {label, file, src} stub whose classic script fills
+   window.DEMO_FILES the first time it is chosen (as in the analyzer; file:// blocks fetch). gen drops stale loads. */
+const demoLoads = {}; let demoGen = 0, shown = -1;
+function openDemo(i) {
+  const d = DEMOS[i]; if (!d) return;
+  const gen = ++demoGen, done = scored => { if (gen !== demoGen) return; if (open(scored, d.file)) { shown = i; $('#toast').hidden = true; } else pick.value = shown >= 0 ? String(shown) : ''; };
+  const cached = d.scored || (window.DEMO_FILES && window.DEMO_FILES[d.file]);
+  if (cached) return done(cached);
+  if (!d.src) return toast('Could not open: this demo has no scores', 5000);
+  toast('Opening ' + d.label + '…', 0);
+  demoLoads[d.src] = demoLoads[d.src] || new Promise((resolve, reject) => {
+    const s = document.createElement('script'); s.src = d.src;
+    s.onload = () => { const o = window.DEMO_FILES && window.DEMO_FILES[d.file]; if (o) resolve(o); else reject(new Error('the demo script did not publish ' + d.file)); };
+    s.onerror = () => reject(new Error('could not load ' + d.src));
+    document.head.appendChild(s);
+  });
+  demoLoads[d.src].then(done, err => {
+    delete demoLoads[d.src];   /* allow a retry */
+    if (gen !== demoGen) return;
+    pick.value = shown >= 0 ? String(shown) : ''; toast('Could not open: ' + err.message, 5000);
+  });
+}
+pick.addEventListener('change', () => { if (DEMOS[+pick.value]) { openDemo(+pick.value); history.replaceState(null, '', '?demo=' + pick.value); } pick.blur(); });
 
 /* drop a scored JSON of your own */
 let dd = 0;
@@ -641,11 +810,11 @@ addEventListener('dragover', e => e.preventDefault());
 addEventListener('drop', async e => {
   e.preventDefault(); dd = 0; $('#drop').hidden = true;
   const f = e.dataTransfer.files[0]; if (!f) return;
-  try { open(JSON.parse(await f.text()), f.name); pick.value = ''; } catch (err) { toast('Story mode reads scored JSON files (docs/FORMAT.md). Open other files in the analyzer view.', 5000); }
+  try { const obj = JSON.parse(await f.text()); demoGen++; if (open(obj, f.name)) { pick.value = ''; shown = -1; } } catch (err) { toast('Story mode reads scored JSON files (docs/FORMAT.md). Open other files in the analyzer view.', 5000); }
 });
 
 const q = +(new URLSearchParams(location.search).get('demo') || 0);
-if (DEMOS.length) { const i = DEMOS[q] ? q : 0; pick.value = String(i); open(DEMOS[i].scored, DEMOS[i].file); }
+if (DEMOS.length) { const i = DEMOS[q] ? q : 0; pick.value = String(i); openDemo(i); }
 else toast('Missing examples/demos.js — drop a scored JSON file to begin', 6000);
 </script>
 </body>
