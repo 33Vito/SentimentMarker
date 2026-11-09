@@ -242,26 +242,26 @@ button{cursor:pointer}
   <div class="row top">
     <div class="brand">Sentiment<em>Marker</em></div>
     <div class="actions">
-      <button class="btn solid" id="btnOpen" type="button">打开文件</button>
-      <button class="btn" id="btnPaste" type="button">粘贴文本</button>
-      <select class="btn" id="selDemo" title="选择演示文章" aria-label="演示文章"><option value="">示例文章…</option></select>
+      <button class="btn solid" id="btnOpen" type="button">Open File</button>
+      <button class="btn" id="btnPaste" type="button">Paste Text</button>
+      <select class="btn" id="selDemo" title="Choose a demo article" aria-label="Demo articles"><option value="">Demo articles…</option></select>
     </div>
   </div>
   <div class="row ctl">
-    <div class="seg" role="radiogroup" aria-label="分析粒度" id="seg">
-      <button type="button" role="radio" aria-checked="false" data-level="word" title="词（按 1）">词</button>
-      <button type="button" role="radio" aria-checked="true" data-level="sent" title="句（按 2）">句</button>
-      <button type="button" role="radio" aria-checked="false" data-level="para" title="段（按 3）">段</button>
+    <div class="seg" role="radiogroup" aria-label="Analysis granularity" id="seg">
+      <button type="button" role="radio" aria-checked="false" data-level="word" title="Word (press 1)">Word</button>
+      <button type="button" role="radio" aria-checked="true" data-level="sent" title="Sentence (press 2)">Sentence</button>
+      <button type="button" role="radio" aria-checked="false" data-level="para" title="Paragraph (press 3)">Paragraph</button>
     </div>
-    <button class="btn" id="btnSpec" type="button" aria-pressed="false" aria-controls="spec">情感光谱</button>
-    <span class="legend" aria-hidden="true"><span>负面</span><i class="ramp"></i><span>正面</span></span>
-    <label class="slider" for="th">弱信号过滤<input id="th" type="range" min="0" max="0.9" step="0.01" value="0.15"><output id="thOut" for="th">15%</output></label>
-    <button class="btn only-m" id="btnTopics" type="button" aria-expanded="false">主题词</button>
+    <button class="btn" id="btnSpec" type="button" aria-pressed="false" aria-controls="spec">Sentiment spectrum</button>
+    <span class="legend" aria-hidden="true"><span>Negative</span><i class="ramp"></i><span>Positive</span></span>
+    <label class="slider" for="th">Weak-signal filter<input id="th" type="range" min="0" max="0.9" step="0.01" value="0.15"><output id="thOut" for="th">15%</output></label>
+    <button class="btn only-m" id="btnTopics" type="button" aria-expanded="false">Topics</button>
   </div>
   <div class="row topics" id="topics">
-    <span class="lbl">主题词</span>
+    <span class="lbl">Topics</span>
     <span id="chips" style="display:contents"></span>
-    <input class="kw" id="kwInput" type="text" placeholder="添加主题词" aria-label="添加主题词" autocomplete="off">
+    <input class="kw" id="kwInput" type="text" placeholder="Add a topic word" aria-label="Add a topic word" autocomplete="off">
     <span class="match" id="matchCount" aria-live="polite"></span>
   </div>
 </header>
@@ -269,21 +269,21 @@ button{cursor:pointer}
 <main class="stage">
   <div class="sheet">
     <div class="dochead" id="dochead"></div>
-    <article class="doc lv-sent" id="doc" aria-label="文档正文"></article>
+    <article class="doc lv-sent" id="doc" aria-label="Document text"></article>
   </div>
 </main>
 
-<aside class="mm" id="mm" title="整篇情感热力条，点击或拖动跳转"><canvas id="mmCanvas"></canvas><div class="vp" id="vp"></div></aside>
-<aside class="spec" id="spec" hidden aria-label="情感光谱"></aside>
+<aside class="mm" id="mm" title="Sentiment heat bar for the whole article — click or drag to jump"><canvas id="mmCanvas"></canvas><div class="vp" id="vp"></div></aside>
+<aside class="spec" id="spec" hidden aria-label="Sentiment spectrum"></aside>
 <aside class="insp" id="insp" hidden></aside>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
-<div class="drop" id="drop" hidden><span>松开以打开 PDF / Markdown / 文本 / 已打分的 JSON·CSV</span></div>
+<div class="drop" id="drop" hidden><span>Drop to open PDF / Markdown / text / scored JSON·CSV</span></div>
 <div class="paste" id="paste" hidden>
   <div class="pcard">
-    <h2>粘贴文本、Markdown 或打分结果</h2>
-    <textarea id="pasteText" placeholder="把文章、笔记或网页正文粘贴到这里；也可以直接粘贴外部模块输出的 JSON / CSV 打分结果"></textarea>
-    <div class="acts"><button class="btn" id="pasteCancel" type="button">取消</button><button class="btn solid" id="pasteGo" type="button">分析</button></div>
+    <h2>Paste text, Markdown or scored results</h2>
+    <textarea id="pasteText" placeholder="Paste an article, note or webpage text here; JSON / CSV scored results from an external model work too"></textarea>
+    <div class="acts"><button class="btn" id="pasteCancel" type="button">Cancel</button><button class="btn solid" id="pasteGo" type="button">Analyze</button></div>
   </div>
 </div>
 <input type="file" id="file" accept=".pdf,.md,.markdown,.txt,.json,.csv,application/json,text/csv,application/pdf,text/plain,text/markdown" hidden>
@@ -462,7 +462,7 @@ const setHas = doc => { doc.has = { word: doc.words.length > 0, sent: doc.sents.
 /* reference spectrum used by the side panel when the doc was scored by the built-in demo lexicon */
 function builtinRef() {
   const ex = w => ({ text: w, score: LEX.get(w) });
-  return { name: `内置词典（${LEX.size} 词，仅供演示）`, scores: [...LEX.values()].sort((a, b) => a - b),
+  return { name: `Built-in dictionary (${LEX.size} words, demo only)`, scores: [...LEX.values()].sort((a, b) => a - b),
     examples: ['terrible', 'bad', 'poor', 'problem', 'serious', 'active', 'helpful', 'good', 'great', 'wonderful'].map(ex) };
 }
 function extractTopics(doc, max = 8) {
@@ -563,7 +563,7 @@ function linesToBlocks(pages) {
 /* ---------- scored files (JSON / CSV)  <->  doc.  The scores come from outside; this layer only lays them out. ---------- */
 const isNum = v => typeof v === 'number' && isFinite(v);
 const r4 = v => Math.round(v * 10000) / 10000;
-const noteText = t => (t.notes || []).map(n => n.t === 'boost' ? `${n.m < 1 ? '减弱' : '加强'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `否定 ${n.w}` : n.t === 'caps' ? '全大写 ×1.2' : n.t === 'text' ? n.s : n.w < 1 ? '转折之前 ×0.5' : '转折之后 ×1.5').join(' · ');
+const noteText = t => (t.notes || []).map(n => n.t === 'boost' ? `${n.m < 1 ? 'weakened' : 'intensified'} ${n.w} ×${n.m.toFixed(2)}` : n.t === 'neg' ? `negated ${n.w}` : n.t === 'caps' ? 'ALL CAPS ×1.2' : n.t === 'text' ? n.s : n.w < 1 ? 'before contrast ×0.5' : 'after contrast ×1.5').join(' · ');
 
 /* offsets in files are Unicode code points (= Python str indices); JS strings index UTF-16 units.
    cpMap(text)[i] is the UTF-16 index of code point i (length = code points + 1). */
@@ -590,11 +590,11 @@ function readCenter(c) {
 }
 
 function docFromScored(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('文件内容不是有效的打分数据（格式见 docs/FORMAT.md）');
-  if (!Array.isArray(obj.paragraphs) || !obj.paragraphs.length) throw new Error('缺少 paragraphs 数组（格式见 docs/FORMAT.md）');
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('File content is not valid scored data (format: docs/FORMAT.md)');
+  if (!Array.isArray(obj.paragraphs) || !obj.paragraphs.length) throw new Error('Missing paragraphs array (format: docs/FORMAT.md)');
   const center = readCenter(obj.center), adjW = v => v - center.word, adjS = v => v - center.sent, adjP = v => v - center.para;
   const warn = { unmatched: 0, misaligned: 0, bad: obj._bad || 0, skipped: 0 };
-  const doc = { title: String(obj.title || '未命名文档'), blocks: [], sents: [], words: [], warn, ref: null, center };
+  const doc = { title: String(obj.title || 'Untitled document'), blocks: [], sents: [], words: [], warn, ref: null, center };
   let sid = 0, wid = 0;
   obj.paragraphs.forEach(p => {
     let sentsIn = p && Array.isArray(p.sentences) && p.sentences.length ? p.sentences : null;
@@ -657,11 +657,11 @@ function docFromScored(obj) {
     else { blk.score = blk.sents.reduce((x, s) => x + s.score, 0) / blk.sents.length; blk.derived = true; }
     doc.blocks.push(blk);
   });
-  if (!doc.sents.length) throw new Error('文件里没有可显示的句子');
+  if (!doc.sents.length) throw new Error('The file has no sentences to display');
   const R = obj.reference;
   if (R && Array.isArray(R.scores)) {
     const sc = R.scores.filter(isNum).map(adjW).filter(v => v !== 0).sort((x, y) => x - y);
-    if (sc.length >= 5) doc.ref = { name: String(R.name || '参考词表'), scores: sc,
+    if (sc.length >= 5) doc.ref = { name: String(R.name || 'reference vocabulary'), scores: sc,
       examples: (Array.isArray(R.examples) ? R.examples : []).filter(e => e && typeof e.text === 'string' && isNum(e.score)).map(e => ({ text: e.text, score: adjW(e.score) })) };
   }
   const sc = obj.scale;
@@ -737,9 +737,9 @@ function parseCSV(text) {
 }
 function csvToScored(text) {
   const rows = parseCSV(text);
-  if (rows.length < 2) throw new Error('CSV 里没有数据行');
+  if (rows.length < 2) throw new Error('The CSV has no data rows');
   const head = rows[0].map(h => h.trim().toLowerCase());
-  for (const need of ['level', 'paragraph', 'sentence', 'text', 'score']) if (head.indexOf(need) < 0) throw new Error(`CSV 缺少列：${need}（格式见 docs/FORMAT.md）`);
+  for (const need of ['level', 'paragraph', 'sentence', 'text', 'score']) if (head.indexOf(need) < 0) throw new Error(`CSV missing column: ${need} (format: docs/FORMAT.md)`);
   const get = (r, n) => { const i = head.indexOf(n); return i < 0 ? undefined : r[i]; };
   const num = v => { if (v === undefined || String(v).trim() === '') return undefined; const n = Number(v); return isFinite(n) ? n : undefined; };
   const P = new Map(); let bad = 0;
@@ -797,7 +797,7 @@ function buildSpec(doc, bins = 24) {
   M = niceMax(M);
   const hist = arr => { const h = new Array(bins).fill(0); for (const v of arr) h[Math.max(0, Math.min(bins - 1, Math.floor((v + M) / (2 * M) * bins)))]++; return h; };
   /* share = (reference words on the same side of zero that are at least as extreme as v) / (ALL n reference words).
-     Shown as "最正面的 X%": X% of the whole vocabulary is this positive or more. */
+     Shown as "most positive X%": X% of the whole vocabulary is this positive or more. */
   const share = v => Math.min(1, Math.max((v > 0 ? n - lowerBound(refScores, v) : upperBound(refScores, v)) / n, 1 / n));
   /* group by (word, sign) so "good" and a negated "not good" stay separate entries */
   const g = new Map();
@@ -815,16 +815,16 @@ function buildSpec(doc, bins = 24) {
     anchors: own ? [] : (doc.ref.examples || []), refName: own ? '' : doc.ref.name };
 }
 /* the colour scale in use: |score| at which the marker is darkest, and where that number came from */
-const CAP_SRC = { file: '来自文件', auto: '自动：非零 |分数| 的 90 分位', default: '默认值', builtin: '内置词典' };
+const CAP_SRC = { file: 'From file', auto: 'Auto: 90th percentile of non-zero |scores|', default: 'Default value', builtin: 'Built-in dictionary' };
 function scaleText(doc) {
   const cap = doc.cap || CAP, src = doc.capSrc || {}, has = doc.has || { word: true, sent: true, para: true };
-  const lv = [['word', '词'], ['sent', '句'], ['para', '段']].filter(([k]) => has[k]);
+  const lv = [['word', 'Word'], ['sent', 'Sentence'], ['para', 'Paragraph']].filter(([k]) => has[k]);
   if (!lv.length) return '';
   const same = lv.every(([k]) => src[k] === src[lv[0][0]]);
   const parts = lv.map(([k, n]) => `${n} <b>±${+cap[k].toPrecision(3)}</b>${same ? '' : '（' + (CAP_SRC[src[k]] || '?') + '）'}`);
-  return '颜色刻度 ' + parts.join(' · ') + (same ? '（' + (CAP_SRC[src[lv[0][0]]] || '?') + '）' : '');
+  return 'Colour scale ' + parts.join(' · ') + (same ? ' (' + (CAP_SRC[src[lv[0][0]]] || '?') + ')' : '');
 }
-const rankText = (it, own) => (own ? '本文' : '') + (it.score > 0 ? '最正面的 ' : '最负面的 ') + Math.max(1, Math.round(it.share * 100)) + '%';
+const rankText = (it, own) => (it.score > 0 ? 'most positive ' : 'most negative ') + Math.max(1, Math.round(it.share * 100)) + '%' + (own ? ' here' : '');
 if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText, scaleText };
 //</core>
 
@@ -855,7 +855,7 @@ const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), t
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
 const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
-const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
+const BADGE_TIP = { 'Sample': 'Built-in example text, scored by the simple in-browser dictionary', 'Built-in': 'Scored by the simple in-browser dictionary — demo only', 'External': 'Scores come from the JSON / CSV file you provided' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
 /* prefs in localStorage: theme, level, threshold, spectrum. Topics are not stored. */
@@ -863,7 +863,7 @@ const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.
 function prefGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function prefSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
 const THEME_CYCLE = ['system', 'light', 'dark'];
-const THEME_LABEL = { system: '跟随系统', light: '浅色', dark: '深色' };
+const THEME_LABEL = { system: 'System', light: 'Light', dark: 'Dark' };
 function themeMode() {
   const a = document.documentElement.getAttribute('data-theme');
   return a === 'light' || a === 'dark' ? a : 'system';
@@ -874,8 +874,8 @@ function applyTheme(mode, persist) {
   else document.documentElement.setAttribute('data-theme', m);
   if (E.btnTheme) {
     E.btnTheme.textContent = THEME_LABEL[m];
-    E.btnTheme.setAttribute('aria-label', '主题：' + THEME_LABEL[m]);
-    E.btnTheme.title = '点击切换主题，当前为' + THEME_LABEL[m];
+    E.btnTheme.setAttribute('aria-label', 'Theme: ' + THEME_LABEL[m]);
+    E.btnTheme.title = 'Click to switch theme; current: ' + THEME_LABEL[m];
   }
   if (persist) prefSet(PREF_KEY.theme, m);
   drawMinimap();
@@ -916,7 +916,7 @@ const sg = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 let toastTimer = 0, toastBusy = false;
-/* busy = a progress message ("正在读取…") that loadFile may clear when it is done; other toasts are left alone */
+/* busy = a progress message ("Reading page…") that loadFile may clear when it is done; other toasts are left alone */
 function toast(msg, ms = 3200, busy = false) {
   clearTimeout(toastTimer); toastBusy = !!msg && busy;
   if (!msg) { E.toast.hidden = true; return; }
@@ -939,14 +939,14 @@ function renderHead() {
     const chars = [...s.text], preview = chars.length > 36 ? chars.slice(0, 36).join('') + '…' : s.text;
     return `<button type="button" class="chip ${sg(s.score)}" data-sent="${s.id}" title="${esc(s.text)}" style="max-width:100%">${fmt(s.score)} · <span style="overflow:hidden;text-overflow:ellipsis;min-width:0">${esc(preview)}</span></button>`;
   }).join('');
-  E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">导出 JSON</button><button class="lnk" type="button" data-exp="csv">导出 CSV</button></span></p>
+  E.head.innerHTML = `<p class="src"><span class="fn">${esc(S.name)}</span><span class="badge" title="${esc(BADGE_TIP[S.badge] || '')}">${esc(S.badge)}</span><span class="exp"><button class="lnk" type="button" data-exp="json">Export JSON</button><button class="lnk" type="button" data-exp="csv">Export CSV</button></span></p>
     <h1>${esc(D.title)}</h1>
-    <p class="meta">${paras} 段 · ${n} 句 · ${D.words.length} 个情感词 · 全文均值 ${fmt(S.avg)}</p>
-    <div class="dist" role="img" aria-label="负面 ${pct(neg)}，中性 ${pct(neu)}，正面 ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
-    <p class="dlg"><span>负面 ${pct(neg)}</span><span>中性 ${pct(neu)}</span><span>正面 ${pct(pos)}</span></p>
-    ${pills ? `<div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0" aria-label="情感极值句">${pills}</div>` : ''}
-    <p class="scl" title="分数的绝对值达到这个数时颜色最深">${scaleText(D)}</p>
-    ${D.mixedSent ? '<p class="scl">注意：部分句分来自文件，部分由词分推出（S / √(S² + 15)），两者不一定在同一尺度上。</p>' : ''}`;
+    <p class="meta">${paras} paragraphs · ${n} sentences · ${D.words.length} sentiment words · article mean ${fmt(S.avg)}</p>
+    <div class="dist" role="img" aria-label="negative ${pct(neg)}, neutral ${pct(neu)}, positive ${pct(pos)}"><i class="neg" style="flex:${neg}"></i><i class="neu" style="flex:${neu}"></i><i class="pos" style="flex:${pos}"></i></div>
+    <p class="dlg"><span>Negative ${pct(neg)}</span><span>Neutral ${pct(neu)}</span><span>Positive ${pct(pos)}</span></p>
+    ${pills ? `<div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0" aria-label="Most positive and negative sentences">${pills}</div>` : ''}
+    <p class="scl" title="The colour is deepest once |score| reaches this value">${scaleText(D)}</p>
+    ${D.mixedSent ? '<p class="scl">Note: some sentence scores come from the file and some are derived from word scores (S / √(S² + 15)) — they may not sit on the same scale.</p>' : ''}`;
 }
 function renderDoc() {
   const out = [];
@@ -995,7 +995,7 @@ function applyTopics() {
   if (key !== S.hitKey) { S.hits = hitIds; S.hitKey = key; S.hitCur = -1; }
   updateMatch();
   const nOn = act.length;
-  E.btnTopics.textContent = nOn ? `主题词 · ${nOn}` : '主题词';
+  E.btnTopics.textContent = nOn ? `Topics · ${nOn}` : 'Topics';
   drawMinimap();
   /* matches went from none to some: show the first one, but only if nothing is selected and it is off screen */
   if (!hadHits && S.hits.length && !S.sel && !inView(els.s[S.hits[0]])) gotoHit(0);
@@ -1007,11 +1007,11 @@ function inView(el) {
   return r.bottom > E.bar.getBoundingClientRect().bottom && r.top < window.innerHeight;
 }
 function syncSeg() {
-  const tips = { word: '词（按 1）', sent: '句（按 2）', para: '段（按 3）' };
+  const tips = { word: 'Word (press 1)', sent: 'Sentence (press 2)', para: 'Paragraph (press 3)' };
   E.seg.querySelectorAll('button').forEach(b => {
     const ok = !S.doc || S.doc.has[b.dataset.level];
     b.disabled = !ok;
-    b.title = ok ? tips[b.dataset.level] : '这个文件没有该级别的分数';
+    b.title = ok ? tips[b.dataset.level] : 'This file has no scores at that level';
     b.setAttribute('aria-checked', String(b.dataset.level === S.level));
   });
 }
@@ -1026,11 +1026,11 @@ const segPol = document.createElement('div');
 segPol.className = 'seg';
 segPol.id = 'segPol';
 segPol.setAttribute('role', 'radiogroup');
-segPol.setAttribute('aria-label', '极性筛选');
+segPol.setAttribute('aria-label', 'Polarity filter');
 segPol.innerHTML = `
-  <button type="button" role="radio" aria-checked="true" data-pol="all" title="全部">全部</button>
-  <button type="button" role="radio" aria-checked="false" data-pol="neg" title="只看负面">负</button>
-  <button type="button" role="radio" aria-checked="false" data-pol="pos" title="只看正面">正</button>
+  <button type="button" role="radio" aria-checked="true" data-pol="all" title="Show all">All</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="neg" title="Negative only">Neg</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="pos" title="Positive only">Pos</button>
 `;
 E.seg.after(segPol);
 
@@ -1055,8 +1055,8 @@ segPol.addEventListener('click', e => {
 function renderChips() {
   const anyOn = S.topics.some(t => t.on);
   E.chips.innerHTML = S.topics.map((t, i) =>
-    `<button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}">${esc(t.label)} <small>${t.count}</small>${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="删除">×</span>' : ''}</button>`).join('')
-    + (anyOn ? '<button type="button" class="chip" data-clear="1">清除</button>' : '');
+    `<button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}">${esc(t.label)} <small>${t.count}</small>${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="Remove">×</span>' : ''}</button>`).join('')
+    + (anyOn ? '<button type="button" class="chip" data-clear="1">Clear</button>' : '');
 }
 E.chips.addEventListener('click', e => {
   if (e.target.closest('[data-clear]')) { S.topics.forEach(t => t.on = false); }
@@ -1067,11 +1067,11 @@ E.chips.addEventListener('click', e => {
 E.kw.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const t = makeTopic(E.kw.value, S.doc); if (!t) return;
-  if (!t.count) { toast(`文中没有找到“${t.label}”`); return; }
+  if (!t.count) { toast(`No occurrences of "${t.label}" in the article`); return; }
   S.topics.push(t); E.kw.value = ''; renderChips(); applyTopics();
 });
 /* topic matches: previous / next buttons beside the match count */
-const [mPrev, mNext] = [['↑ 上一处', '上一处匹配'], ['下一处 ↓', '下一处匹配']].map(([txt, lbl]) => {
+const [mPrev, mNext] = [['↑ prev', 'Previous match'], ['next ↓', 'Next match']].map(([txt, lbl]) => {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = txt; b.setAttribute('aria-label', lbl); b.hidden = true; return b;
 });
 E.match.after(mPrev, mNext);
@@ -1086,7 +1086,7 @@ function hitIndex() {
 }
 function updateMatch() {
   const act = S.topics.some(t => t.on), m = S.hits.length, i = hitIndex();
-  E.match.textContent = !act ? '' : !m ? '匹配 0 句' : i >= 0 ? `第 ${i + 1} 处 / 共 ${m} 处` : `共 ${m} 处`;
+  E.match.textContent = !act ? '' : !m ? '0 matches' : i >= 0 ? `match ${i + 1} of ${m}` : `${m} matches`;
   mPrev.hidden = mNext.hidden = !act;
   mPrev.disabled = mNext.disabled = !m;
 }
@@ -1104,7 +1104,7 @@ function stepHit(d) {
     else { const i = hitIndex(); cur = i >= 0 ? h[i] : S.doc.blocks[S.sel.id].sents[0].id - 0.5; }
   }
   const r = cur === null ? { i: d > 0 ? 0 : h.length - 1, wrapped: false } : stepIn(h, cur, d);
-  if (r.wrapped) toast(d > 0 ? '已回到第一处' : '已回到最后一处', 1600);
+  if (r.wrapped) toast(d > 0 ? 'Back to the first match' : 'Back to the last match', 1600);
   gotoHit(r.i);
 }
 E.btnTopics.addEventListener('click', () => { const o = E.topics.classList.toggle('open'); E.btnTopics.setAttribute('aria-expanded', String(o)); syncBar(); });
@@ -1165,7 +1165,7 @@ E.mm.addEventListener('pointermove', e => {
   const body = it.text != null ? it.text : it.sents.map(x => x.text + x.gap).join('');
   const chars40 = [...body];
   const text40 = chars40.length > 40 ? chars40.slice(0, 40).join('') + '…' : body;
-  E.tip.innerHTML = `<span class="${sg(it.score)}"><i class="dot"></i>${para ? '段' : '句'} <b>${fmt(it.score)}</b></span><span class="m">${esc(text40)}</span>`;
+  E.tip.innerHTML = `<span class="${sg(it.score)}"><i class="dot"></i>${para ? 'Para' : 'Sentence'} <b>${fmt(it.score)}</b></span><span class="m">${esc(text40)}</span>`;
   E.tip.hidden = false;
   const tr = E.tip.getBoundingClientRect();
   E.tip.style.left = (r.left - tr.width - 10) + 'px';
@@ -1179,18 +1179,18 @@ E.mm.addEventListener('pointercancel', () => { drag = false; E.tip.hidden = true
 function inspSent(s, wid) {
   const b = S.doc.blocks[s.block];
   const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
-    `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}" data-wid="${t.wid}" title="在正文中定位" style="cursor:pointer"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
-  const drv = s.derived && !S.doc.builtin ? '<span class="drv" title="文件没有给这句的分数，按 S / √(S² + 15) 由词分推出">由词分推出</span>' : '';
-  return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
+    `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}" data-wid="${t.wid}" title="Locate in the article" style="cursor:pointer"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
+  const drv = s.derived && !S.doc.builtin ? '<span class="drv" title="The file gave no score for this sentence; derived from word scores via S / √(S² + 15)">from word scores</span>' : '';
+  return `<div class="ih"><span class="ik">Sentence</span><span class="is">${fmt(s.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>Copy quote</button><button class="x" type="button" data-close aria-label="Close">×</button></div>
     <p class="itx">${esc(s.text)}</p>
-    ${rows ? `<ul class="cl">${rows}</ul>` : '<p class="none">这句没有命中情感词。</p>'}
-    <p class="ctx">所在段落 <b>${fmt(b.score)}</b> · 全文均值 <b>${fmt(S.avg)}</b></p>${miniSpec(s.scored.map(t => t.score))}`;
+    ${rows ? `<ul class="cl">${rows}</ul>` : '<p class="none">No sentiment words hit in this sentence.</p>'}
+    <p class="ctx">Paragraph <b>${fmt(b.score)}</b> · article mean <b>${fmt(S.avg)}</b></p>${miniSpec(s.scored.map(t => t.score))}`;
 }
 function inspBlock(b) {
   const rows = b.sents.map(s => `<li class="${sg(s.score)}"><span class="sn">${fmt(s.score)}</span><span class="nt">${esc(s.text.length > 70 ? s.text.slice(0, 70) + '…' : s.text)}</span></li>`).join('');
-  const drv = b.derived && !S.doc.builtin ? '<span class="drv">由句分推出</span>' : '';
-  const how = b.derived ? `段内 ${b.sents.length} 句的平均值` : `段分来自文件 · 段内 ${b.sents.length} 句`;
-  return `<div class="ih"><span class="ik">${b.type === 'h' ? '标题' : '段落'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>复制引用</button><button class="x" type="button" data-close aria-label="关闭">×</button></div>
+  const drv = b.derived && !S.doc.builtin ? '<span class="drv">from sentence scores</span>' : '';
+  const how = b.derived ? `average of the ${b.sents.length} sentences inside` : `paragraph score from file · ${b.sents.length} sentences`;
+  return `<div class="ih"><span class="ik">${b.type === 'h' ? 'Heading' : 'Paragraph'}</span><span class="is">${fmt(b.score)}</span>${drv}<button class="lnk" type="button" data-copy-quote>Copy quote</button><button class="x" type="button" data-close aria-label="Close">×</button></div>
     <p class="ctx" style="margin:0 0 .6rem">${how}</p><ul class="cl bl">${rows}</ul>${miniSpec(b.sents.flatMap(x => x.scored).map(t => t.score))}`;
 }
 function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
@@ -1239,12 +1239,12 @@ function patrolIds() {
 function patrol(d) {
   if (!S.doc) return;
   const ids = patrolIds();
-  if (!ids.length) { toast('当前粒度和阈值下没有可巡检的高亮', 2000); return; }
+  if (!ids.length) { toast('No highlights to step through at this granularity and filter', 2000); return; }
   const kind = S.level === 'para' ? 'b' : 's', list = kind === 'b' ? els.b : els.s;
   let i;
   if (S.sel && S.sel.kind === kind) {
     const r = stepIn(ids, S.sel.id, d); i = r.i;
-    if (r.wrapped) toast(d > 0 ? '已回到第一条高亮' : '已回到最后一条高亮', 1600);
+    if (r.wrapped) toast(d > 0 ? 'Back to the first highlight' : 'Back to the last highlight', 1600);
   } else {
     /* nothing selected: start from what is on screen (below the toolbar) */
     const barB = E.bar.getBoundingClientRect().bottom, vh = window.innerHeight;
@@ -1277,12 +1277,12 @@ function miniSpec(marks) {
   const sp = getSpec(); if (!sp || !marks.length) return '';
   const W = 280, padX = 8, rowH = 18, top = 2, base = top + rowH, H = base + 24, iw = W - padX * 2, bw = iw / sp.bins;
   const x = v => padX + (v + sp.M) / (2 * sp.M) * iw, h = sp.own ? sp.docHist : sp.refHist, mx = Math.max(1, ...h);
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="这段文字的词在情感光谱上的位置">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Where these words sit on the sentiment spectrum">`;
   h.forEach((c, i) => { if (c) { const bh = Math.max(1.5, c / mx * rowH); svg += `<rect class="sp-ref" x="${(padX + i * bw + .6).toFixed(1)}" y="${(base - bh).toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${bh.toFixed(1)}" rx="1"/>`; } });
   svg += `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${base}" y2="${base}"/><line class="sp-zero" x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${base + 2}"/>`;
   for (const v of marks) { const px = x(v).toFixed(1); svg += `<path class="sp-mk" d="M${px} ${base + 2} l-4 7 h8 z"/>`; }
   svg += `<text class="sp-t" x="${padX}" y="${H - 3}">${fmt(-sp.M, 1)}</text><text class="sp-t" x="${W / 2}" y="${H - 3}" text-anchor="middle">0</text><text class="sp-t" x="${W - padX}" y="${H - 3}" text-anchor="end">${fmt(sp.M, 1)}</text></svg>`;
-  return `<div class="mini"><p class="ctx">情感光谱：▲ 是这里的词，灰色是${sp.own ? '本文全部情感词' : esc(sp.refName)}的分布</p>${svg}</div>`;
+  return `<div class="mini"><p class="ctx">Spectrum: ▲ = the words here, grey = the distribution of ${sp.own ? 'all sentiment words in this article' : esc(sp.refName)}</p>${svg}</div>`;
 }
 
 /* spectrum side panel: where this doc's sentiment words sit among a reference vocabulary */
@@ -1301,13 +1301,13 @@ function specChart(sp, marks) {
     return `<rect class="${cls || (mid < 0 ? 'sp-neg' : 'sp-pos')}" x="${(padX + i * bw + .6).toFixed(1)}" y="${(y0 + rowH - bh).toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5"/>`;
   }).join(''); };
   const yDoc = top + (rows - 1) * (rowH + gap), base = yDoc + rowH;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="情感光谱：本文用词在参考词表中的分布">`;
-  if (!sp.own) s += `<text class="sp-t" x="${padX}" y="${top - 6}">参考词表 · ${sp.refN} 词</text>` + bars(sp.refHist, top, 'sp-ref') + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${top + rowH}" y2="${top + rowH}"/>`;
-  s += `<text class="sp-t" x="${padX}" y="${yDoc - 6}">本文 · ${sp.docN} 个情感词</text>` + bars(sp.docHist, yDoc) + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${base}" y2="${base}"/>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sentiment spectrum: this article's words against the reference vocabulary">`;
+  if (!sp.own) s += `<text class="sp-t" x="${padX}" y="${top - 6}">Reference vocabulary · ${sp.refN} words</text>` + bars(sp.refHist, top, 'sp-ref') + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${top + rowH}" y2="${top + rowH}"/>`;
+  s += `<text class="sp-t" x="${padX}" y="${yDoc - 6}">This article · ${sp.docN} sentiment words</text>` + bars(sp.docHist, yDoc) + `<line class="sp-ax" x1="${padX}" x2="${W - padX}" y1="${base}" y2="${base}"/>`;
   s += `<line class="sp-zero" x1="${x(0)}" x2="${x(0)}" y1="${top - 2}" y2="${base + 2}"/>`;
-  s += `<line class="sp-mean" x1="${x(sp.mean).toFixed(1)}" x2="${x(sp.mean).toFixed(1)}" y1="${yDoc - 2}" y2="${base}"><title>本文平均 ${fmt(sp.mean)}</title></line>`;
+  s += `<line class="sp-mean" x1="${x(sp.mean).toFixed(1)}" x2="${x(sp.mean).toFixed(1)}" y1="${yDoc - 2}" y2="${base}"><title>Article mean ${fmt(sp.mean)}</title></line>`;
   for (const v of marks) { const px = x(v).toFixed(1); s += `<path class="sp-mk ${sg(v)}" d="M${px} ${base + 3} l-4 7 h8 z"/>`; }
-  s += `<text class="sp-t" x="${padX}" y="${H - 5}">${fmt(-sp.M, 1)} 负面</text><text class="sp-t" x="${W / 2}" y="${H - 5}" text-anchor="middle">0</text><text class="sp-t" x="${W - padX}" y="${H - 5}" text-anchor="end">正面 ${fmt(sp.M, 1)}</text></svg>`;
+  s += `<text class="sp-t" x="${padX}" y="${H - 5}">${fmt(-sp.M, 1)} Negative</text><text class="sp-t" x="${W / 2}" y="${H - 5}" text-anchor="middle">0</text><text class="sp-t" x="${W - padX}" y="${H - 5}" text-anchor="end">Positive ${fmt(sp.M, 1)}</text></svg>`;
   return s;
 }
 function updateSpecChart() {
@@ -1317,20 +1317,20 @@ function updateSpecChart() {
 function renderSpec() {
   if (E.spec.hidden || !S.doc) return;
   const sp = getSpec();
-  const head = '<div class="ih"><span class="ik">情感光谱</span><button class="x" type="button" data-spec-close aria-label="关闭">×</button></div>';
-  if (!sp) { E.spec.innerHTML = head + '<p class="none">这个文件里没有带分数的词，画不出光谱。</p>'; return; }
-  const sub = sp.own ? '这个文件没有提供参考词表，下面只显示本文自己的分布和排名。'
-    : `横轴是词的情感分数。灰色是${esc(sp.refName)}里全部 ${sp.refN} 个词的分布，彩色是本文用到的情感词，竖线是本文平均分，▲ 是你点中的句子里的词。`;
-  let sum = `本文 ${sp.docN} 个情感词：正面 ${sp.nPos}，负面 ${sp.nNeg}。平均分 <b>${fmt(sp.mean)}</b>`;
-  if (!sp.own) { const d = sp.mean - sp.refMean, v = d > sp.M * 0.1 ? '整体比参考词表更偏正面' : d < -sp.M * 0.1 ? '整体比参考词表更偏负面' : '整体和参考词表差不多'; sum += `，参考词表平均 <b>${fmt(sp.refMean)}</b>，${v}。`; } else sum += '。';
+  const head = '<div class="ih"><span class="ik">Sentiment spectrum</span><button class="x" type="button" data-spec-close aria-label="Close">×</button></div>';
+  if (!sp) { E.spec.innerHTML = head + '<p class="none">No scored words in this file — nothing to chart.</p>'; return; }
+  const sub = sp.own ? 'This file ships no reference vocabulary; only the distribution and ranks of the article itself are shown.'
+    : `The x-axis is word sentiment scores. Grey = the distribution of all ${sp.refN} words in ${esc(sp.refName)}; colour = the sentiment words this article uses; the line = the article mean; ▲ = the words in the sentence you clicked.`;
+  let sum = `This article has ${sp.docN} sentiment words: ${sp.nPos} positive, ${sp.nNeg} negative. Mean <b>${fmt(sp.mean)}</b>`;
+  if (!sp.own) { const d = sp.mean - sp.refMean, v = d > sp.M * 0.1 ? 'overall more positive than the reference vocabulary' : d < -sp.M * 0.1 ? 'overall more negative than the reference vocabulary' : 'overall about the same as the reference vocabulary'; sum += `, reference mean <b>${fmt(sp.refMean)}</b> — ${v}.`; } else sum += '.';
   const row = it => `<li data-wid="${it.wid}" class="${sg(it.score)}"><span class="wt">${esc(it.text)}${it.n > 1 ? ` <small>×${it.n}</small>` : ''}</span><span class="sc">${fmt(it.score, 1)}</span><span class="rk">${rankText(it, sp.own)}</span></li>`;
   const list = (title, arr) => arr.length ? `<h3>${title}</h3><ul class="wl">${arr.map(row).join('')}</ul>` : '';
   const an = (arr) => arr.map(a => `<span class="an ${sg(a.score)}"><span>${esc(a.text)}</span><span class="sc">${fmt(a.score, 1)}</span></span>`).join('');
   const anNeg = sp.anchors.filter(a => a.score < 0).sort((a, b) => a.score - b.score), anPos = sp.anchors.filter(a => a.score > 0).sort((a, b) => b.score - a.score);
-  const sw = sp.scaleWarn ? `<p class="warnl">本文词分的最大绝对值是 ${sp.docMax.toFixed(2)}，参考词表是 ${sp.refMax.toFixed(2)}，相差 ${sp.scaleRatio > 1 ? sp.scaleRatio.toFixed(1) : (1 / sp.scaleRatio).toFixed(1)} 倍。两者可能不是同一把尺子，百分位仅供参考。</p>` : '';
+  const sw = sp.scaleWarn ? `<p class="warnl">The largest |word score| in this article is ${sp.docMax.toFixed(2)}, in the reference ${sp.refMax.toFixed(2)} — a ${sp.scaleRatio > 1 ? sp.scaleRatio.toFixed(1) : (1 / sp.scaleRatio).toFixed(1)}× gap. The two may not share the same ruler, so treat percentiles as indicative.</p>` : '';
   E.spec.innerHTML = head + `<p class="sub">${sub}</p>${sw}<div id="specChart">${specChart(sp, specMarks())}</div><p class="sumline">${sum}</p>`
-    + list('本文最正面的词', sp.pos) + list('本文最负面的词', sp.neg)
-    + (sp.anchors.length ? `<h3>参照刻度</h3><p class="sub" style="margin:0 0 .5rem">这些词在参考词表里的分数，帮你把分数对应到具体用词。</p><div class="anch"><div>${an(anNeg)}</div><div>${an(anPos)}</div></div>` : '');
+    + list('Most positive words in this article', sp.pos) + list('Most negative words in this article', sp.neg)
+    + (sp.anchors.length ? `<h3>Scale anchors</h3><p class="sub" style="margin:0 0 .5rem">Scores of these words in the reference vocabulary, to pin numbers onto real words.</p><div class="anch"><div>${an(anNeg)}</div><div>${an(anPos)}</div></div>` : '');
 }
 E.btnSpec.addEventListener('click', () => {
   const on = specOn();
@@ -1350,11 +1350,11 @@ E.insp.addEventListener('click', async e => {
     const item = kind === 'b' ? S.doc.blocks[id] : S.doc.sents[id];
     const body = kind === 'b' ? item.sents.map(s => s.text + s.gap).join('').trimEnd() : item.text;
     const quoted = body.replace(/\r\n?/g, '\n').split('\n').map(line => `> ${line}`).join('\n');
-    const label = item.score > 0 ? '正面' : item.score < 0 ? '负面' : '中性';
+    const label = item.score > 0 ? 'positive' : item.score < 0 ? 'negative' : 'neutral';
     try {
-      await navigator.clipboard.writeText(`${quoted}\n> —— 情感分：${fmt(item.score)}（${label}）`);
-      toast('引用已复制');
-    } catch (_) { toast('复制失败，请检查剪贴板权限'); }
+      await navigator.clipboard.writeText(`${quoted}\n—— Sentiment: ${fmt(item.score)}(${label})`);
+      toast('Quote copied');
+    } catch (_) { toast('Copy failed - check clipboard permission'); }
     return;
   }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);   /* word list -> the word in the text */
@@ -1371,9 +1371,9 @@ let tipRAF = 0;
 function showTip(e) {
   const t = e.target; if (!t.closest) return;
   const wEl = t.closest('.w'), sEl = t.closest('.s'), bEl = t.closest('.blk'), rows = [];
-  if (S.level === 'para' && bEl) { const b = S.doc.blocks[+bEl.dataset.b]; rows.push(`<span class="${sg(b.score)}"><i class="dot"></i>段落 <b>${fmt(b.score)}</b></span>`); }
-  if (S.level === 'sent' && sEl) { const s = S.doc.sents[+sEl.dataset.s]; rows.push(`<span class="${sg(s.score)}"><i class="dot"></i>句 <b>${fmt(s.score)}</b></span>`); }
-  if (S.level !== 'para' && wEl) { const w = S.doc.words[+wEl.dataset.w]; rows.push(`<span class="${sg(w.score)}"><i class="dot"></i>词 <b>${esc(w.text)} ${fmt(w.score, 1)}</b></span>`); if (w.notes.length) rows.push(`<span class="m">${esc(noteText(w))}</span>`); }
+  if (S.level === 'para' && bEl) { const b = S.doc.blocks[+bEl.dataset.b]; rows.push(`<span class="${sg(b.score)}"><i class="dot"></i>Paragraph <b>${fmt(b.score)}</b></span>`); }
+  if (S.level === 'sent' && sEl) { const s = S.doc.sents[+sEl.dataset.s]; rows.push(`<span class="${sg(s.score)}"><i class="dot"></i>Sentence <b>${fmt(s.score)}</b></span>`); }
+  if (S.level !== 'para' && wEl) { const w = S.doc.words[+wEl.dataset.w]; rows.push(`<span class="${sg(w.score)}"><i class="dot"></i>Word <b>${esc(w.text)} ${fmt(w.score, 1)}</b></span>`); if (w.notes.length) rows.push(`<span class="m">${esc(noteText(w))}</span>`); }
   if (!rows.length) { E.tip.hidden = true; return; }
   E.tip.innerHTML = rows.join(''); E.tip.hidden = false;
   const r = E.tip.getBoundingClientRect();
@@ -1386,8 +1386,8 @@ E.doc.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 /* loading documents */
 function openDoc(title, blocks, meta) {
   const doc = meta.scored ? docFromScored(meta.scored) : buildDoc(title, blocks);
-  if (!doc.sents.length) throw new Error('没有找到可分析的文字');
-  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? '示例' : '内置词典');
+  if (!doc.sents.length) throw new Error('No text found to analyse');
+  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? 'Sample' : 'Built-in');
   S.topics = extractTopics(doc, 8); S.sel = null; S.spec = undefined; S.hits = []; S.hitKey = ''; S.hitCur = -1;
   if (!doc.has[S.level]) S.level = doc.has.sent ? 'sent' : doc.has.para ? 'para' : 'word';
   syncSeg();
@@ -1398,10 +1398,10 @@ function openDoc(title, blocks, meta) {
   requestAnimationFrame(() => { layout(); drawMinimap(); });
   const w = doc.warn, parts = [];
   if (w) {
-    if (w.misaligned) parts.push(`${w.misaligned} 个词的偏移和原文对不上，已按文字重新定位`);
-    if (w.unmatched) parts.push(`跳过 ${w.unmatched} 个在句子里找不到的词`);
-    if (w.bad) parts.push(`跳过 ${w.bad} 行/条无效数据`);
-    if (w.skipped) parts.push(`跳过 ${w.skipped} 个没有文字的段`);
+    if (w.misaligned) parts.push(`${w.misaligned} word offsets did not match the text and were relocated by content`);
+    if (w.unmatched) parts.push(`skipped ${w.unmatched} words not found inside their sentences`);
+    if (w.bad) parts.push(`skipped ${w.bad} invalid rows/entries`);
+    if (w.skipped) parts.push(`skipped ${w.skipped} paragraphs without text`);
   }
   const msg = parts.join('；');
   if (msg) toast(msg, 8000);
@@ -1409,10 +1409,10 @@ function openDoc(title, blocks, meta) {
 }
 function openScoredText(text, kind, name) {
   let obj;
-  if (kind === 'json') { try { obj = JSON.parse(text); } catch (e) { throw new Error('JSON 解析失败：' + e.message); } }
+  if (kind === 'json') { try { obj = JSON.parse(text); } catch (e) { throw new Error('JSON parse failed: ' + e.message); } }
   else obj = csvToScored(text);
   if (obj && typeof obj === 'object' && !obj.title) obj.title = name.replace(/\.[^.]+$/, '').replace(/\.scored$/, '');
-  return openDoc(null, null, { name, scored: obj, badge: '外部打分' });
+  return openDoc(null, null, { name, scored: obj, badge: 'External' });
 }
 function exportDoc(kind) {
   if (!S.doc) return;
@@ -1424,34 +1424,34 @@ function exportDoc(kind) {
     a.href = URL.createObjectURL(new Blob([text], { type: kind === 'json' ? 'application/json' : 'text/csv;charset=utf-8' }));
     a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast(`已开始下载 ${name}；如果没有看到文件，可能是当前页面不允许下载，请在本地打开 index.html 再导出`, 6000);
+    toast(`Started downloading ${name}; if no file shows up, this page may block downloads — open index.html locally to export`, 6000);
     return;
   } catch (e) { /* the download could not even be started (some embedded viewers): fall back to the clipboard */ }
   const small = text.length < 1.5e6;
   (small && navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(
-    () => toast(`浏览器不允许下载，已把 ${name} 的内容复制到剪贴板，粘贴到新文件里保存即可`, 7000),
-    () => toast(`浏览器不允许下载，也无法复制到剪贴板；请在本地打开 index.html 再导出`, 7000));
+    () => toast(`Downloads are blocked; the content of ${name} was copied to the clipboard — paste it into a new file to save`, 7000),
+    () => toast(`Downloads are blocked and the clipboard failed too; open index.html locally to export`, 7000));
 }
 async function readPDF(file) {
-  if (!window.pdfjsLib) throw new Error('PDF 引擎没有加载成功，请检查网络后刷新页面');
+  if (!window.pdfjsLib) throw new Error('The PDF engine failed to load — check your connection and refresh');
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
   const n = Math.min(pdf.numPages, MAX_PAGES), pages = [];
   for (let i = 1; i <= n; i++) {
-    toast(`正在读取第 ${i} / ${n} 页…`, 0, true);
+    toast(`Reading page ${i} / ${n}…`, 0, true);
     const page = await pdf.getPage(i), tc = await page.getTextContent(), vp = page.getViewport({ scale: 1 });
     pages.push({ height: vp.height, lines: itemsToLines(tc.items) });
   }
-  const note = pdf.numPages > n ? `为保持流畅，只读取了前 ${n} 页（共 ${pdf.numPages} 页）` : '';
+  const note = pdf.numPages > n ? `Only the first ${n} of ${pdf.numPages} pages were read to keep the page responsive` : '';
   pdf.destroy();
   const blocks = linesToBlocks(pages);
-  if (blocks.reduce((a, b) => a + b.text.length, 0) < 40) throw new Error('这份 PDF 里读不到文字，可能是扫描件。v1 暂不支持 OCR。');
+  if (blocks.reduce((a, b) => a + b.text.length, 0) < 40) throw new Error('No readable text found in this PDF — it may be a scan; v1 does not do OCR.');
   return { blocks, note };
 }
 async function loadFile(file) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   try {
-    toast(`正在读取 ${file.name}…`, 0, true);
+    toast(`Reading ${file.name}…`, 0, true);
     let warnMsg = '', note = '';
     if (ext === 'json' || ext === 'csv') warnMsg = openScoredText(await file.text(), ext, file.name);
     else {
@@ -1462,19 +1462,19 @@ async function loadFile(file) {
     }
     if (note) toast(warnMsg ? note + '；' + warnMsg : note, 8000);   /* keep the truncation notice; never cleared by the progress check */
     else if (toastBusy) toast('');
-  } catch (err) { toast('打开失败：' + (err && err.message ? err.message : err), 6000); }
+  } catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 6000); }
 }
 /* article picker: demo docs embedded in examples/demos.js (window.DEMOS = [{label, file, scored}, …]) */
 function loadDemo(i) {
   const d = (window.DEMOS || [])[i];
   if (!d) return false;
-  try { openDoc(null, null, { name: d.file, scored: d.scored, badge: '外部打分' }); return true; }
-  catch (err) { toast('打开示例文章失败：' + (err && err.message ? err.message : err), 6000); return false; }
+  try { openDoc(null, null, { name: d.file, scored: d.scored, badge: 'External' }); return true; }
+  catch (err) { toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000); return false; }
 }
 function initDemoSel() {
   const sel = $('#selDemo'), list = window.DEMOS || [];
   list.forEach((d, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = d.label; sel.appendChild(o); });
-  if (!list.length) { const o = document.createElement('option'); o.value = ''; o.textContent = '缺少 examples/demos.js'; o.disabled = true; sel.appendChild(o); return; }
+  if (!list.length) { const o = document.createElement('option'); o.value = ''; o.textContent = 'Missing examples/demos.js'; o.disabled = true; sel.appendChild(o); return; }
   /* blur afterwards: a focused <select> is excluded from the reading shortcuts (1/2/3, j/k) */
   sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); sel.blur(); });
   if (loadDemo(0)) sel.value = '0';
@@ -1485,8 +1485,8 @@ const btnTop = document.createElement('button');
 btnTop.className = 'btn';
 btnTop.id = 'btnTop';
 btnTop.type = 'button';
-btnTop.textContent = '回到顶部';
-btnTop.title = '回到页面顶部';
+btnTop.textContent = 'Back to top';
+btnTop.title = 'Back to the top of the page';
 btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: scrollBehavior() }); });
 $('.actions').appendChild(btnTop);
 
@@ -1497,11 +1497,11 @@ $('#pasteCancel').addEventListener('click', () => { E.paste.hidden = true; });
 $('#pasteGo').addEventListener('click', () => {
   const t = E.pasteText.value.trim(); if (!t) return;
   try {
-    if (/^\{/.test(t)) openScoredText(t, 'json', '粘贴的 JSON');
-    else if (/^level\s*,/i.test(t)) openScoredText(t, 'csv', '粘贴的 CSV');
-    else openDoc('粘贴的文本', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: '粘贴的文本' });
+    if (/^\{/.test(t)) openScoredText(t, 'json', 'Pasted JSON');
+    else if (/^level\s*,/i.test(t)) openScoredText(t, 'csv', 'Pasted CSV');
+    else openDoc('Pasted text', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: 'Pasted text' });
     E.paste.hidden = true;
-  } catch (err) { toast('分析失败：' + err.message, 6000); }
+  } catch (err) { toast('Analysis failed: ' + err.message, 6000); }
 });
 E.head.addEventListener('click', e => {
   const b = e.target.closest('[data-exp]'); if (b) { exportDoc(b.dataset.exp); return; }

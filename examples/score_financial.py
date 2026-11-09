@@ -21,7 +21,7 @@ try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
     import pysentiment2, importlib.util
 except ImportError:
-    sys.exit("需要先安装：pip install vaderSentiment pysentiment2")
+    sys.exit("Missing dependencies: pip install vaderSentiment pysentiment2"
 
 VADER = SentimentIntensityAnalyzer().lexicon
 LM_CSV = os.path.join(os.path.dirname(pysentiment2.__file__), "static", "LM.csv")
@@ -84,7 +84,7 @@ def build(path, title):
     return {
         "version": 1, "title": title,
         "scale": {"word": 2.5},
-        "reference": {"name": "LM × VADER 金融词表", "scores": sorted(round(v, 3) for v in LEX.values()),
+        "reference": {"name": "LM × VADER finance vocabulary", "scores": sorted(round(v, 3) for v in LEX.values()),
                       "examples": [{"text": w, "score": round(LEX[w], 3)} for w in
                                    ("losses", "vulnerabilities", "disruption", "stress", "resilient", "stable", "favourable", "strong") if w in LEX]},
         "paragraphs": paragraphs,
