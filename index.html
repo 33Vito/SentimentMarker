@@ -851,7 +851,9 @@ const MAX_PAGES = 200;
 const $ = s => document.querySelector(s);
 const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec') };
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
-const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null };
+/* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
+   navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
+const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
 const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
@@ -903,14 +905,16 @@ function renderDoc() {
   els = { w: [...E.doc.querySelectorAll('.w')], s: [...E.doc.querySelectorAll('.s')], b: [...E.doc.querySelectorAll('.blk')] };
 }
 
+/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold */
+const isOn = it => it.k > 0 && it.k >= S.th;
 function refresh() {
   E.doc.className = 'doc lv-' + S.level;
   const [E_, D_] = S.level === 'word' ? [els.w, S.doc.words] : S.level === 'sent' ? [els.s, S.doc.sents] : [els.b, S.doc.blocks];
-  for (let i = 0; i < E_.length; i++) E_[i].classList.toggle('on', D_[i].k > 0 && D_[i].k >= S.th);
+  for (let i = 0; i < E_.length; i++) E_[i].classList.toggle('on', isOn(D_[i]));
   applyTopics();
 }
 function applyTopics() {
-  const act = S.topics.filter(t => t.on); let hits = 0;
+  const act = S.topics.filter(t => t.on), hitIds = [];
   visS = []; visB = [];
   S.doc.blocks.forEach((b, bi) => {
     const flags = b.sents.map(s => act.some(t => matches(s, t)));
@@ -921,13 +925,23 @@ function applyTopics() {
       const vis = !act.length || flags[i];
       visS[s.id] = vis && (!act.length || any);
       els.s[s.id].classList.toggle('dim', !!act.length && any && !flags[i]);
-      if (act.length && flags[i]) hits++;
+      if (act.length && flags[i]) hitIds.push(s.id);
     });
   });
-  E.match.textContent = act.length ? `匹配 ${hits} 句` : '';
+  const hadHits = S.hits.length > 0, key = hitIds.join(',');
+  if (key !== S.hitKey) { S.hits = hitIds; S.hitKey = key; S.hitCur = -1; }
+  updateMatch();
   const nOn = act.length;
   E.btnTopics.textContent = nOn ? `主题词 · ${nOn}` : '主题词';
   drawMinimap();
+  /* matches went from none to some: show the first one, but only if nothing is selected and it is off screen */
+  if (!hadHits && S.hits.length && !S.sel && !inView(els.s[S.hits[0]])) gotoHit(0);
+}
+/* any part of the element is on screen below the sticky toolbar */
+function inView(el) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return r.bottom > E.bar.getBoundingClientRect().bottom && r.top < window.innerHeight;
 }
 function syncSeg() {
   const tips = { word: '词（按 1）', sent: '句（按 2）', para: '段（按 3）' };
@@ -962,6 +976,43 @@ E.kw.addEventListener('keydown', e => {
   if (!t.count) { toast(`文中没有找到“${t.label}”`); return; }
   S.topics.push(t); E.kw.value = ''; renderChips(); applyTopics();
 });
+/* topic matches: previous / next buttons beside the match count */
+const [mPrev, mNext] = [['↑ 上一处', '上一处匹配'], ['下一处 ↓', '下一处匹配']].map(([txt, lbl]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = txt; b.setAttribute('aria-label', lbl); b.hidden = true; return b;
+});
+E.match.after(mPrev, mNext);
+mPrev.addEventListener('click', () => stepHit(-1));
+mNext.addEventListener('click', () => stepHit(1));
+/* which hit the selection is on (-1 if none); a selected paragraph keeps the hit last navigated to inside it */
+function hitIndex() {
+  const h = S.hits; if (!h.length || !S.sel || !S.doc) return -1;
+  if (S.sel.kind === 's') return h.indexOf(S.sel.id);
+  if (S.hitCur >= 0 && S.doc.sents[h[S.hitCur]].block === S.sel.id) return S.hitCur;
+  return h.findIndex(id => S.doc.sents[id].block === S.sel.id);
+}
+function updateMatch() {
+  const act = S.topics.some(t => t.on), m = S.hits.length, i = hitIndex();
+  E.match.textContent = !act ? '' : !m ? '匹配 0 句' : i >= 0 ? `第 ${i + 1} 处 / 共 ${m} 处` : `共 ${m} 处`;
+  mPrev.hidden = mNext.hidden = !act;
+  mPrev.disabled = mNext.disabled = !m;
+}
+function gotoHit(i) {
+  const id = S.hits[i]; if (id === undefined) return;
+  S.hitCur = i;
+  if (S.level === 'para') jumpTo('b', S.doc.sents[id].block, undefined, els.s[id]);   /* paragraph view: select the block, scroll to the sentence */
+  else jumpTo('s', id);
+}
+function stepHit(d) {
+  const h = S.hits; if (!h.length) return;
+  let cur = null;
+  if (S.sel) {
+    if (S.sel.kind === 's') cur = S.sel.id;
+    else { const i = hitIndex(); cur = i >= 0 ? h[i] : S.doc.blocks[S.sel.id].sents[0].id - 0.5; }
+  }
+  const r = cur === null ? { i: d > 0 ? 0 : h.length - 1, wrapped: false } : stepIn(h, cur, d);
+  if (r.wrapped) toast(d > 0 ? '已回到第一处' : '已回到最后一处', 1600);
+  gotoHit(r.i);
+}
 E.btnTopics.addEventListener('click', () => { const o = E.topics.classList.toggle('open'); E.btnTopics.setAttribute('aria-expanded', String(o)); syncBar(); });
 
 /* heat strip */
@@ -984,7 +1035,7 @@ function drawMinimap() {
   const para = S.level === 'para', list = para ? S.doc.blocks : S.doc.sents, P = para ? pos.b : pos.s, vis = para ? visB : visS;
   for (let i = 0; i < list.length; i++) {
     const it = list[i];
-    if (!(it.k > 0 && it.k >= S.th) || vis[i] === false || !P[i]) continue;
+    if (!isOn(it) || vis[i] === false || !P[i]) continue;
     ctx.fillStyle = it.score > 0 ? cp : cn; ctx.globalAlpha = Math.min(1, .35 + it.k * .65);
     ctx.fillRect(2, P[i].top * sc, W - 4, Math.max(2, P[i].h * sc));
   }
@@ -1006,7 +1057,7 @@ E.mm.addEventListener('pointercancel', () => { drag = false; });
 function inspSent(s, wid) {
   const b = S.doc.blocks[s.block];
   const rows = s.scored.slice().sort((a, c) => Math.abs(c.score) - Math.abs(a.score)).map(t =>
-    `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
+    `<li class="${sg(t.score)}${t.wid === wid ? ' hit' : ''}" data-wid="${t.wid}" title="在正文中定位" style="cursor:pointer"><span class="wt">${esc(t.text)}</span><span class="sc">${fmt(t.score, 1)}</span><span class="nt">${esc(noteText(t))}</span></li>`).join('');
   const drv = s.derived && !S.doc.builtin ? '<span class="drv" title="文件没有给这句的分数，按 S / √(S² + 15) 由词分推出">由词分推出</span>' : '';
   return `<div class="ih"><span class="ik">句子</span><span class="is">${fmt(s.score)}</span>${drv}<button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <p class="itx">${esc(s.text)}</p>
@@ -1021,13 +1072,67 @@ function inspBlock(b) {
     <p class="ctx" style="margin:0 0 .6rem">${how}</p><ul class="cl bl">${rows}</ul>${miniSpec(b.sents.flatMap(x => x.scored).map(t => t.score))}`;
 }
 function clearSelClass() { E.doc.querySelectorAll('.sel').forEach(n => n.classList.remove('sel')); }
-function closeInsp() { clearSelClass(); S.sel = null; syncPanels(); }
-function select(kind, id, wid) {
-  if (S.sel && S.sel.kind === kind && S.sel.id === id && S.sel.wid === wid) { closeInsp(); return; }
+function closeInsp() { clearSelClass(); S.sel = null; syncPanels(); updateMatch(); }
+/* keep = true: re-selecting the current item keeps the inspector open (navigation) instead of toggling it shut (click) */
+function select(kind, id, wid, keep) {
+  if (!keep && S.sel && S.sel.kind === kind && S.sel.id === id && S.sel.wid === wid) { closeInsp(); return; }
   clearSelClass(); S.sel = { kind, id, wid };
   (kind === 'b' ? els.b[id] : els.s[id]).classList.add('sel');
   E.insp.innerHTML = kind === 'b' ? inspBlock(S.doc.blocks[id]) : inspSent(S.doc.sents[id], wid);
-  panelFront = 'insp'; syncPanels();
+  panelFront = 'insp'; syncPanels(); updateMatch();
+}
+
+/* ---------- navigation: one jump path shared by j/k patrol, topic prev/next, spectrum and inspector word lists ---------- */
+const scrollBehavior = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+/* scroll `el` (default: the sentence / block itself) to the middle of the screen and open it in the inspector */
+function jumpTo(kind, id, wid, el) {
+  el = el || (kind === 'b' ? els.b[id] : els.s[id]); if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
+  select(kind, id, wid, true);
+}
+/* the .w element for a word id; falls back to a lookup if the cached list is ever out of step with data-w */
+const elW = wid => { const e = els.w[wid]; return e && +e.dataset.w === wid ? e : E.doc.querySelector(`.w[data-w="${wid}"]`); };
+function jumpWord(wid) {
+  if (!S.doc || !S.doc.words[wid]) return;
+  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word');
+  const el = elW(wid), sEl = el && el.closest('.s'); if (!sEl) return;
+  jumpTo('s', +sEl.dataset.s, wid, el);
+}
+/* step through an ordered id list from position `cur` (an id, or a fraction between ids); wraps at the ends */
+function stepIn(ids, cur, d) {
+  const n = ids.length, at = ids.indexOf(cur);
+  if (at >= 0) { const i = at + d; return { i: (i + n) % n, wrapped: i < 0 || i >= n }; }
+  if (d > 0) { const i = ids.findIndex(v => v > cur); return i >= 0 ? { i, wrapped: false } : { i: 0, wrapped: true }; }
+  for (let i = n - 1; i >= 0; i--) if (ids[i] < cur) return { i, wrapped: false };
+  return { i: n - 1, wrapped: true };
+}
+/* j/k patrol: highlighted items at the current level that topic words have not dimmed.
+   Word level patrols sentences that hold at least one highlighted word. */
+function patrolIds() {
+  const D = S.doc; if (!D) return [];
+  if (S.level === 'para') return D.blocks.filter((b, i) => isOn(b) && visB[i] !== false).map(b => b.id);
+  const on = S.level === 'sent' ? isOn : s => s.scored.some(isOn);
+  return D.sents.filter(s => on(s) && visS[s.id] !== false).map(s => s.id);
+}
+function patrol(d) {
+  if (!S.doc) return;
+  const ids = patrolIds();
+  if (!ids.length) { toast('当前粒度和阈值下没有可巡检的高亮', 2000); return; }
+  const kind = S.level === 'para' ? 'b' : 's', list = kind === 'b' ? els.b : els.s;
+  let i;
+  if (S.sel && S.sel.kind === kind) {
+    const r = stepIn(ids, S.sel.id, d); i = r.i;
+    if (r.wrapped) toast(d > 0 ? '已回到第一条高亮' : '已回到最后一条高亮', 1600);
+  } else {
+    /* nothing selected: start from what is on screen (below the toolbar) */
+    const barB = E.bar.getBoundingClientRect().bottom, vh = window.innerHeight;
+    if (d > 0) { i = ids.findIndex(id => list[id].getBoundingClientRect().bottom > barB); if (i < 0) i = 0; }
+    else { i = -1; for (let k = ids.length - 1; k >= 0; k--) if (list[ids[k]].getBoundingClientRect().top < vh) { i = k; break; } if (i < 0) i = ids.length - 1; }
+  }
+  const id = ids[i];
+  let wid;
+  if (S.level === 'word') { let best = null; for (const t of S.doc.sents[id].scored) if (isOn(t) && (!best || t.k > best.k)) best = t; if (best) wid = best.wid; }
+  jumpTo(kind, id, wid);
 }
 /* Panels. Wide: spectrum on the left rail, inspector on the right, both visible.
    Narrow: both are bottom sheets in the same slot, so only one shows at a time (the one used last).
@@ -1114,14 +1219,12 @@ E.btnSpec.addEventListener('click', () => {
 wideMQ.addEventListener('change', () => syncPanels());   /* auto-toggles only while specWanted is null */
 E.spec.addEventListener('click', e => {
   if (e.target.closest('[data-spec-close]')) { S.specWanted = false; syncPanels(); return; }
-  const li = e.target.closest('li[data-wid]'); if (!li || !S.doc) return;
-  const t = S.doc.words[+li.dataset.wid]; if (!t) return;
-  if (S.level === 'para') setLevel(S.doc.has.sent ? 'sent' : 'word');
-  const el = els.w[t.wid], sEl = el && el.closest('.s'); if (!sEl) return;
-  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  select('s', +sEl.dataset.s, t.wid);
+  const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);
 });
-E.insp.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeInsp(); });
+E.insp.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) { closeInsp(); return; }
+  const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);   /* word list -> the word in the text */
+});
 E.doc.addEventListener('click', e => {
   const sEl = e.target.closest('.s'), bEl = e.target.closest('.blk'), wEl = e.target.closest('.w');
   if (S.level === 'para') { if (bEl) select('b', +bEl.dataset.b); }
@@ -1151,7 +1254,7 @@ function openDoc(title, blocks, meta) {
   const doc = meta.scored ? docFromScored(meta.scored) : buildDoc(title, blocks);
   if (!doc.sents.length) throw new Error('没有找到可分析的文字');
   S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? '示例' : '内置词典');
-  S.topics = extractTopics(doc, 8); S.sel = null; S.spec = undefined;
+  S.topics = extractTopics(doc, 8); S.sel = null; S.spec = undefined; S.hits = []; S.hitKey = ''; S.hitCur = -1;
   if (!doc.has[S.level]) S.level = doc.has.sent ? 'sent' : doc.has.para ? 'para' : 'word';
   syncSeg();
   E.spec.innerHTML = '';
@@ -1238,7 +1341,8 @@ function initDemoSel() {
   const sel = $('#selDemo'), list = window.DEMOS || [];
   list.forEach((d, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = d.label; sel.appendChild(o); });
   if (!list.length) { const o = document.createElement('option'); o.value = ''; o.textContent = '缺少 examples/demos.js'; o.disabled = true; sel.appendChild(o); return; }
-  sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); });
+  /* blur afterwards: a focused <select> is excluded from the reading shortcuts (1/2/3, j/k) */
+  sel.addEventListener('change', () => { if (sel.value !== '') loadDemo(+sel.value); sel.blur(); });
   if (loadDemo(0)) sel.value = '0';
 }
 
@@ -1266,7 +1370,9 @@ window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth -
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; E.drop.hidden = true; const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
 document.addEventListener('keydown', e => {
-  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'j' || e.key === 'k') { if (E.paste.hidden) { e.preventDefault(); patrol(e.key === 'j' ? 1 : -1); } return; }   /* not behind the paste dialog */
   if (e.key === '1') setLevel('word'); else if (e.key === '2') setLevel('sent'); else if (e.key === '3') setLevel('para');
   else if (e.key === 'Escape') {           /* close the panel in front: inspector first; narrow spectrum sheet next */
     E.paste.hidden = true;
