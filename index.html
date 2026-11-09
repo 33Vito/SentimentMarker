@@ -1145,21 +1145,26 @@ const jump = e => { const r = E.mm.getBoundingClientRect(); window.scrollTo({ to
 E.mm.addEventListener('pointerdown', e => { drag = true; E.tip.hidden = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
 E.mm.addEventListener('pointermove', e => {
   if (drag) { jump(e); E.tip.hidden = true; return; }
-  if (!S.doc || !pos.s.length) return;
+  const para = S.level === 'para';
+  const list = para ? (S.doc && S.doc.blocks) : (S.doc && S.doc.sents);
+  const P = para ? pos.b : pos.s, vis = para ? visB : visS;
+  if (!list || !P.length) return;
   const r = E.mm.getBoundingClientRect();
   const total = document.documentElement.scrollHeight;
   const targetY = (e.clientY - r.top) / r.height * total;
-  let bestIdx = 0, minD = Infinity;
-  for (let i = 0; i < pos.s.length; i++) {
-    if (!pos.s[i]) continue;
-    const d = Math.abs(pos.s[i].top - targetY);
+  let bestIdx = -1, minD = Infinity;
+  for (let i = 0; i < P.length; i++) {
+    if (!P[i]) continue;
+    const d = Math.abs(P[i].top - targetY);
     if (d < minD) { minD = d; bestIdx = i; }
-    else if (pos.s[i].top > targetY && d > minD) break;
+    else if (P[i].top > targetY && d > minD) break;
   }
-  const s = S.doc.sents[bestIdx];
-  if (!s) { E.tip.hidden = true; return; }
-  const text40 = s.text.length > 40 ? s.text.slice(0, 40) + '…' : s.text;
-  E.tip.innerHTML = `<span class="${sg(s.score)}"><i class="dot"></i>句 <b>${fmt(s.score)}</b></span><span class="m">${esc(text40)}</span>`;
+  /* tip only the item the heat strip actually drew: it must pass isOn() (threshold + polarity) and survive topic dimming */
+  const it = bestIdx >= 0 ? list[bestIdx] : null;
+  if (!it || !isOn(it) || vis[bestIdx] === false) { E.tip.hidden = true; return; }
+  const body = it.text != null ? it.text : it.sents.map(x => x.text + x.gap).join('');
+  const text40 = body.length > 40 ? body.slice(0, 40) + '…' : body;
+  E.tip.innerHTML = `<span class="${sg(it.score)}"><i class="dot"></i>${para ? '段' : '句'} <b>${fmt(it.score)}</b></span><span class="m">${esc(text40)}</span>`;
   E.tip.hidden = false;
   const tr = E.tip.getBoundingClientRect();
   E.tip.style.left = (r.left - tr.width - 10) + 'px';
