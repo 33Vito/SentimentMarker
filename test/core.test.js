@@ -80,6 +80,26 @@ const supItems = [
 ];
 const supLines = C.itemsToLines(supItems);
 ok(supLines.length === 1 && supLines[0].text === 'risks to stability.', 'superscript not joined: ' + JSON.stringify(supLines.map(l => l.text)));
+const sameBase = [
+  mk('• ', 50, 400, 12, 18),
+  mk('Vulnerabilities persist.', 70, 400, 160, 11.5),
+];
+const sbLines = C.itemsToLines(sameBase);
+ok(sbLines.length === 1 && sbLines[0].text.includes('Vulnerabilities persist.') && sbLines[0].size === 11.5, 'same-baseline small text is kept and sets the line size: ' + JSON.stringify(sbLines.map(l => ({ text: l.text, size: l.size }))));
+const leadPage = [{ height: 800, lines: C.itemsToLines([
+  mk('• ', 50, 400, 12, 18),
+  mk('Operational vulnerabilities have continued to grow.', 70, 400, 280, 11.5),
+  mk('The next sentence stays with them.', 50, 386, 220, 11.5),
+]) }];
+const leadBlocks = C.linesToBlocks(leadPage);
+ok(leadBlocks.length === 1 && leadBlocks[0].type === 'p' && leadBlocks[0].text.includes('Operational vulnerabilities') && leadBlocks[0].text.includes('next sentence'), 'a bullet lead stays one paragraph: ' + JSON.stringify(leadBlocks));
+const noteItems = [
+  mk('vulnerable to external shocks.', 50, 400, 160, 11),
+  mk('1 ', 50, 386, 12, 8),
+  mk('Conflicts in the Middle East remain.', 64, 386, 200, 11),
+];
+const noteLines = C.itemsToLines(noteItems);
+ok(noteLines.length === 2 && noteLines[1].text.startsWith('1 ') && noteLines[1].text.includes('Conflicts'), 'a smaller note marker on the next line is kept: ' + JSON.stringify(noteLines.map(l => l.text)));
 const edgePage = [{ height: 842, lines: [
   { y: 820, x: 40, size: 9, text: 'Financial Stability Review | October 2026' },
   { y: 400, x: 80, size: 11, text: 'The body sentence stays on the only page.' },
@@ -99,6 +119,14 @@ const up = [{ height: 800, lines: [
 ]}];
 const ub = C.linesToBlocks(up);
 ok(ub.length === 1 && ub[0].text === 'exposures to NBFIs have continued.', 'repeated edge banner dropped and the sentence rejoins: ' + JSON.stringify(ub));
+const jump = [{ height: 800, lines: [
+  { y: 400, x: 50, size: 11, text: 'First column ends here.' },
+  { y: 386, x: 50, size: 11, text: 'Still the first column.' },
+  { y: 700, x: 50, size: 11, text: 'Second column starts up here.' },
+  { y: 686, x: 50, size: 11, text: 'And continues downward.' },
+]}];
+const jb = C.linesToBlocks(jump);
+ok(jb.length === 2 && jb[0].text === 'First column ends here. Still the first column.' && jb[1].text === 'Second column starts up here. And continues downward.', 'an upward jump starts a new block: ' + JSON.stringify(jb));
 
 // 5. external scored files
 const fs2 = require('fs');
@@ -228,6 +256,8 @@ const djs = fs2.readFileSync(exDir + '/demos.js', 'utf8');
 const dlist = JSON.parse(djs.slice(djs.indexOf('window.DEMOS =') + 'window.DEMOS ='.length).replace(/;\s*$/, ''));
 ok(dlist.length === 3 && dlist[0].file.includes('fsr-assessment') && dlist[0].scored && dlist[0].scored.title, 'start-up demo stays the Assessment');
 ok(dlist[1].label && dlist[1].file && dlist[1].src && !dlist[1].scored, 'full review is a lazy script stub');
+ok(/demoScriptLoads\[d\.src\] === load\) delete demoScriptLoads/.test(appSrc), 'a failed demo script is not cached');
+ok(/gen === demoOpenGen/.test(appSrc) && /if \(!current\(\)\) return ''/.test(appSrc), 'a late demo load does not replace the article now open');
 ok(dlist[2].scored && dlist[2].scored.title, 'synthetic demo stays inline');
 [dlist[0], dlist[2]].forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
 const side = fs2.readFileSync(exDir + '/fsr-2026-10.demo.js', 'utf8');

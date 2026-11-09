@@ -4,11 +4,15 @@
    pdfjs-dist 3.11.174, the same version as the cdnjs script in index.html.
    Do not point this at a newer pdf.js: the joiner is sensitive to glyph metrics.
 
-   PDFJS_DIST may be an absolute path to legacy/build/pdf.js. Otherwise the
-   script requires pdfjs-dist from node_modules.
+   The repo has no package.json. Install the pinned extractor beside the
+   command, or point PDFJS_DIST at legacy/build/pdf.js:
+   npm install pdfjs-dist@3.11.174
+   PDFJS_DIST may be an absolute path. Otherwise the script requires
+   pdfjs-dist from node_modules.
 
+   Assessment is PDF pages 4–11 (page 12 is Endnotes, not part of that demo).
    node examples/pack_fsr.js --heads
-   node examples/pack_fsr.js --from 4 --to 12 --txt examples/fsr-assessment-2026-10.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
+   node examples/pack_fsr.js --from 4 --to 11 --txt examples/fsr-assessment-2026-10.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
    node examples/pack_fsr.js --from 1 --to 79 --txt examples/fsr-2026-10.txt --title "RBA Financial Stability Review (Oct 2026)" --side examples/fsr-2026-10.demo.js
    node examples/pack_fsr.js --repack-demos
 */
@@ -117,8 +121,9 @@ function repackDemos() {
   ];
   const head = [
     '// Built-in demo articles (the data source of the article picker). Packed by examples/pack_fsr.js.',
-    '// Regenerate: node examples/pack_fsr.js --from <a> --to <b> --txt <file> --title "..." [--side <demo.js>]',
-    '// then node examples/pack_fsr.js --repack-demos. The full review is a second classic script, not fetch().',
+    '// Regenerate: node examples/pack_fsr.js --from 4 --to 11 --txt examples/fsr-assessment-2026-10.txt --title "..."',
+    '// then the full review with --from 1 --to 79 --side examples/fsr-2026-10.demo.js, then --repack-demos.',
+    '// Needs pdfjs-dist 3.11.174 (PDFJS_DIST or node_modules). The full review is a second classic script, not fetch().',
     '// ' + ATTR,
     'window.DEMOS = ' + JSON.stringify(demos) + ';\n',
   ].join('\n');

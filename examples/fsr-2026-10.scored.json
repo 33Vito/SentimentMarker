@@ -2071,8 +2071,15 @@
    "type": "p",
    "sentences": [
     {
-     "text": "cyber-attack capabilities and the reliance of financial services on common service providers, including those that sit outside the regulatory perimeter.",
-     "words": []
+     "text": "• Operational vulnerabilities have continued to grow in response to increasing cyber-attack capabilities and the reliance of financial services on common service providers, including those that sit outside the regulatory perimeter.",
+     "words": [
+      {
+       "text": "vulnerabilities",
+       "score": -0.6,
+       "start": 14,
+       "end": 29
+      }
+     ]
     },
     {
      "text": "The emergence of frontier AI models has increased the complexity of the international cyber threat landscape that was already heightened due to activity by state-sponsored and other malicious actors.",
@@ -2143,8 +2150,32 @@
    "type": "p",
    "sentences": [
     {
-     "text": "are elevated in major advanced economies and expected to rise further, and higher bond yields are increasing government debt servicing costs.",
-     "words": []
+     "text": "• Vulnerabilities in overseas sovereign bond markets persist.",
+     "words": [
+      {
+       "text": "Vulnerabilities",
+       "score": -0.6,
+       "start": 2,
+       "end": 17
+      },
+      {
+       "text": "persist",
+       "score": -1.5,
+       "start": 53,
+       "end": 60
+      }
+     ]
+    },
+    {
+     "text": "Government debt burdens are elevated in major advanced economies and expected to rise further, and higher bond yields are increasing government debt servicing costs.",
+     "words": [
+      {
+       "text": "burdens",
+       "score": -1.5,
+       "start": 16,
+       "end": 23
+      }
+     ]
     },
     {
      "text": "Meanwhile, leveraged non-banks have continued to increase their participation in sovereign bond markets.",
@@ -2258,13 +2289,13 @@
    "type": "p",
    "sentences": [
     {
-     "text": "and the exposure of these markets to the AI investment boom continues to grow.",
+     "text": "• Risk premia in global equity and credit markets remain low by historical standards, and the exposure of these markets to the AI investment boom continues to grow.",
      "words": [
       {
        "text": "boom",
        "score": 1.5,
-       "start": 55,
-       "end": 59
+       "start": 141,
+       "end": 145
       }
      ]
     },
@@ -6202,8 +6233,15 @@
    "type": "p",
    "sentences": [
     {
-     "text": "helped them weather the rise in cost pressures this year.",
-     "words": []
+     "text": "• The strong financial positions of most Australian households and businesses have helped them weather the rise in cost pressures this year.",
+     "words": [
+      {
+       "text": "strong",
+       "score": 2.3,
+       "start": 6,
+       "end": 12
+      }
+     ]
     },
     {
      "text": "Inflation has been elevated in 2026, reflecting domestic capacity pressures and higher input costs due to the Middle East conflict.",
@@ -6334,13 +6372,13 @@
    "type": "p",
    "sentences": [
     {
-     "text": "declining housing prices.",
+     "text": "• Most borrowers appear well placed to manage ongoing cost pressures amid declining housing prices.",
      "words": [
       {
        "text": "declining",
        "score": -1.5,
-       "start": 0,
-       "end": 9
+       "start": 74,
+       "end": 83
       }
      ]
     },
@@ -6439,7 +6477,7 @@
    "type": "p",
    "sentences": [
     {
-     "text": "resilience in the Australian financial system.",
+     "text": "• It is important that prudent lending standards are maintained to support continued resilience in the Australian financial system.",
      "words": []
     },
     {
@@ -11108,7 +11146,7 @@
    "type": "p",
    "sentences": [
     {
-     "text": "large holdings of liquid assets.",
+     "text": "• Banks have maintained prudent lending standards, are well capitalised and have large holdings of liquid assets.",
      "words": []
     },
     {
@@ -11157,7 +11195,7 @@
    "type": "p",
    "sentences": [
     {
-     "text": "other financial institutions.",
+     "text": "• Operational resilience is a significant and growing focus for regulators, banks and other financial institutions.",
      "words": []
     },
     {
@@ -11192,13 +11230,25 @@
    "type": "p",
    "sentences": [
     {
-     "text": "and dynamic, increasing the risks to financial stability from operational vulnerabilities.",
+     "text": "• Rapid progress in frontier AI capabilities has also made cyber threats more complex and dynamic, increasing the risks to financial stability from operational vulnerabilities.",
      "words": [
+      {
+       "text": "progress",
+       "score": 1.8,
+       "start": 8,
+       "end": 16
+      },
+      {
+       "text": "threats",
+       "score": -1.8,
+       "start": 65,
+       "end": 72
+      },
       {
        "text": "vulnerabilities",
        "score": -0.6,
-       "start": 74,
-       "end": 89
+       "start": 160,
+       "end": 175
       }
      ]
     },
@@ -11219,13 +11269,19 @@
    "type": "p",
    "sentences": [
     {
-     "text": "system, including following international shocks, but risk management challenges will grow over time.",
+     "text": "• The superannuation sector has been a source of stability for the broader financial system, including following international shocks, but risk management challenges will grow over time.",
      "words": [
+      {
+       "text": "stability",
+       "score": 1.5,
+       "start": 49,
+       "end": 58
+      },
       {
        "text": "challenges",
        "score": -1.5,
-       "start": 70,
-       "end": 80
+       "start": 155,
+       "end": 165
       }
      ]
     },
@@ -11278,7 +11334,7 @@
    "type": "p",
    "sentences": [
     {
-     "text": "though the sector’s systemic impact remains limited by its small size.",
+     "text": "• Non-bank lenders are a growing source of credit for households and businesses, though the sector’s systemic impact remains limited by its small size.",
      "words": []
     },
     {
@@ -11317,13 +11373,19 @@
    "type": "p",
    "sentences": [
     {
-     "text": "a challenge and the implications for financial stability could increase over time.",
+     "text": "• Insurance affordability is not an imminent threat to financial stability, but it remains a challenge and the implications for financial stability could increase over time.",
      "words": [
+      {
+       "text": "threat",
+       "score": -2.4,
+       "start": 45,
+       "end": 51
+      },
       {
        "text": "challenge",
        "score": -1.5,
-       "start": 2,
-       "end": 11
+       "start": 93,
+       "end": 102
       }
      ]
     },

@@ -516,20 +516,18 @@ function itemsToLines(items) {
     if (typeof it.str !== 'string' || it.str === '') continue;
     const tr = it.transform, x = tr[4], y = tr[5];
     const size = Math.abs(it.height) || Math.hypot(tr[2], tr[3]) || 10;
-    /* Footnote superscripts sit a few points above the baseline and are clearly smaller.
-       The line-break test uses max(2, size * 0.5), which is about 5pt on body text, so a
-       digit raised by ~4pt would otherwise be glued on ("risks 7"). Skip it instead. */
-    if (cur && size < cur.size * 0.75) {
-      const dy = y - cur.y;
-      const close = Math.abs(dy) <= Math.max(2, Math.max(size, cur.size) * 0.5);
-      if (dy > 2 || close) continue;
-    }
-    if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x }; }
+    /* A footnote digit is smaller and raised by more than 2pt ("risks 7"). Skip that.
+       A smaller glyph on the same baseline is real text (a bullet's bold lead) and stays.
+       Line size follows the longest run, so the bullet does not make that lead a heading. */
+    if (cur && size < cur.size * 0.75 && y - cur.y > 2) continue;
+    if (!cur || Math.abs(y - cur.y) > Math.max(2, size * 0.5)) { if (cur) lines.push(cur); cur = { y, x, size, text: '', endX: x, span: 0 }; }
     if (cur.text && x - cur.endX > size * 0.2 && !/\s$/.test(cur.text) && !/^\s/.test(it.str)) cur.text += ' ';
-    cur.text += it.str; cur.endX = x + (it.width || 0); cur.size = Math.max(cur.size, size);
+    cur.text += it.str; cur.endX = x + (it.width || 0);
+    const span = it.str.trim().length;
+    if (span >= cur.span) { cur.size = size; cur.span = span; }
   }
   if (cur) lines.push(cur);
-  return lines.map(l => ({ ...l, text: l.text.replace(/\s+/g, ' ').trim() })).filter(l => l.text);
+  return lines.map(l => ({ y: l.y, x: l.x, size: l.size, text: l.text.replace(/\s+/g, ' ').trim() })).filter(l => l.text);
 }
 function linesToBlocks(pages) {
   const n = pages.length, freq = new Map();
@@ -1490,17 +1488,32 @@ async function loadFile(file) {
    script (d.src) assigned onto window.DEMO_FILES, inserted the first time it is opened.
    fetch() is not used: file:// blocks it. loadDemo(0) stays synchronous. */
 const demoScriptLoads = {};
+let demoOpenGen = 0;
 function loadDemo(i) {
   const d = (window.DEMOS || [])[i];
   if (!d) return false;
-  const open = scored => openDoc(null, null, { name: d.file, scored, badge: 'External' });
-  const fail = err => { toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000); return false; };
+  const gen = ++demoOpenGen;
+  const current = () => gen === demoOpenGen;
+  const open = scored => {
+    if (!current()) return '';
+    return openDoc(null, null, { name: d.file, scored, badge: 'External' });
+  };
+  const fail = err => {
+    if (!current()) return false;
+    const sel = $('#selDemo');
+    if (sel && sel.value === String(i)) sel.value = '';
+    toast('Could not open the demo article: ' + (err && err.message ? err.message : err), 6000);
+    return false;
+  };
   const cached = d.scored || (window.DEMO_FILES && window.DEMO_FILES[d.file]);
-  if (cached) { try { open(cached); return true; } catch (err) { return fail(err); } }
+  if (cached) {
+    try { const msg = open(cached); if (!msg && toastBusy) toast(''); return true; }
+    catch (err) { return fail(err); }
+  }
   if (!d.src) return fail(new Error('missing scores'));
   toast('Opening the full review…', 0, true);
   if (!demoScriptLoads[d.src]) {
-    demoScriptLoads[d.src] = new Promise((resolve, reject) => {
+    const load = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = d.src;
       s.onload = () => {
@@ -1510,8 +1523,14 @@ function loadDemo(i) {
       s.onerror = () => reject(new Error('could not load ' + d.src));
       document.head.appendChild(s);
     });
+    /* A rejected load must not stick: the next choice inserts the script again. */
+    demoScriptLoads[d.src] = load;
+    load.catch(() => { if (demoScriptLoads[d.src] === load) delete demoScriptLoads[d.src]; });
   }
-  demoScriptLoads[d.src].then(scored => { const msg = open(scored); if (!msg && toastBusy) toast(''); }).catch(fail);
+  demoScriptLoads[d.src].then(scored => {
+    const msg = open(scored);
+    if (current() && !msg && toastBusy) toast('');
+  }).catch(fail);
   return true;
 }
 function initDemoSel() {
