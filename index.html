@@ -853,7 +853,7 @@ const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), t
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
-const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
+const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
 const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
@@ -905,8 +905,9 @@ function renderDoc() {
   els = { w: [...E.doc.querySelectorAll('.w')], s: [...E.doc.querySelectorAll('.s')], b: [...E.doc.querySelectorAll('.blk')] };
 }
 
-/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold */
-const isOn = it => it.k > 0 && it.k >= S.th;
+/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold and polarity filter */
+const polMatch = it => S.pol === 'all' || (S.pol === 'pos' ? it.score > 0 : it.score < 0);
+const isOn = it => it.k > 0 && it.k >= S.th && polMatch(it);
 function refresh() {
   E.doc.className = 'doc lv-' + S.level;
   const [E_, D_] = S.level === 'word' ? [els.w, S.doc.words] : S.level === 'sent' ? [els.s, S.doc.sents] : [els.b, S.doc.blocks];
@@ -956,6 +957,36 @@ function setLevel(l) {
   if (S.doc && !S.doc.has[l]) return;
   S.level = l; syncSeg(); closeInsp(); refresh();
 }
+
+const segPol = document.createElement('div');
+segPol.className = 'seg';
+segPol.id = 'segPol';
+segPol.setAttribute('role', 'radiogroup');
+segPol.setAttribute('aria-label', '极性筛选');
+segPol.innerHTML = `
+  <button type="button" role="radio" aria-checked="true" data-pol="all" title="全部">全部</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="neg" title="只看负面">负</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="pos" title="只看正面">正</button>
+`;
+E.seg.after(segPol);
+
+function syncSegPol() {
+  segPol.querySelectorAll('button').forEach(b => {
+    const act = b.dataset.pol === S.pol;
+    b.setAttribute('aria-checked', String(act));
+  });
+}
+function setPol(p) {
+  if (p === S.pol) return;
+  S.pol = p;
+  syncSegPol();
+  refresh();
+  drawMinimap();
+}
+segPol.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && b.dataset.pol) setPol(b.dataset.pol);
+});
 
 /* topic chips */
 function renderChips() {
