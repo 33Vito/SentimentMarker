@@ -196,6 +196,7 @@ button{cursor:pointer}
 .lnk:hover{color:var(--ink)}
 .seg button:disabled{opacity:.35;cursor:not-allowed}
 .btn[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.btn[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
 /* wide: two side rails beside the centred 44rem page. Rail width = the space left beside the page minus
    gutters, capped at 20rem (at 1360px: 680 - 352 - 48 = 280px, leaving >=16px to the page even with a scrollbar) */
 @media (min-width:1360px){
@@ -1350,8 +1351,10 @@ function syncPanels() {
   const showInsp = sel && (wide || (panelFront !== 'toc' && !on) || panelFront === 'insp');
   const wasHidden = E.spec.hidden;
   E.spec.hidden = !showSpec; E.insp.hidden = !showInsp; E.toc.hidden = !showToc;
-  E.btnToc.disabled = !(S.doc && S.doc.blocks.some(b => b.type === 'h'));
-  E.btnToc.title = E.btnToc.disabled ? 'No headings in this document' : 'Outline of the article';
+  /* keep the button focusable: Chromium shows no title on a truly disabled control, so aria-disabled + early return */
+  const noHeads = !(S.doc && S.doc.blocks.some(b => b.type === 'h'));
+  E.btnToc.setAttribute('aria-disabled', String(noHeads));
+  E.btnToc.title = noHeads ? 'No headings in this document' : 'Outline of the article';
   /* wide: the outline stays when a sentence is selected - the inspector docks under the outline's real
      bottom edge; on short windows the outline gives room back so the inspector keeps a usable height */
   if (wide && !E.toc.hidden && !E.insp.hidden) {
@@ -1468,6 +1471,7 @@ function updateTocActive() {
 window.addEventListener('wheel', () => { S.tocClick = null; }, { passive: true });
 window.addEventListener('touchmove', () => { S.tocClick = null; }, { passive: true });
 E.btnToc.addEventListener('click', () => {
+  if (E.btnToc.getAttribute('aria-disabled') === 'true') return;   /* before rememberToc: a dead click must not persist a preference */
   const on = tocOn();
   if (on && E.toc.hidden) panelFront = 'toc';               /* narrow sheet tucked behind another panel -> bring it forward */
   else { S.tocWanted = !on; rememberToc(); panelFront = S.tocWanted ? 'toc' : 'spec'; }
@@ -1712,7 +1716,7 @@ document.addEventListener('keydown', e => {
     E.paste.hidden = true;
     if (S.sel && !E.insp.hidden) closeInsp();
     else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; rememberSpec(); syncPanels(); }
-    else if (!wideMQ.matches && !E.toc.hidden) { S.tocWanted = false; rememberToc(); syncPanels(); }
+    else if (!wideMQ.matches && !E.toc.hidden) { S.tocWanted = false; rememberToc(); panelFront = 'spec'; syncPanels(); }   /* hand the front back like the button's close path, or every sheet stays hidden */
     else if (S.sel) closeInsp();
   }
 });

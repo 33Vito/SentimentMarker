@@ -300,7 +300,7 @@ const awDoc = { blocks: [] };
 for (let i = 0; i < 11; i++) awDoc.blocks.push({ type: i < 4 ? 'h' : 'p', id: i, level: 1, sents: [{ score: 0 }], score: 0, k: 0 });
 for (let i = 0; i < 3; i++) awDoc.blocks.push({ type: 'p', id: 11 + i, sents: [{ score: 0 }], score: 0, k: 0 });
 ok(C.outlineWorthy(secDoc) === false, 'outlineWorthy: 8 blocks with 4 headings is below the floor');
-ok(C.outlineWorthy(awDoc) === true && C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 11) }) === false, 'outlineWorthy: the block floor is 12');
+ok(C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 12) }) === true && C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 11) }) === false, 'outlineWorthy: the block floor is exactly 12');
 awDoc.blocks[3].type = 'p';
 ok(C.outlineWorthy({ blocks: awDoc.blocks.slice(0, 12) }) === false, 'outlineWorthy: 12 blocks with only 3 headings is below the heading floor');
 [dlist[0], dlist[2]].forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });

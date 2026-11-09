@@ -5,10 +5,11 @@ Checks narrow-sheet rotation, docked inspector geometry, active row, hold cleari
 Not part of node test/core.test.js - that suite is dependency-free; this one is the interactive layer.
 """
 import json, os, subprocess, sys, time, urllib.request
+from pathlib import Path
 import websocket
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-PAGE = 'file:///' + (sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'index.html').replace('\\', '/')).replace('\\', '/')
+PAGE = Path(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'index.html')).resolve().as_uri()
 PROFILE = os.path.join(os.environ.get('LOCALAPPDATA', '/tmp'), 'sm-ui-smoke-profile')
 PORT = 9337
 CHROME_CANDIDATES = [r"C:\Program Files\Google\Chrome\Application\chrome.exe", r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"]
@@ -44,7 +45,11 @@ try:
         except Exception: time.sleep(0.5)
     ws = websocket.create_connection(ws_url, timeout=30)
     send(ws, 'Page.enable'); send(ws, 'Runtime.enable')
-    ev(ws, "try{localStorage.clear()}catch(e){}")
+    send(ws, 'Page.navigate', url=PAGE)
+    for _ in range(60):
+        if ev(ws, "document.getElementById('toc')"): break
+        time.sleep(0.4)
+    ev(ws, "try{localStorage.clear()}catch(e){}")          # clear IN the page under test, then reload clean
     send(ws, 'Page.navigate', url=PAGE)
     for _ in range(60):
         if ev(ws, "document.querySelectorAll('#toc [data-goto]').length > 0"): break
@@ -63,13 +68,14 @@ try:
     ev(ws, 'closeInsp()'); time.sleep(0.3)
     # headingless document: Outline button disabled, nothing persists
     ev(ws, "openDoc(null, [{type:'p', text:'Just a plain document without any headings at all. '.repeat(30)}], {name:'plain'})"); time.sleep(0.6)
-    check('headingless: Outline button disabled', ev(ws, "document.getElementById('btnToc').disabled"))
-    check('headingless: no persisted pref', ev(ws, "!localStorage.getItem('sm.toc')"))
+    check('headingless: Outline is aria-disabled and dimmed', ev(ws, "document.getElementById('btnToc').getAttribute('aria-disabled') === 'true'"))
+    ev(ws, "document.getElementById('btnToc').click()"); time.sleep(0.3)
+    check('headingless: dead click changes nothing and writes no pref', ev(ws, "document.getElementById('btnToc').getAttribute('aria-pressed') === 'false' && !localStorage.getItem('sm.toc')"))
     # narrow rotation: exactly one sheet in every state
     send(ws, 'Emulation.setDeviceMetricsOverride', width=800, height=900, deviceScaleFactor=1, mobile=True); time.sleep(0.6)
     ev(ws, "const s=document.getElementById('selDemo'); s.value='0'; s.dispatchEvent(new Event('change'));"); time.sleep(1)
     def one_sheet():
-        return ev(ws, "[document.getElementById('spec').hidden, document.getElementById('insp').hidden, document.getElementById('toc').hidden].filter(x=>!x).length <= 1")
+        return ev(ws, "[document.getElementById('spec').hidden, document.getElementById('insp').hidden, document.getElementById('toc').hidden].filter(x=>!x).length == 1")
     ev(ws, "document.querySelector('.doc .blk .s').click()"); time.sleep(0.4)
     check('narrow: select shows exactly one sheet', one_sheet())
     ev(ws, "document.getElementById('btnToc').click()"); time.sleep(0.4)
@@ -81,6 +87,13 @@ try:
     ev(ws, "document.getElementById('btnSpec').click()"); time.sleep(0.4)   # turn spectrum off
     ev(ws, "document.getElementById('btnToc').click()"); time.sleep(0.4)
     check('narrow: outline opens without a selection too', ev(ws, "!document.getElementById('toc').hidden"))
+    # Escape is the outline's close key on narrow - it must hand the front back, never blank the rail
+    ev(ws, "document.querySelector('.doc .blk .s').click()"); time.sleep(0.3)
+    ev(ws, "document.getElementById('btnToc').click()"); time.sleep(0.3)
+    check('narrow: outline front while selected', ev(ws, "!document.getElementById('toc').hidden"))
+    ev(ws, "document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}))"); time.sleep(0.4)
+    check('narrow: Escape closes outline and keeps one visible sheet', ev(ws, "document.getElementById('toc').hidden && [ 'spec','insp','toc' ].some(id => !document.getElementById(id).hidden)"))
+    check('narrow: still exactly one sheet after Escape', one_sheet())
     send(ws, 'Emulation.clearDeviceMetricsOverride')
     ws.close()
 finally:
