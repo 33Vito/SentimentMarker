@@ -64,7 +64,7 @@ function keepBlock(b) {
 }
 
 function blocksToText(blocks) {
-  const body = blocks.filter(keepBlock).map(b => (b.type === 'h' ? '# ' : '') + b.text.trim()).join('\n\n');
+  const body = blocks.filter(keepBlock).map(b => (b.type === 'h' ? (b.level === 2 ? '## ' : '# ') : '') + b.text.trim()).join('\n\n');
   return body + (body.endsWith('\n') ? '' : '\n');
 }
 

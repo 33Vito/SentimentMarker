@@ -72,15 +72,20 @@ def build(path, title):
         if not block:
             continue
         kind = "p"
-        if block.startswith("# "):
-            kind, block = "h", block[2:].strip()
+        level = 1
+        if block.startswith("## "):
+            kind, block, level = "h", block[3:].strip(), 2
+        elif block.startswith("# "):
+            kind, block, level = "h", block[2:].strip(), 1
         sents = []
         for s in ([block] if kind == "h" else split_sentences(block)):
             skip = neutral_spans(s)
             words = [{"text": m.group(), "score": round(LEX[m.group().lower()], 3), "start": m.start(), "end": m.end()}
                      for m in WORD.finditer(s) if m.group().lower() in LEX and m.span() not in skip]
             sents.append({"text": s, "words": words})        # sentence / paragraph scores are derived from the words
-        paragraphs.append({"type": kind, "sentences": sents})
+        p = {"type": kind, "sentences": sents}
+        if kind == "h" and level == 2: p["level"] = 2      # level 1 is the default; only depth 2 is written
+        paragraphs.append(p)
     return {
         "version": 1, "title": title,
         "scale": {"word": 2.5},

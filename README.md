@@ -8,6 +8,7 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 - Topic filter: high-frequency words are extracted automatically and you can add your own; sentences that do not mention a topic word are dimmed
 - Click a sentence or paragraph to see each word's score and how negation, boosters and contrasts affected it
 - A heat strip on the right shows the sentiment distribution of the whole document; click or drag it to jump
+- An outline panel for long articles: two heading levels, each row carrying a sentiment bar and the running sum of its section, click to jump, the current section stays highlighted
 - Reads PDF, Markdown, TXT and pasted text
 - **Open externally scored files** (JSON / CSV): the scores come from your own Python module or API, the reader only displays them
 - An emotion spectrum sidebar: where the words of this document sit inside the distribution of a reference lexicon (VADER, for example), listing the most positive and most negative words with percentiles

@@ -41,6 +41,7 @@ If some sentences in one file carry a score and others do not, the header warns 
 | Field | Required | Description |
 | --- | --- | --- |
 | `paragraphs[]` | yes | In document order. `type` = `"h"` marks a heading, anything else is body text |
+| `paragraphs[].level` | no | Heading depth for the outline: 1 (chapter, the default) or 2 (section). Only meaningful with `type: "h"`; missing or out-of-range values fall back to 1. CSV cannot carry it - its `level` column already names the row kind - so CSV headings are level 1 |
 | `paragraphs[].score` | no | Paragraph score. When missing it is the mean of its sentence scores (labelled "Derived from sentences") |
 | `paragraphs[].sentences[]` | no | When missing or an empty array `[]`, the paragraph's `text` is split into sentences automatically (in that case there are no word scores) |
 | `paragraphs[].text` | no | Used for sentence splitting when there is no `sentences`. A paragraph with neither sentences nor `text` (for example only a `score`) **is skipped**, and the page reports how many were skipped |

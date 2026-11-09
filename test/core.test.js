@@ -128,6 +128,37 @@ const jump = [{ height: 800, lines: [
 const jb = C.linesToBlocks(jump);
 ok(jb.length === 2 && jb[0].text === 'First column ends here. Still the first column.' && jb[1].text === 'Second column starts up here. And continues downward.', 'an upward jump starts a new block: ' + JSON.stringify(jb));
 
+// 4c. heading levels for the outline: absolute size cut, markdown hashes, section sums
+const lvPage = [{ height: 800, lines: C.itemsToLines([
+  mk('Body line one of the paragraph runs long enough to be body text.', 50, 400, 320, 11),
+  mk('Body line two continues below it.', 50, 386, 200, 11),
+  mk('Chapter title is twenty-two pt.', 50, 340, 260, 22),
+  mk('A section head is sixteen pt.', 50, 300, 240, 16),
+  mk('Body after the section head also runs a full line of text here.', 50, 260, 330, 11),
+]) }];
+const lvH = C.linesToBlocks(lvPage).filter(b => b.type === 'h');
+ok(lvH.length === 2 && lvH[0].level === 1 && lvH[1].level === 2, 'level by absolute size: 22pt -> 1, 16pt -> 2: ' + JSON.stringify(lvH));
+const mdH = C.parseMarkdown('# One\n\ntext one\n\n## Two\n\ntext two\n\n### Three\n').filter(b => b.type === 'h');
+ok(mdH.length === 3 && mdH[0].level === 1 && mdH[1].level === 2 && mdH[2].level === 2, 'markdown hashes map to levels 1 / 2 / 2: ' + JSON.stringify(mdH.map(b => b.level)));
+const secDoc = C.buildDoc('T', C.parseMarkdown('# Alpha\n\nGreat work here.\n\n## Beta\n\nAwful luck.\n\n## Gamma\n\nFine.\n\n# Delta\n\nTerrible.\n'));
+const secs = C.sectionScores(secDoc);
+const bsum = i => secDoc.blocks[i].sents.reduce((x, s) => x + s.score, 0);
+const rsum = (i0, i1) => Math.round(Array.from({ length: i1 - i0 }, (_, k) => bsum(i0 + k)).reduce((x, y) => x + y, 0) * 100) / 100;
+ok(secs.length === 4 && secs.map(r => r.blockId).join() === '0,2,4,6' && secs.map(r => r.level).join() === '1,2,2,1', 'one outline row per heading, levels survive buildDoc: ' + JSON.stringify(secs.map(r => [r.blockId, r.level])));
+ok(secs[1].score === rsum(2, 4) && secs[1].count === 2, 'an h2 section is its heading plus the paragraphs until the next heading');
+ok(secs[0].score === rsum(0, 6) && secs[0].count === 6, 'an h1 section runs through its nested h2s until the next h1');
+ok(secs[3].score === rsum(6, 8) && secs[3].count === 2, 'the last h1 owns only its own block');
+const lvlDoc = C.docFromScored({ version: 1, title: 't', paragraphs: [
+  { type: 'h', sentences: [{ text: 'Head one' }] },
+  { type: 'h', level: 2, sentences: [{ text: 'Head two' }] },
+  { type: 'h', level: 9, sentences: [{ text: 'Head nine' }] },
+  { type: 'h', level: '2', sentences: [{ text: 'Head string two' }] },
+  { type: 'p', sentences: [{ text: 'Body.' }] },
+] });
+ok(lvlDoc.blocks.slice(0, 4).map(b => b.level).join() === '1,2,2,2' && lvlDoc.blocks[4].level === undefined, 'level reads: default 1, 2 kept, 9 clamps to 2, "2" coerces; paragraphs carry none: ' + lvlDoc.blocks.map(b => b.level));
+const rtLv = C.docToJSON(lvlDoc);
+ok(rtLv.paragraphs[1].level === 2 && rtLv.paragraphs[0].level === undefined && rtLv.paragraphs[2].level === 2, 'docToJSON writes level 2 (clamped 9 included), omits the default 1');
+
 // 5. external scored files
 const fs2 = require('fs');
 const exDir = process.env.EXAMPLES || require('path').join(__dirname, '..', 'examples');
@@ -259,6 +290,11 @@ ok(dlist[1].label && dlist[1].file && dlist[1].src && !dlist[1].scored, 'full re
 ok(/demoScriptLoads\[d\.src\] === load\) delete demoScriptLoads/.test(appSrc), 'a failed demo script is not cached');
 ok(/gen === demoOpenGen/.test(appSrc) && /if \(!current\(\)\) return ''/.test(appSrc), 'a late demo load does not replace the article now open');
 ok(dlist[2].scored && dlist[2].scored.title, 'synthetic demo stays inline');
+ok(dlist[0].scored.paragraphs.some(p => p.type === 'h' && p.level === 2) && dlist[0].scored.paragraphs[0].level === undefined, 'packed Assessment carries level 2 on section heads, default 1 elsewhere');
+ok(/id="btnToc"/.test(html) && /class="toc" id="toc"/.test(html), 'Outline toggle and outline aside exist');
+ok(/S\.tocRows = sectionScores\(S\.doc\)/.test(appSrc) && /renderToc\(\);/.test(appSrc), 'the outline is built from the opened document inside openDoc');
+ok(/const showToc = ton && !sel/.test(appSrc) && /showToc = ton && !sel && \(wide \|\| panelFront === .toc.\)/.test(appSrc), 'the outline shares the right rail with the inspector and the narrow sheets');
+ok(/el\.scrollIntoView\(\{ block: 'start', behavior: scrollBehavior\(\) \}\)/.test(appSrc) && !/\(jumpTo|select\(/.test(appSrc.slice(appSrc.indexOf('E.toc.addEventListener'), appSrc.indexOf('\n});', appSrc.indexOf('E.toc.addEventListener')))), 'an outline row scrolls without opening the inspector');
 [dlist[0], dlist[2]].forEach(d => { const dd = C.docFromScored(d.scored); ok(noWarn(dd) && dd.has.word && dd.has.sent && dd.has.para, 'demo loads with all levels, no warnings: ' + d.file); });
 const side = fs2.readFileSync(exDir + '/fsr-2026-10.demo.js', 'utf8');
 const marker = "window.DEMO_FILES['fsr-2026-10.scored.json'] = ";
