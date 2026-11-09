@@ -853,7 +853,7 @@ const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), t
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
-const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
+const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, hits: [], hitCur: -1, hitKey: '' };
 const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
@@ -966,8 +966,9 @@ function renderDoc() {
   els = { w: [...E.doc.querySelectorAll('.w')], s: [...E.doc.querySelectorAll('.s')], b: [...E.doc.querySelectorAll('.blk')] };
 }
 
-/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold */
-const isOn = it => it.k > 0 && it.k >= S.th;
+/* an item (word / sentence / block) is highlighted when it passes the weak-signal threshold and polarity filter */
+const polMatch = it => S.pol === 'all' || (S.pol === 'pos' ? it.score > 0 : it.score < 0);
+const isOn = it => it.k > 0 && it.k >= S.th && polMatch(it);
 function refresh() {
   E.doc.className = 'doc lv-' + S.level;
   const [E_, D_] = S.level === 'word' ? [els.w, S.doc.words] : S.level === 'sent' ? [els.s, S.doc.sents] : [els.b, S.doc.blocks];
@@ -1019,6 +1020,36 @@ function setLevel(l) {
   S.level = l; syncSeg(); closeInsp(); refresh();
   prefSet(PREF_KEY.level, l);
 }
+
+const segPol = document.createElement('div');
+segPol.className = 'seg';
+segPol.id = 'segPol';
+segPol.setAttribute('role', 'radiogroup');
+segPol.setAttribute('aria-label', '极性筛选');
+segPol.innerHTML = `
+  <button type="button" role="radio" aria-checked="true" data-pol="all" title="全部">全部</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="neg" title="只看负面">负</button>
+  <button type="button" role="radio" aria-checked="false" data-pol="pos" title="只看正面">正</button>
+`;
+E.seg.after(segPol);
+
+function syncSegPol() {
+  segPol.querySelectorAll('button').forEach(b => {
+    const act = b.dataset.pol === S.pol;
+    b.setAttribute('aria-checked', String(act));
+  });
+}
+function setPol(p) {
+  if (p === S.pol) return;
+  S.pol = p;
+  syncSegPol();
+  refresh();
+  drawMinimap();
+}
+segPol.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && b.dataset.pol) setPol(b.dataset.pol);
+});
 
 /* topic chips */
 function renderChips() {
@@ -1078,6 +1109,21 @@ function stepHit(d) {
 }
 E.btnTopics.addEventListener('click', () => { const o = E.topics.classList.toggle('open'); E.btnTopics.setAttribute('aria-expanded', String(o)); syncBar(); });
 
+const btnClearTopics = document.createElement('button');
+btnClearTopics.className = 'btn';
+btnClearTopics.id = 'btnClearTopics';
+btnClearTopics.setAttribute('data-action', 'clear');
+btnClearTopics.type = 'button';
+btnClearTopics.textContent = '清除';
+btnClearTopics.title = '清除选中的主题词';
+btnClearTopics.style.cssText = 'padding:.35rem .65rem;font-size:.75rem;border-radius:999px;white-space:nowrap';
+btnClearTopics.addEventListener('click', () => {
+  S.topics.forEach(t => { t.on = false; });
+  renderChips();
+  applyTopics();
+});
+E.topics.appendChild(btnClearTopics);
+
 /* heat strip */
 function layout() {
   if (!S.doc) return;
@@ -1111,10 +1157,32 @@ function updateVP() {
 }
 let drag = false;
 const jump = e => { const r = E.mm.getBoundingClientRect(); window.scrollTo({ top: (e.clientY - r.top) / r.height * document.documentElement.scrollHeight - window.innerHeight / 2 }); };
-E.mm.addEventListener('pointerdown', e => { drag = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
-E.mm.addEventListener('pointermove', e => { if (drag) jump(e); });
+E.mm.addEventListener('pointerdown', e => { drag = true; E.tip.hidden = true; E.mm.setPointerCapture(e.pointerId); jump(e); });
+E.mm.addEventListener('pointermove', e => {
+  if (drag) { jump(e); E.tip.hidden = true; return; }
+  if (!S.doc || !pos.s.length) return;
+  const r = E.mm.getBoundingClientRect();
+  const total = document.documentElement.scrollHeight;
+  const targetY = (e.clientY - r.top) / r.height * total;
+  let bestIdx = 0, minD = Infinity;
+  for (let i = 0; i < pos.s.length; i++) {
+    if (!pos.s[i]) continue;
+    const d = Math.abs(pos.s[i].top - targetY);
+    if (d < minD) { minD = d; bestIdx = i; }
+    else if (pos.s[i].top > targetY && d > minD) break;
+  }
+  const s = S.doc.sents[bestIdx];
+  if (!s) { E.tip.hidden = true; return; }
+  const text40 = s.text.length > 40 ? s.text.slice(0, 40) + '…' : s.text;
+  E.tip.innerHTML = `<span class="${sg(s.score)}"><i class="dot"></i>句 <b>${fmt(s.score)}</b></span><span class="m">${esc(text40)}</span>`;
+  E.tip.hidden = false;
+  const tr = E.tip.getBoundingClientRect();
+  E.tip.style.left = (r.left - tr.width - 10) + 'px';
+  E.tip.style.top = Math.max(8, Math.min(window.innerHeight - tr.height - 8, e.clientY - tr.height / 2)) + 'px';
+});
+E.mm.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 E.mm.addEventListener('pointerup', () => { drag = false; });
-E.mm.addEventListener('pointercancel', () => { drag = false; });
+E.mm.addEventListener('pointercancel', () => { drag = false; E.tip.hidden = true; });
 
 /* inspector */
 function inspSent(s, wid) {
@@ -1422,6 +1490,15 @@ function initDemoSel() {
 }
 
 /* wiring */
+const btnTop = document.createElement('button');
+btnTop.className = 'btn';
+btnTop.id = 'btnTop';
+btnTop.type = 'button';
+btnTop.textContent = '回到顶部';
+btnTop.title = '回到页面顶部';
+btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+$('.actions').appendChild(btnTop);
+
 $('#btnOpen').addEventListener('click', () => E.file.click());
 E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
 $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
