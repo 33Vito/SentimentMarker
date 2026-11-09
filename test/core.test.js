@@ -104,8 +104,8 @@ ok(m1.words[0].start === undefined || true, 'offset-free words located by search
 ok(m1.sents[0].toks.filter(t => t.word).map(t => t.text).join() === 'Great,awful', 'words located by text search');
 // malformed input
 const bad = (o, re) => { try { C.docFromScored(o); return false; } catch (e) { return re.test(e.message); } };
-ok(bad(null, /打分数据/) && bad({}, /paragraphs/) && bad({ paragraphs: [{ sentences: [] }] }, /句子/), 'malformed JSON rejected with message');
-ok((() => { try { C.csvToScored('a,b\n1,2'); } catch (e) { return /缺少列/.test(e.message); } })(), 'CSV missing columns rejected');
+ok(bad(null, /valid scored data/) && bad({}, /paragraphs/) && bad({ paragraphs: [{ sentences: [] }] }, /sentences/i), 'malformed JSON rejected with message');
+ok((() => { try { C.csvToScored('a,b\n1,2'); } catch (e) { return /missing column/i.test(e.message); } })(), 'CSV missing columns rejected');
 const um = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Fine day.', words: [{ text: 'zzz', score: 1 }, { text: 'Fine', score: 2, start: 0, end: 99 }, { text: 'day', score: 'x' }] }] }] });
 ok(um.warn.unmatched === 2 && um.words.length === 1, 'unmatched / bad words counted: ' + um.warn.unmatched);
 const onlySent = C.docFromScored({ paragraphs: [{ text: 'Good news. Bad news.' }] });
@@ -181,15 +181,15 @@ ok(C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Hello there
 const gs = C.buildSpec(C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Good start. Not good end.', words: [{ text: 'Good', score: 2 }, { text: 'good', score: -1.2 }] }] }] }));
 ok(gs.pos.length === 1 && gs.neg.length === 1 && gs.pos[0].score === 2 && gs.neg[0].score === -1.2, 'good / not good kept apart in spectrum');
 const shr = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-3, -2, -1, 1, 2, 3, 4, 5], examples: [] } }));
-ok(Math.abs(shr.pos[0].share - 2 / 8) < 1e-9 && Math.abs(shr.pos[1].share - 5 / 8) < 1e-9 && C.rankText(shr.pos[0], false) === '最正面的 25%', 'share = same-side at-least-as-extreme / all reference words');
+ok(Math.abs(shr.pos[0].share - 2 / 8) < 1e-9 && Math.abs(shr.pos[1].share - 5 / 8) < 1e-9 && C.rankText(shr.pos[0], false) === 'most positive 25%', 'share = same-side at-least-as-extreme / all reference words');
 // item 10: scale mismatch warning
 const sw1 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-40, -20, 10, 20, 40], examples: [] } }));
 const sw2 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-4, -2, 1, 2, 4], examples: [] } }));
 ok(sw1.scaleWarn && !sw2.scaleWarn && !C.buildSpec(Object.assign(mini({}), { ref: null })).scaleWarn, 'scale mismatch flagged only when ratio is far off');
 // item 11: colour scale shown with its source
-ok(/来自文件/.test(C.scaleText(d2)) && /±3/.test(C.scaleText(d2)), 'scale text (file): ' + C.scaleText(d2).replace(/<[^>]+>/g, ''));
-ok(/自动/.test(C.scaleText(mini({}))) && /内置/.test(C.scaleText(doc)), 'scale text (auto / built-in)');
-ok(/句.*来自文件/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mixed scale sources labelled per level');
+ok(/From file/.test(C.scaleText(d2)) && /±3/.test(C.scaleText(d2)), 'scale text (file): ' + C.scaleText(d2).replace(/<[^>]+>/g, ''));
+ok(/Auto/.test(C.scaleText(mini({}))) && /Built-in/.test(C.scaleText(doc)), 'scale text (auto / built-in)');
+ok(/Sentence.*From file/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mixed scale sources labelled per level');
 // items 6 / 7: app wiring (checked in the source; the UI itself is checked with Playwright)
 ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:1360px\)/.test(html) && !/min-width:1520px/.test(html), 'wide breakpoint is 1360px in CSS and JS');
 ok(/specWanted === null \? wideMQ\.matches/.test(appSrc) && !/setSpec\(e\.matches\)/.test(appSrc), 'manual spectrum choice wins over width changes');
