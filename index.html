@@ -51,6 +51,7 @@ button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .pos{--hue:var(--pos)} .neg{--hue:var(--neg)}
+.chip.pos::before,.chip.neg::before{content:"";width:.5rem;height:.5rem;border-radius:99px;background:var(--hue);flex:none}
 
 /* toolbar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);display:grid;gap:.6rem;padding-block:.75rem .65rem;max-width:60rem;margin-inline:auto;border-bottom:1px solid transparent}
@@ -1044,7 +1045,6 @@ function setPol(p) {
   S.pol = p;
   syncSegPol();
   refresh();
-  drawMinimap();
 }
 segPol.addEventListener('click', e => {
   const b = e.target.closest('button');
@@ -1163,7 +1163,8 @@ E.mm.addEventListener('pointermove', e => {
   const it = bestIdx >= 0 ? list[bestIdx] : null;
   if (!it || !isOn(it) || vis[bestIdx] === false) { E.tip.hidden = true; return; }
   const body = it.text != null ? it.text : it.sents.map(x => x.text + x.gap).join('');
-  const text40 = body.length > 40 ? body.slice(0, 40) + '…' : body;
+  const chars40 = [...body];
+  const text40 = chars40.length > 40 ? chars40.slice(0, 40).join('') + '…' : body;
   E.tip.innerHTML = `<span class="${sg(it.score)}"><i class="dot"></i>${para ? '段' : '句'} <b>${fmt(it.score)}</b></span><span class="m">${esc(text40)}</span>`;
   E.tip.hidden = false;
   const tr = E.tip.getBoundingClientRect();
@@ -1347,7 +1348,7 @@ E.insp.addEventListener('click', async e => {
   if (e.target.closest('[data-copy-quote]') && S.sel) {
     const { kind, id } = S.sel;
     const item = kind === 'b' ? S.doc.blocks[id] : S.doc.sents[id];
-    const body = kind === 'b' ? item.sents.map(s => s.text + s.gap).join('') : item.text;
+    const body = kind === 'b' ? item.sents.map(s => s.text + s.gap).join('').trimEnd() : item.text;
     const quoted = body.replace(/\r\n?/g, '\n').split('\n').map(line => `> ${line}`).join('\n');
     const label = item.score > 0 ? '正面' : item.score < 0 ? '负面' : '中性';
     try {
