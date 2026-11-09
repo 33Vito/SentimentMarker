@@ -1109,21 +1109,6 @@ function stepHit(d) {
 }
 E.btnTopics.addEventListener('click', () => { const o = E.topics.classList.toggle('open'); E.btnTopics.setAttribute('aria-expanded', String(o)); syncBar(); });
 
-const btnClearTopics = document.createElement('button');
-btnClearTopics.className = 'btn';
-btnClearTopics.id = 'btnClearTopics';
-btnClearTopics.setAttribute('data-action', 'clear');
-btnClearTopics.type = 'button';
-btnClearTopics.textContent = '清除';
-btnClearTopics.title = '清除选中的主题词';
-btnClearTopics.style.cssText = 'padding:.35rem .65rem;font-size:.75rem;border-radius:999px;white-space:nowrap';
-btnClearTopics.addEventListener('click', () => {
-  S.topics.forEach(t => { t.on = false; });
-  renderChips();
-  applyTopics();
-});
-E.topics.appendChild(btnClearTopics);
-
 /* heat strip */
 function layout() {
   if (!S.doc) return;
