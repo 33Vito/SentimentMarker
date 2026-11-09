@@ -857,6 +857,58 @@ const S = { level: 'sent', th: 0.15, doc: null, topics: [], sel: null, sample: f
 const BADGE_TIP = { '示例': '内置示例文本，用浏览器内的简易词典打分', '内置词典': '用浏览器内的简易词典打分，仅供演示', '外部打分': '分数来自你提供的 JSON / CSV 文件' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
+/* prefs in localStorage: theme, level, threshold, spectrum. Topics are not stored. */
+const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec' };
+function prefGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function prefSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
+const THEME_CYCLE = ['system', 'light', 'dark'];
+const THEME_LABEL = { system: '跟随系统', light: '浅色', dark: '深色' };
+function themeMode() {
+  const a = document.documentElement.getAttribute('data-theme');
+  return a === 'light' || a === 'dark' ? a : 'system';
+}
+function applyTheme(mode, persist) {
+  const m = mode === 'light' || mode === 'dark' ? mode : 'system';
+  if (m === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', m);
+  if (E.btnTheme) {
+    E.btnTheme.textContent = THEME_LABEL[m];
+    E.btnTheme.setAttribute('aria-label', '主题：' + THEME_LABEL[m]);
+    E.btnTheme.title = '点击切换主题，当前为' + THEME_LABEL[m];
+  }
+  if (persist) prefSet(PREF_KEY.theme, m);
+  drawMinimap();
+}
+function mountThemeButton() {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.id = 'btnTheme'; b.type = 'button';
+  E.bar.querySelector('.actions').appendChild(b);
+  E.btnTheme = b;
+  b.addEventListener('click', () => {
+    const i = THEME_CYCLE.indexOf(themeMode());
+    applyTheme(THEME_CYCLE[(i + 1) % THEME_CYCLE.length], true);
+  });
+}
+function rememberSpec() {
+  prefSet(PREF_KEY.spec, S.specWanted === null ? null : S.specWanted ? '1' : '0');
+}
+function restorePrefs() {
+  const theme = prefGet(PREF_KEY.theme);
+  applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system', false);
+  const lv = prefGet(PREF_KEY.level);
+  if (lv === 'word' || lv === 'sent' || lv === 'para') S.level = lv;
+  const raw = prefGet(PREF_KEY.th);
+  const n = raw == null || raw === '' ? NaN : Number(raw);
+  if (Number.isFinite(n)) {
+    S.th = Math.min(0.9, Math.max(0, Math.round(n * 100) / 100));
+    E.th.value = String(S.th);
+    E.thOut.textContent = Math.round(S.th * 100) + '%';
+  }
+  const spec = prefGet(PREF_KEY.spec);
+  if (spec === '1') S.specWanted = true;
+  else if (spec === '0') S.specWanted = false;
+  syncSeg();
+}
 
 const fmt = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
 const sg = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
@@ -953,8 +1005,10 @@ function syncSeg() {
   });
 }
 function setLevel(l) {
+  if (l !== 'word' && l !== 'sent' && l !== 'para') return;
   if (S.doc && !S.doc.has[l]) return;
   S.level = l; syncSeg(); closeInsp(); refresh();
+  prefSet(PREF_KEY.level, l);
 }
 
 /* topic chips */
@@ -1213,12 +1267,12 @@ function renderSpec() {
 E.btnSpec.addEventListener('click', () => {
   const on = specOn();
   if (on && E.spec.hidden) panelFront = 'spec';      /* narrow: tucked behind the inspector -> bring it forward */
-  else { S.specWanted = !on; if (!on) panelFront = 'spec'; }
+  else { S.specWanted = !on; rememberSpec(); if (!on) panelFront = 'spec'; }
   syncPanels();
 });
 wideMQ.addEventListener('change', () => syncPanels());   /* auto-toggles only while specWanted is null */
 E.spec.addEventListener('click', e => {
-  if (e.target.closest('[data-spec-close]')) { S.specWanted = false; syncPanels(); return; }
+  if (e.target.closest('[data-spec-close]')) { S.specWanted = false; rememberSpec(); syncPanels(); return; }
   const li = e.target.closest('li[data-wid]'); if (li) jumpWord(+li.dataset.wid);
 });
 E.insp.addEventListener('click', e => {
@@ -1363,7 +1417,7 @@ $('#pasteGo').addEventListener('click', () => {
 E.head.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b) exportDoc(b.dataset.exp); });
 E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
 let thRAF = 0;
-E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
+E.th.addEventListener('input', () => { S.th = +E.th.value; E.thOut.textContent = Math.round(S.th * 100) + '%'; prefSet(PREF_KEY.th, S.th); cancelAnimationFrame(thRAF); thRAF = requestAnimationFrame(() => { refresh(); }); });
 let dragDepth = 0;
 window.addEventListener('dragenter', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { dragDepth++; E.drop.hidden = false; } });
 window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) E.drop.hidden = true; });
@@ -1377,7 +1431,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') {           /* close the panel in front: inspector first; narrow spectrum sheet next */
     E.paste.hidden = true;
     if (S.sel && !E.insp.hidden) closeInsp();
-    else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; syncPanels(); }
+    else if (!wideMQ.matches && !E.spec.hidden) { S.specWanted = false; rememberSpec(); syncPanels(); }
     else if (S.sel) closeInsp();
   }
 });
@@ -1390,6 +1444,8 @@ window.addEventListener('scroll', () => { E.bar.classList.toggle('scrolled', win
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawMinimap());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); drawMinimap(); });
 
+mountThemeButton();
+restorePrefs();
 initDemoSel();
 syncBar();
 //</app>
