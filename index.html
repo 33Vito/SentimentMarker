@@ -1505,7 +1505,9 @@ $('#pasteGo').addEventListener('click', () => {
 E.head.addEventListener('click', e => {
   const b = e.target.closest('[data-exp]'); if (b) { exportDoc(b.dataset.exp); return; }
   const pill = e.target.closest('[data-sent]'); if (!pill || !S.doc) return;
-  jumpTo('s', +pill.dataset.sent);
+  const id = +pill.dataset.sent;
+  if (S.level === 'para') jumpTo('b', S.doc.sents[id].block, undefined, els.s[id]);   /* paragraph view: select the block, scroll to the sentence */
+  else jumpTo('s', id);
 });
 E.seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(b.dataset.level); });
 let thRAF = 0;
