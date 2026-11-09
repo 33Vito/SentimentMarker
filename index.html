@@ -393,6 +393,10 @@ function lookup(lower) {
 }
 const strength = (level, score, cap = CAP) => Math.min(1, Math.abs(score) / cap[level]);
 
+/* outline rows (pure): true when the document is long enough for the outline to auto-open */
+function outlineWorthy(doc) {
+  return !!doc && doc.blocks.length >= 12 && doc.blocks.filter(b => b.type === 'h').length >= 4;
+}
 /* outline rows (pure): every heading block owns the blocks that follow it until the next heading
    whose level is <= its own (an h2 ends the previous h2; only an h1 ends an h1). The section score
    is the plain sum of its sentence scores, the heading's own included: addition for now, the
@@ -890,7 +894,7 @@ function scaleText(doc) {
   return 'Colour scale ' + parts.join(' · ') + (same ? ' (' + (CAP_SRC[src[lv[0][0]]] || '?') + ')' : '');
 }
 const rankText = (it, own) => (it.score > 0 ? 'most positive ' : 'most negative ') + Math.max(1, Math.round(it.share * 100)) + '%' + (own ? ' here' : '');
-if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText, scaleText, sectionScores };
+if (typeof module !== 'undefined') module.exports = { splitSentences, analyzeSentence, buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, strength, CAP, docFromScored, docToJSON, docToCSV, parseCSV, csvToScored, buildSpec, rankText, noteText, scaleText, sectionScores, outlineWorthy };
 //</core>
 
 //<app>
@@ -1335,26 +1339,33 @@ function patrol(d) {
 let panelFront = 'insp';
 const specOn = () => !!S.doc && (S.specWanted === null ? wideMQ.matches : S.specWanted);
 /* the outline auto-opens only on long documents, and only on wide screens; the button always works */
-const tocLongDoc = () => !!S.doc && S.doc.blocks.length >= 12 && S.doc.blocks.filter(b => b.type === 'h').length >= 4;
-const tocOn = () => !!S.doc && S.doc.blocks.some(b => b.type === 'h') && (S.tocWanted === null ? wideMQ.matches && tocLongDoc() : S.tocWanted);
+const tocLongDoc = outlineWorthy;
+const tocOn = () => !!S.doc && S.doc.blocks.some(b => b.type === 'h') && (S.tocWanted === null ? wideMQ.matches && tocLongDoc(S.doc) : S.tocWanted);
 function syncPanels() {
   const wide = wideMQ.matches, on = specOn(), sel = !!S.sel, ton = tocOn();
-  const showSpec = on && (wide || !sel || panelFront === 'spec');
-  const showToc = ton && (wide || (!sel && panelFront === 'toc'));
-  const showInsp = sel && (wide || !on || panelFront === 'insp');
+  /* narrow: exactly one sheet. The front token wins; while selected the inspector is front unless the
+     outline was explicitly brought up; the spectrum returns on its own once nothing is selected */
+  const showSpec = on && (wide || (!sel && panelFront !== 'toc') || panelFront === 'spec');
+  const showToc = ton && (wide || panelFront === 'toc');
+  const showInsp = sel && (wide || (panelFront !== 'toc' && !on) || panelFront === 'insp');
   const wasHidden = E.spec.hidden;
   E.spec.hidden = !showSpec; E.insp.hidden = !showInsp; E.toc.hidden = !showToc;
-  /* wide: the outline stays when a sentence is selected - the inspector docks under its real bottom edge
-     (the outline auto-sizes up to 50vh, so no reserved gap on short documents, no overlap on long ones) */
+  E.btnToc.disabled = !(S.doc && S.doc.blocks.some(b => b.type === 'h'));
+  E.btnToc.title = E.btnToc.disabled ? 'No headings in this document' : 'Outline of the article';
+  /* wide: the outline stays when a sentence is selected - the inspector docks under the outline's real
+     bottom edge; on short windows the outline gives room back so the inspector keeps a usable height */
   if (wide && !E.toc.hidden && !E.insp.hidden) {
+    const t = E.toc.getBoundingClientRect().top;
+    E.toc.style.maxHeight = Math.max(140, Math.min(window.innerHeight * 0.5, window.innerHeight - t - 156)) + 'px';
     const bottom = E.toc.getBoundingClientRect().bottom;
     E.insp.style.top = (bottom + 12) + 'px';
-    E.insp.style.maxHeight = Math.max(120, window.innerHeight - bottom - 24) + 'px';
-  } else { E.insp.style.top = ''; E.insp.style.maxHeight = ''; }
+    E.insp.style.maxHeight = Math.max(132, window.innerHeight - bottom - 24) + 'px';
+  } else { E.toc.style.maxHeight = ''; E.insp.style.top = ''; E.insp.style.maxHeight = ''; }
   E.btnSpec.setAttribute('aria-pressed', String(on));
   E.btnToc.setAttribute('aria-pressed', String(ton));
   document.body.classList.toggle('spec-on', showSpec);
   if (showSpec) { if (wasHidden || !E.spec.firstChild) renderSpec(); else updateSpecChart(); }
+  if (showToc) updateTocActive();
 }
 const getSpec = () => { if (S.spec === undefined) S.spec = S.doc ? buildSpec(S.doc) : null; return S.spec; };
 function miniSpec(marks) {
@@ -1439,25 +1450,27 @@ function renderToc() {
   }).join('')}</ol>`;
   updateTocActive();
 }
-/* the active row = the last heading whose top is at or above the reading line;
-   a row the user just clicked stays active while its heading is still on screen (near the document end
-   the last heading sits below the reading line even when it fills the view) */
+/* the active row = the last heading whose top is at or above the reading line (the line sits below
+   scroll-margin-top so a clicked heading counts as reached); a row the user just clicked stays active
+   until real user input (wheel / touch / key) or a document switch */
 function updateTocActive() {
   if (E.toc.hidden || !S.tocRows.length) return;
-  const y = window.scrollY + E.bar.offsetHeight + 12;
+  const y = window.scrollY + E.bar.offsetHeight + 24;
   let act = -1;
   for (const r of S.tocRows) { const p = pos.b[r.blockId]; if (p && p.top <= y) act = r.blockId; else break; }
   if (S.tocClick != null) {
     const p = pos.b[S.tocClick];
-    if (p && Math.abs(p.top - window.scrollY) < window.innerHeight) act = S.tocClick;   /* out of range: ignored this frame (mid-smooth-scroll), only a document switch clears it */
+    if (p && Math.abs(p.top - window.scrollY) < window.innerHeight) act = S.tocClick;   /* out of range: ignored this frame (mid-smooth-scroll), cleared by user input or a document switch */
   }
   if (act < 0) act = S.tocRows[0].blockId;
   E.toc.querySelectorAll('.te').forEach(b => b.classList.toggle('on', +b.dataset.goto === act));
 }
+window.addEventListener('wheel', () => { S.tocClick = null; }, { passive: true });
+window.addEventListener('touchmove', () => { S.tocClick = null; }, { passive: true });
 E.btnToc.addEventListener('click', () => {
   const on = tocOn();
   if (on && E.toc.hidden) panelFront = 'toc';               /* narrow sheet tucked behind another panel -> bring it forward */
-  else { S.tocWanted = !on; rememberToc(); if (S.tocWanted) panelFront = 'toc'; }
+  else { S.tocWanted = !on; rememberToc(); panelFront = S.tocWanted ? 'toc' : 'spec'; }
   syncPanels();
 });
 E.toc.addEventListener('click', e => {
@@ -1692,6 +1705,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; E.drop
 document.addEventListener('keydown', e => {
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) { if (e.key === 'Escape') { e.target.blur(); E.paste.hidden = true; } return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  S.tocClick = null;                                       /* keyboard navigation is real user input for the outline */
   if (e.key === 'j' || e.key === 'k') { if (E.paste.hidden) { e.preventDefault(); patrol(e.key === 'j' ? 1 : -1); } return; }   /* not behind the paste dialog */
   if (e.key === '1') setLevel('word'); else if (e.key === '2') setLevel('sent'); else if (e.key === '3') setLevel('para');
   else if (e.key === 'Escape') {           /* close the panel in front: inspector first; narrow spectrum sheet next */
