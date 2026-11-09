@@ -1384,6 +1384,15 @@ function initDemoSel() {
 }
 
 /* wiring */
+const btnTop = document.createElement('button');
+btnTop.className = 'btn';
+btnTop.id = 'btnTop';
+btnTop.type = 'button';
+btnTop.textContent = '回到顶部';
+btnTop.title = '回到页面顶部';
+btnTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+$('.actions').appendChild(btnTop);
+
 $('#btnOpen').addEventListener('click', () => E.file.click());
 E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
 $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
