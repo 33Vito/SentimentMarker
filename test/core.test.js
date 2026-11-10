@@ -414,6 +414,25 @@ ok(sdA.sents.every(s => s.topics.every(i => C.matches(s.core, sdA.topics[i]))), 
 // app wiring for the topic summary (the UI itself is not driven here)
 ok(/S\.tstats = topicScores\(S\.doc, S\.topics\)/.test(appSrc) && /sectionTopicScores\(S\.doc, act\)/.test(appSrc) && /data-more=/.test(appSrc) && /jumpSent\(\+b\.dataset\.sent\)/.test(appSrc), 'chips, outline and the topic popover are wired to topicScores / sectionTopicScores / jumpSent');
 ok(/group\('Positive', st\.topPos\)/.test(appSrc) && /group\('Negative', st\.topNeg\)/.test(appSrc) && /<p class="none">none<\/p>/.test(appSrc) && !/st\.top\b(?!Pos|Neg)/.test(appSrc), 'popover lists Positive and Negative groups, each "none" when empty; no caller of the old top list');
+// chip number = sentences (topicScores.count), the same figure as the popover and the prev/next "N matches" for that topic alone
+ok(/\$\{esc\(t\.label\)\} <small>\$\{st\.count\}<\/small>/.test(appSrc) && !/<small>\$\{t\.count\}<\/small>/.test(appSrc), 'topic chip shows the sentence count from topicScores, not word occurrences');
+const chipDoc = C.docFromScored(dlist[0].scored), chipTopics = C.extractTopics(chipDoc, 8), chipStats = C.topicScores(chipDoc, chipTopics);
+const finIdx = chipTopics.findIndex(t => t.label === 'financial');
+ok(finIdx >= 0 && chipTopics[finIdx].count === 92 && chipStats[finIdx].count === 64, 'Assessment "financial": 92 occurrences, 64 sentences -> the chip now reads 64 like the popover');
+ok(chipTopics.every((t, i) => chipStats[i].count === chipDoc.sents.filter(s => C.matches(s, t)).length), 'chip count = the match total prev/next walks with that topic alone selected');
+// the popover states the neutral rule tally() applies, with this document's numbers
+const neuSrc = appSrc.slice(appSrc.indexOf('function neutralText('), appSrc.indexOf('\n}\n', appSrc.indexOf('function neutralText(')) + 2);
+const neutralText = (d, st) => new Function('S', 'NEUTRAL_K', neuSrc + '\nreturn neutralText;')({ doc: d }, C.NEUTRAL_K)(st);
+const nt = neutralText(chipDoc, chipStats[finIdx]);
+ok(nt === 'Neutral: |score| &lt; <b>0.158</b> (20% of the colour scale <b>±0.791</b>)', 'popover neutral line for the Assessment: ' + nt);
+ok(/<p class="scl" data-neutral>\$\{neutralText\(st\)\}<\/p>/.test(appSrc), 'the neutral line is rendered in the popover');
+const finHits = chipDoc.sents.filter(s => C.matches(s, chipTopics[finIdx]));
+ok(chipStats[finIdx].byPara === 0 && chipStats[finIdx].neu === finHits.filter(s => Math.abs(s.score) < C.NEUTRAL_K * chipDoc.cap.sent).length, 'the stated threshold is the one the neutral count uses: ' + chipStats[finIdx].neu);
+const pOnly = C.docFromScored({ paragraphs: [{ text: 'Rates rose. Rates fell.', score: -0.4 }, { text: 'Rates held.', score: 0.05 }] });
+const pOnlyStat = C.topicScores(pOnly, [C.makeTopic('rates', pOnly)])[0];
+ok(pOnlyStat.byPara === 3 && neutralText(pOnly, pOnlyStat) === 'Neutral: |score| &lt; <b>0.08</b> (20% of the colour scale <b>±0.4</b>)' && pOnlyStat.neu === 1, 'paragraph-only file: the line quotes the paragraph scale: ' + neutralText(pOnly, pOnlyStat));
+const mixStat = C.topicScores(paraOnly, [C.makeTopic('rates', paraOnly)])[0], mixText = neutralText(paraOnly, mixStat);
+ok(mixStat.byPara === 3 && /&lt; <b>0\.02<\/b> for sentence scores, &lt; <b>0\.08<\/b> for paragraph-only scores \(20% of the colour scales <b>±0\.1<\/b> \/ <b>±0\.4<\/b>\)/.test(mixText), 'mixed file: both thresholds stated: ' + mixText);
 ok(/if \(!E\.tpop\.hidden\) closeTpop\(true\)/.test(appSrc) && /e\.key === '1'\) setLevel\('word'\)/.test(appSrc), 'Escape closes the topic popover first; level shortcuts unchanged');
 
 // 6. syntax check of app part

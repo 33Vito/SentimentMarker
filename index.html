@@ -568,7 +568,8 @@ segPol.addEventListener('click', e => {
   if (b && b.dataset.pol) setPol(b.dataset.pol);
 });
 
-/* topic chips: count, then the topic's mean sentence score (topicScores: sentence-level, overlaps count toward each topic) */
+/* topic chips: sentences that mention the topic, then their mean score (topicScores: sentence-level, overlaps count
+   toward each topic). t.count from extractTopics is word occurrences; it only ranks the auto-picked topics. */
 const topicLv = () => (S.doc.has.sent ? 'sent' : 'para');   /* the colour scale a topic mean is read on (paragraph-only files: paragraphs) */
 function renderChips() {
   const anyOn = S.topics.some(t => t.on);
@@ -576,7 +577,7 @@ function renderChips() {
   E.chips.innerHTML = S.topics.map((t, i) => {
     const st = S.tstats[i], k = strength(topicLv(), st.mean, S.doc.cap).toFixed(3);
     const tip = st.count ? `${st.count} sentence${st.count === 1 ? '' : 's'} mention “${t.label}” · mean ${fmt(st.mean)}` : `No sentence mentions “${t.label}”`;
-    return `<span class="tg"><button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}" title="${esc(tip)}">${esc(t.label)} <small>${t.count}</small>`
+    return `<span class="tg"><button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}" title="${esc(tip)}">${esc(t.label)} <small>${st.count}</small>`
       + `<span class="tmean ${sg(st.mean)}" style="--k:${k}" aria-label="mean ${fmt(st.mean)}"><i></i>${fmt(st.mean)}</span>${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="Remove">×</span>' : ''}</button>`
       + `<button type="button" class="chip more" data-more="${i}" aria-controls="tpop" aria-expanded="${S.tpop === t}" aria-label="Strongest passages about ${esc(t.label)}" title="Strongest passages">▾</button></span>`;
   }).join('') + (anyOn ? '<button type="button" class="chip" data-clear="1">Clear</button>' : '');
@@ -596,6 +597,14 @@ E.kw.addEventListener('keydown', e => {
   if (!t.count) { toast(`No occurrences of "${t.label}" in the article`); return; }
   S.topics.push(t); E.kw.value = ''; renderChips(); applyTopics(); paintToc();
 });
+/* the neutral rule tally() applies, with this document's numbers: |score| / colour scale below NEUTRAL_K.
+   Hits that stand for their paragraph (st.byPara) are read on the paragraph scale; a mix states both */
+function neutralText(st) {
+  const cap = S.doc.cap, num = v => +v.toPrecision(3), pct = Math.round(NEUTRAL_K * 100);
+  const lvs = !st.byPara ? ['sent'] : st.byPara === st.count ? ['para'] : ['sent', 'para'];
+  if (lvs.length === 1) return `Neutral: |score| &lt; <b>${num(NEUTRAL_K * cap[lvs[0]])}</b> (${pct}% of the colour scale <b>±${num(cap[lvs[0]])}</b>)`;
+  return `Neutral: |score| &lt; <b>${num(NEUTRAL_K * cap.sent)}</b> for sentence scores, &lt; <b>${num(NEUTRAL_K * cap.para)}</b> for paragraph-only scores (${pct}% of the colour scales <b>±${num(cap.sent)}</b> / <b>±${num(cap.para)}</b>)`;
+}
 /* topic popover: one topic's summary and its strongest positive / negative passages; a passage jumps like a match does */
 function renderTpop() {
   const t = S.tpop, i = S.topics.indexOf(t), st = S.tstats[i];
@@ -605,7 +614,8 @@ function renderTpop() {
   E.tpop.innerHTML = `<div class="ih"><span class="ik">Topic</span><b>${esc(t.label)}</b><button class="x" type="button" data-tpop-close aria-label="Close">×</button></div>
     <p class="ctx">${n ? `${n} sentence${n === 1 ? '' : 's'} mention it · mean <b>${fmt(st.mean)}</b>` : 'No sentence mentions this topic.'}</p>
     ${n ? `<div class="dist" role="img" aria-label="negative ${st.neg}, neutral ${st.neu}, positive ${st.pos}"><i class="neg" style="flex:${st.neg}"></i><i class="neu" style="flex:${st.neu}"></i><i class="pos" style="flex:${st.pos}"></i></div>
-    <p class="dlg"><span>Negative ${st.neg}</span><span>Neutral ${st.neu}</span><span>Positive ${st.pos}</span></p>` : ''}
+    <p class="dlg"><span>Negative ${st.neg}</span><span>Neutral ${st.neu}</span><span>Positive ${st.pos}</span></p>
+    <p class="scl" data-neutral>${neutralText(st)}</p>` : ''}
     ${group('Positive', st.topPos)}${group('Negative', st.topNeg)}
     <p class="scl">Counted per sentence: a sentence that mentions several topics counts toward each of them${st.shared ? ` (${st.shared} of these ${n === 1 ? 'does' : 'do'})` : ''}.</p>`;
   E.tpop.hidden = false;

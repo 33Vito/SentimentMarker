@@ -240,18 +240,19 @@ function sentValue(doc, s) {
   const b = doc.blocks[s.block];
   return s.derived && !s.scored.length && b && !b.derived ? { score: b.score, level: 'para' } : { score: s.score, level: 'sent' };
 }
-/* count / sum / mean and the negative / neutral / positive split of a sentence list; an empty list gives zeros, never NaN */
+/* count / sum / mean and the negative / neutral / positive split of a sentence list; an empty list gives zeros, never NaN.
+   byPara = how many were read on the paragraph scale (they stand for their paragraph) */
 function tally(doc, list) {
-  const r = { count: list.length, sum: 0, mean: 0, pos: 0, neg: 0, neu: 0 }, cap = doc.cap || CAP;
+  const r = { count: list.length, sum: 0, mean: 0, pos: 0, neg: 0, neu: 0, byPara: 0 }, cap = doc.cap || CAP;
   for (const s of list) {
     const v = sentValue(doc, s);
-    r.sum += v.score;
+    r.sum += v.score; if (v.level === 'para') r.byPara++;
     if (!v.score || strength(v.level, v.score, cap) < NEUTRAL_K) r.neu++; else if (v.score > 0) r.pos++; else r.neg++;
   }
   if (r.count) r.mean = r.sum / r.count;
   return r;
 }
-/* one row per topic, in the order given: { key, label, count, sum, mean, pos, neg, neu, shared, topPos, topNeg }.
+/* one row per topic, in the order given: { key, label, count, sum, mean, pos, neg, neu, byPara, shared, topPos, topNeg }.
    shared = hits that also match another topic in this list. topPos = up to opts.n (default 3) hits with score > 0,
    highest first; topNeg = up to n hits with score < 0, lowest first; ties in document order. Each is
    { id, block, score, text }; id is doc.sents[id]. opts.sents narrows the pool (the story view counts body sentences only). */
@@ -270,7 +271,7 @@ function topicScores(doc, topics, opts = {}) {
   });
 }
 /* outline rows x topics: per sectionSpans row, the sentences that match ANY of `topics` (the same union the
-   topic filter leaves undimmed), as { blockId, count, sum, mean, pos, neg, neu } */
+   topic filter leaves undimmed), as { blockId, count, sum, mean, pos, neg, neu, byPara } */
 function sectionTopicScores(doc, topics) {
   const B = doc.blocks;
   return sectionSpans(doc).map(r => {
