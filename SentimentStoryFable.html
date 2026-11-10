@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SentimentMarker Story · Fable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..700&family=Literata:opsz,wght@7..72,400..700&display=swap">
+<style>
+/* Story mode: a scroll-driven reading of a scored article.
+   The page reacts to the sentence at the reading line: the room tints with its mood, the words light up,
+   topics in the right rail count up and lean negative / positive, the left seismograph tracks the place. */
+:root{
+  --bg:#f3f4f6; --paper:#fbfbfc; --ink:#1c2128; --muted:#5d6672; --line:#d5d9e0; --chip:#e7e9ee;
+  --pos:#14a596; --neg:#f2802b; --a-min:.16; --a-max:.62; --glow:.30;
+  --font-read:'Literata','Noto Serif SC',Georgia,serif;
+  --font-ui:'DM Sans','PingFang SC','Noto Sans SC',system-ui,sans-serif;
+  --font-num:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --n:0; --p:0;             /* live mood, 0..1 each, written by the scroll loop */
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1014; --paper:#161a20; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a; --chip:#1f252d;
+    --pos:#1fb5a5; --neg:#f08c3f; --a-min:.16; --a-max:.55; --glow:.36; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1014; --paper:#161a20; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a; --chip:#1f252d;
+  --pos:#1fb5a5; --neg:#f08c3f; --a-min:.16; --a-max:.55; --glow:.36; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);-webkit-text-size-adjust:100%;overflow-x:hidden}
+[hidden]{display:none!important}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* the room: two soft light sources whose strength follows the mood at the reading line */
+.atmo{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(90% 70% at 12% 100%,color-mix(in srgb,var(--neg) calc(var(--n) * var(--glow) * 100%),transparent),transparent 72%),
+    radial-gradient(90% 70% at 88% 0%,color-mix(in srgb,var(--pos) calc(var(--p) * var(--glow) * 100%),transparent),transparent 72%)}
+body.surge .atmo{animation:surge .9s ease-out}
+@keyframes surge{0%{filter:saturate(1.8) brightness(1.15)}100%{filter:none}}
+
+/* top bar */
+.top{position:fixed;z-index:30;top:0;left:0;right:0;display:flex;align-items:center;gap:.6rem;padding:.7rem max(16px,env(safe-area-inset-right,0px)) .7rem max(16px,env(safe-area-inset-left,0px));
+  background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.brand{font:650 .95rem/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap;margin-right:auto}
+.brand em{font-style:normal;padding:.08em .22em;border-radius:.25em;
+  background-image:linear-gradient(103deg,color-mix(in srgb,var(--neg) 55%,transparent) 0 48%,color-mix(in srgb,var(--pos) 55%,transparent) 52% 100%)}
+.brand small{font:500 .7rem var(--font-ui);color:var(--muted);margin-left:.45rem;letter-spacing:.06em;text-transform:uppercase}
+.top select,.top a{font:500 .8rem/1 var(--font-ui);padding:.5rem .7rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none;max-width:24rem;min-width:0}
+.prog{position:absolute;left:0;bottom:0;height:2px;width:100%;transform-origin:0 50%;transform:scaleX(var(--prog,0));
+  background:linear-gradient(90deg,var(--neg),var(--pos))}
+
+/* hero */
+.hero{position:relative;z-index:1;min-height:100svh;display:grid;align-content:center;justify-items:center;text-align:center;padding:6rem 20px 4rem}
+.hero-in{width:min(62rem,100%);will-change:transform,opacity}
+.kicker{margin:0 0 1rem;font:500 .78rem var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hero h1{margin:0 auto;max-width:18ch;font:700 clamp(2.2rem,6.4vw,4.6rem)/1.02 var(--font-ui);letter-spacing:-.035em;text-wrap:balance}
+.hero h1 span{display:inline-block;opacity:0;transform:translateY(.4em);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:calc(var(--i) * 60ms)}
+@keyframes rise{to{opacity:1;transform:none}}
+.wave{display:block;width:100%;height:auto;margin:2.6rem 0 1.4rem;overflow:visible}
+.wave .zero{stroke:var(--line);stroke-width:1}
+.wave .ln{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;opacity:.8;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 2.4s .4s cubic-bezier(.4,0,.2,1) forwards}
+.wave .fpos{fill:color-mix(in srgb,var(--pos) 55%,transparent)}
+.wave .fneg{fill:color-mix(in srgb,var(--neg) 60%,transparent)}
+.wave .fill{opacity:0;animation:fade 1.2s 1.6s forwards}
+.wave text{font:400 11px var(--font-num);fill:var(--muted)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{to{opacity:1}}
+.stats{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem 2.2rem;margin:0;font:400 .85rem var(--font-ui);color:var(--muted)}
+.stats b{display:block;font:600 1.6rem/1.2 var(--font-num);color:var(--ink)}
+.stats .neg b{color:var(--neg)} .stats .pos b{color:var(--pos)}
+.cue{margin-top:2.4rem;font:500 .8rem var(--font-ui);color:var(--muted);letter-spacing:.06em}
+.cue i{display:block;width:1px;height:2.6rem;margin:.6rem auto 0;background:linear-gradient(var(--muted),transparent);animation:drip 1.8s infinite}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* left seismograph: every sentence as a stroke left (negative) or right (positive) of the spine */
+.spine{position:fixed;z-index:20;left:max(18px,env(safe-area-inset-left,0px));top:5rem;bottom:2rem;width:60px;opacity:var(--chrome,0);transition:opacity .3s;touch-action:none;cursor:pointer}
+.spine canvas{display:block;width:100%;height:100%}
+.spine .cur{position:absolute;top:0;left:-6px;right:-6px;height:0;border-top:2px solid var(--ink);transform:translateY(var(--y,0));pointer-events:none}
+.spine .cur::after{content:attr(data-pct);position:absolute;left:calc(100% + 6px);top:-.55rem;font:500 .65rem var(--font-num);color:var(--muted)}
+
+/* right rail: the mood here + topics as you meet them */
+.rail{position:fixed;z-index:20;right:max(20px,env(safe-area-inset-right,0px));top:5.2rem;width:16rem;max-height:calc(100vh - 7rem);overflow:auto;opacity:var(--railo,0);transition:opacity .3s;
+  padding:1rem;border-radius:1rem;background:color-mix(in srgb,var(--paper) 78%,transparent);border:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.rail h3{margin:0 0 .5rem;font:600 .68rem var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.moodword{font:700 1.9rem/1 var(--font-ui);letter-spacing:-.02em;transition:color .4s}
+.moodword.neg{color:var(--neg)} .moodword.pos{color:var(--pos)}
+.needle{position:relative;height:.5rem;margin:.7rem 0 .3rem;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--neg) 70%,transparent),var(--chip) 50%,color-mix(in srgb,var(--pos) 70%,transparent))}
+.needle i{position:absolute;top:-.3rem;width:3px;height:1.1rem;border-radius:2px;background:var(--ink);left:calc(50% + var(--m,0) * 50%);transform:translateX(-50%);transition:left .5s cubic-bezier(.2,.7,.2,1)}
+.where{margin:.5rem 0 1.1rem;font:400 .75rem/1.45 var(--font-ui);color:var(--muted)}
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:.15rem}
+.tp{width:100%;border:0;background:transparent;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.25rem .5rem;padding:.45rem .5rem;border-radius:.6rem;cursor:pointer;transition:background-color .3s}
+.tp:hover{background:var(--chip)}
+.tp .tn{font:600 .88rem var(--font-ui);overflow-wrap:anywhere}
+.tp .tc{font:500 .75rem var(--font-num);color:var(--muted)}
+.tp .tc b{color:var(--ink);font-weight:500}
+.tp .tm{grid-column:1/-1;position:relative;height:5px;border-radius:99px;background:var(--chip)}
+.tp .tm::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+.tp .tm i{position:absolute;top:0;bottom:0;border-radius:99px;transition:left .5s,width .5s,background-color .5s}
+.tp.unseen{opacity:.4}
+.tp.hit{animation:hit 1s ease-out}
+@keyframes hit{0%{background:color-mix(in srgb,var(--hue,var(--ink)) 28%,transparent);transform:translateX(-4px)}100%{background:transparent;transform:none}}
+.rail .hint{margin:.8rem 0 0;font:400 .7rem/1.45 var(--font-ui);color:var(--muted)}
+
+/* the story */
+.story{position:relative;z-index:1;padding:0 20px 10vh}
+.chapter{max-width:40rem;margin:0 auto}
+.ch-head{position:sticky;top:3.4rem;z-index:5;margin:22vh 0 2.4rem;padding:.6rem 0;transition:padding .35s}
+.ch-head::before{content:"";position:absolute;inset:0 -20px;z-index:-1;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .35s}
+.ch-kick{display:block;font:500 .72rem var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.ch-no{font:500 .8rem var(--font-num);color:var(--muted);margin-right:.6rem}
+.ch-head h2{margin:.3rem 0 .9rem;font:700 clamp(1.7rem,4.2vw,2.8rem)/1.08 var(--font-ui);letter-spacing:-.025em;text-wrap:balance;transition:font-size .35s,margin .35s}
+.ch-head.long h2{font-size:clamp(1.35rem,3vw,1.95rem);line-height:1.2}
+.ch-mood{display:flex;align-items:center;gap:.7rem;margin:0;font:500 .8rem var(--font-ui);color:var(--muted);transition:opacity .3s}
+.ch-mood b{font-weight:600}
+.ch-mood b.neg{color:var(--neg)} .ch-mood b.pos{color:var(--pos)}
+.ch-bar{position:relative;width:7rem;height:5px;border-radius:99px;background:var(--chip)}
+.ch-bar i{position:absolute;top:0;bottom:0;border-radius:99px}
+/* stuck: the chapter title becomes a compact running head */
+.ch-head.stuck{padding:.35rem 0}
+.ch-head.stuck::before{opacity:1;border-bottom:1px solid var(--line)}
+.ch-head.stuck h2{font-size:1rem;margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.ch-head.stuck .ch-kick,.ch-head.stuck .ch-mood{display:none}
+.ch-sub{display:none}
+.ch-head.stuck .ch-sub:not(:empty){display:block;font:500 .78rem/1.35 var(--font-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-head.stuck .ch-sub::before{content:"› ";color:var(--line)}
+/* level-2 headings: sections inside a chapter, part of the flow (only the chapter title sticks) */
+.sec-head{margin:3.2rem 0 1.1rem;scroll-margin-top:6.5rem}
+.sec-head h3{margin:0 0 .5rem;font:650 1.32rem/1.25 var(--font-ui);letter-spacing:-.015em;text-wrap:balance}
+.sec-head.long h3{font-size:1.08rem;line-height:1.4;font-weight:600}
+.sec-head .ch-mood{font-size:.75rem}
+.sec-head .ch-bar{width:4.5rem}
+
+.para{position:relative;margin:0 0 1.5rem;font:400 1.14rem/1.9 var(--font-read);overflow-wrap:break-word;hyphens:auto}
+/* paragraph mood rail grows in as the paragraph enters */
+.para::before{content:"";position:absolute;left:-1.3rem;top:.45rem;bottom:.45rem;width:3px;border-radius:3px;
+  background:color-mix(in srgb,var(--hue,var(--line)) calc(var(--pk,0) * 85%),var(--line));transform:scaleY(0);transform-origin:top;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.para.in::before{transform:none}
+.s{color:color-mix(in srgb,var(--ink) 38%,transparent);transition:color .6s}
+.s.lit{color:var(--ink)}
+.m{--hl:color-mix(in srgb,var(--hue) calc((var(--a-min) + var(--k) * (var(--a-max) - var(--a-min))) * var(--fade,1) * 100%),transparent);
+  background-image:linear-gradient(103deg,transparent 0,var(--hl) 2%,var(--hl) 97%,transparent 100%);
+  background-repeat:no-repeat;background-size:0% 88%;background-position:0 62%;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:.3em;padding:.04em .16em;margin:0 -.16em;
+  transition:background-size .75s cubic-bezier(.2,.7,.2,1)}
+.s.lit .m{background-size:100% 88%}
+.s.lit:not(.now) .m{--fade:.7}
+.s.now .m{transition-delay:calc(var(--d,0) * 90ms)}
+.neg{--hue:var(--neg)} .pos{--hue:var(--pos)}
+.tw{text-decoration:underline dotted color-mix(in srgb,var(--ink) 35%,transparent);text-underline-offset:.28em;text-decoration-thickness:1.5px}
+.s.now .tw{text-decoration-style:solid;text-decoration-color:var(--ink)}
+body.follow .tw:not(.tf){text-decoration-color:transparent}
+body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-offset:.28em}
+.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%{background:color-mix(in srgb,var(--ink) 14%,transparent)}100%{background:transparent}}
+
+/* finale */
+.finale{position:relative;z-index:1;max-width:58rem;margin:0 auto;padding:18vh 20px 16vh}
+.finale h2{margin:0 0 .6rem;font:700 clamp(1.9rem,4.6vw,3.2rem)/1.05 var(--font-ui);letter-spacing:-.03em;text-align:center}
+.finale .sub{margin:0 auto 3rem;max-width:34rem;text-align:center;font:400 .95rem/1.6 var(--font-ui);color:var(--muted)}
+.field{position:relative;height:var(--fh,260px);margin:0 0 .6rem}
+.pins{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.pins path{fill:none;stroke:color-mix(in srgb,var(--hue) 55%,transparent);stroke-width:1.2;stroke-dasharray:2 3;opacity:0;transition:opacity .8s;transition-delay:calc(.9s + var(--i) * 90ms)}
+.pins circle{fill:var(--hue);opacity:0;transition:opacity .8s;transition-delay:calc(.9s + var(--i) * 90ms)}
+.field.go .pins path,.field.go .pins circle{opacity:1}
+.field .ax{position:absolute;left:0;right:0;top:calc(var(--axis,200px) - 3px);height:6px;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--neg) 70%,transparent),var(--chip) 50%,color-mix(in srgb,var(--pos) 70%,transparent))}
+.field .lab{position:absolute;bottom:0;font:500 .75rem var(--font-ui);color:var(--muted)}
+.bub{position:absolute;left:50%;top:var(--y);width:var(--d);height:var(--d);margin-left:calc(var(--d) / -2);border-radius:50%;border:0;padding:0;
+  background:color-mix(in srgb,var(--hue,var(--muted)) calc(25% + var(--k) * 55%),transparent);
+  transform:scale(.2);opacity:0;transition:left 1.4s cubic-bezier(.2,.8,.2,1),transform 1.2s cubic-bezier(.2,.8,.2,1),opacity .6s;transition-delay:calc(var(--i) * 90ms)}
+.bub span{position:absolute;left:50%;top:calc(100% + .3rem);transform:translateX(-50%);white-space:nowrap;font:600 .82rem var(--font-ui)}
+.bub small{display:block;font:400 .7rem var(--font-num);color:var(--muted);text-align:center}
+.field.go .bub{left:var(--x);transform:none;opacity:1}
+.moments{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:4.5rem}
+.moments h3{margin:0 0 .8rem;font:600 .72rem var(--font-ui);letter-spacing:.12em;text-transform:uppercase}
+.moments h3.neg{color:var(--neg)} .moments h3.pos{color:var(--pos)}
+.card{display:block;width:100%;text-align:left;margin:0 0 .7rem;padding:.9rem 1rem;border-radius:.9rem;border:1px solid var(--line);background:var(--paper);
+  font:400 .95rem/1.6 var(--font-read);box-shadow:inset 3px 0 0 var(--hue);opacity:0;transform:translateY(16px);transition:opacity .7s,transform .7s,border-color .2s;transition-delay:calc(var(--i) * 110ms)}
+.card:hover{border-color:color-mix(in srgb,var(--hue) 60%,var(--line))}
+.card b{display:block;font:500 .75rem var(--font-num);color:var(--hue);margin-bottom:.25rem}
+.card small{display:block;margin-top:.45rem;font:500 .72rem/1.35 var(--font-ui);color:var(--muted)}
+.moments.go .card{opacity:1;transform:none}
+.again{display:block;margin:4rem auto 0;padding:.7rem 1.1rem;border-radius:.7rem;border:1px solid var(--line);background:var(--paper);font:500 .85rem var(--font-ui)}
+
+.toast{position:fixed;z-index:60;left:50%;bottom:1.2rem;transform:translateX(-50%);padding:.55rem .9rem;border-radius:.7rem;background:var(--ink);color:var(--bg);font:500 .82rem var(--font-ui)}
+.drop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(4px);font:600 1.1rem var(--font-ui)}
+.drop span{padding:2rem 2.4rem;border:2px dashed var(--ink);border-radius:1.2rem}
+
+/* outline: the two heading levels, each row with its section's sentiment (the sum of its sentence scores, as in
+   the analyzer's outline). Rows you have not reached yet are dimmed; the one you are in is filled.
+   Wide: a column between the seismograph and the text. Narrower: a popover from the top bar button. */
+.toc{position:fixed;z-index:20;left:112px;top:5.2rem;width:min(18rem,calc(50vw - 20rem - 136px));max-height:calc(100vh - 7.5rem);overflow:auto;overscroll-behavior:contain;
+  opacity:var(--railo,0);transition:opacity .3s;padding:.2rem .2rem .6rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.toc h3{margin:0 0 .4rem .45rem;font:600 .68rem var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.toc li.lv2{padding-left:.95rem}
+.toc .te{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .5rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;
+  padding:.34rem .45rem;border-radius:.5rem;transition:background-color .25s,opacity .3s}
+.toc .te:hover{background:var(--chip)}
+.toc .te.ahead{opacity:.5}
+.toc .te.on{background:color-mix(in srgb,var(--hue) 16%,var(--chip));opacity:1}
+.toc .tt{font:550 .78rem/1.35 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc .tt i{font:500 .68rem var(--font-num);font-style:normal;color:var(--muted);margin-right:.4rem}
+.toc li.lv2 .tt{font-weight:400}
+.toc li.lv2 .te:not(.on) .tt{color:var(--muted)}
+.toc .tv{font:500 .68rem var(--font-num);padding:.04rem .35rem;border-radius:.3rem;background:color-mix(in srgb,var(--hue) 24%,transparent);white-space:nowrap}
+.toc .tb{grid-column:1/-1;height:3px;border-radius:2px;background:color-mix(in srgb,var(--hue) 80%,transparent)}
+.toc .tb.n{justify-self:end}
+.tocBtn{display:none;align-items:center;gap:.4rem;font:500 .8rem/1 var(--font-ui);padding:.5rem .7rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);flex:none}
+.tocBtn[aria-expanded="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:1359px){
+  .tocBtn:not([hidden]){display:inline-flex}
+  .toc{z-index:40;left:auto;right:max(16px,env(safe-area-inset-right,0px));top:3.6rem;width:min(23rem,calc(100% - 32px));max-height:min(70vh,36rem);opacity:1;
+    padding:.8rem .6rem .8rem;border-radius:1rem;border:1px solid var(--line);background:var(--paper);box-shadow:0 18px 50px -18px rgba(0,0,0,.35)}
+  .toc:not(.open){display:none}
+}
+
+/* narrow: the seismograph lies down along the top, the rail becomes a pill at the bottom */
+.pill{display:none}
+
+/* ---------- FX layer: a living room, wet ink, sparks that feed the mood needle, autoplay ---------- */
+:root{--mc:var(--ink)}   /* the live mood colour, written by the scroll loop */
+.aurora,.ink{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;display:none}
+.aurora{z-index:0}
+.ink{z-index:45}
+body.fx .aurora,body.fx .ink{display:block}
+body.fx .atmo{display:none}
+/* focus: the sentence at the reading line is full ink, what you have read settles back a little */
+.s.lit:not(.now){color:color-mix(in srgb,var(--ink) 80%,transparent)}
+/* wet ink: a fresh stroke glows in its colour, by its strength, then dries */
+.s.now .m{animation:wet 1.6s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(var(--d,0) * 90ms)}
+@keyframes wet{0%{box-shadow:0 0 0 0 transparent}28%{box-shadow:0 .05em 1.3em 0 color-mix(in srgb,var(--hue) calc(18% + var(--k) * 72%),transparent)}100%{box-shadow:0 0 0 0 transparent}}
+.moodword{display:inline-block;transform-origin:0 60%}
+.spine .cur{border-color:var(--mc);box-shadow:0 0 14px 1px color-mix(in srgb,var(--mc) 65%,transparent);transition:border-color .4s}
+.prog{box-shadow:0 0 12px color-mix(in srgb,var(--mc) 70%,transparent)}
+/* chapter titles rise in as they arrive */
+.ch-head h2{transition:font-size .35s,margin .35s,opacity .9s,transform .9s cubic-bezier(.2,.7,.2,1)}
+.ch-head .ch-kick{transition:opacity .9s,letter-spacing 1.2s cubic-bezier(.2,.7,.2,1)}
+.ch-head:not(.in) h2{opacity:0;transform:translateY(.55em)}
+.ch-head:not(.in) .ch-kick{opacity:0;letter-spacing:.4em}
+/* hero: a reading dot rides the sentiment line */
+.wave .scan{fill:var(--ink);opacity:0;animation:fade .5s 2.8s forwards}
+.wave .halo{fill:var(--ink);opacity:0;animation:halo .5s 2.8s forwards}
+@keyframes halo{to{opacity:.16}}
+/* finale: bubbles keep floating once they land */
+.field.go .bub{animation:bob 4.6s ease-in-out calc(1.9s + var(--i) * .35s) infinite alternate}
+@keyframes bob{from{transform:none}to{transform:translateY(-6px)}}
+/* autoplay */
+.playBtn{display:inline-flex;align-items:center;gap:.4rem;font:500 .8rem/1 var(--font-ui);padding:.5rem .7rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);flex:none}
+.playBtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.speedBtn{font-family:var(--font-num);min-width:2.6rem;justify-content:center}
+
+@media (max-width:1180px){
+  .rail{display:none}
+  .pill{display:flex;position:fixed;z-index:25;left:50%;bottom:max(14px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);opacity:var(--railo,0);align-items:center;gap:.6rem;
+    max-width:calc(100% - 32px);padding:.5rem .8rem;border-radius:999px;background:color-mix(in srgb,var(--paper) 85%,transparent);border:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font:500 .78rem var(--font-ui);white-space:nowrap;overflow:hidden}
+  .pill b{font:700 .9rem var(--font-ui)} .pill b.neg{color:var(--neg)} .pill b.pos{color:var(--pos)}
+  .pill .pt{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+}
+@media (max-width:760px){
+  .brand small{display:none}
+  .top{padding-block:.55rem}
+  .spine{left:0;right:0;top:3.3rem;bottom:auto;width:auto;height:26px;background:var(--bg)}
+  .spine .cur{top:0;bottom:0;left:0;right:auto;height:auto;width:0;border-top:0;border-left:2px solid var(--ink);transform:translateX(var(--x,0))}
+  .spine .cur::after{display:none}
+  .ch-head{top:5rem}
+  .sec-head{scroll-margin-top:8rem}
+  .sec-head h3{font-size:1.18rem}
+  .toc{top:5.4rem}
+  .para{font-size:1.06rem}
+  .para::before{left:-.8rem}
+  .moments{grid-template-columns:1fr}
+  .brand{margin-right:0}
+  .top select{flex:1 1 auto;max-width:none}
+  .top a{flex:none}
+  .tocBtn span{display:none}
+  .playBtn span{display:none}
+  .playBtn{padding:.5rem .55rem}
+  .speedBtn{min-width:0}
+  .tocBtn{padding:.5rem .55rem}
+  .top a.ed{display:none}
+}
+@media (min-width:761px) and (max-width:1180px){ .story,.finale{padding-left:100px} }
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .bub,.s.now .m{animation:none!important}
+  .wave .scan,.wave .halo{display:none}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<div class="atmo" aria-hidden="true"></div>
+<canvas class="aurora" id="aurora" aria-hidden="true"></canvas>
+<header class="top">
+  <span class="brand">Sentiment<em>Marker</em><small>Fable</small></span>
+  <select id="pick" aria-label="Article"></select>
+  <button type="button" class="playBtn" id="play" aria-pressed="false" title="Play: scroll through the article by itself (Space)"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path id="playIco" d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg><span id="playLbl">Play</span></button>
+  <button type="button" class="playBtn speedBtn" id="speed" title="Playback speed" hidden>1×</button>
+  <button type="button" class="tocBtn" id="tocBtn" aria-expanded="false" aria-controls="toc" aria-label="Outline" title="Outline" hidden><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3.5h12M5 8h9M5 12.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg><span>Outline</span></button>
+  <a class="ed" href="SentimentStoryDemo.html" title="Story without the ink layer">Story</a>
+  <a class="ed" href="SentimentStoryAstra.html" title="Editorial Stability under pressure">Astra</a>
+  <a href="index.html" id="toAnalyzer" title="Open the classic analyzer view">Analyzer</a>
+  <i class="prog" aria-hidden="true"></i>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-in" id="heroIn">
+    <p class="kicker" id="kicker">A sentiment reading</p>
+    <h1 id="title"></h1>
+    <svg class="wave" id="wave" viewBox="0 0 1000 200" role="img"></svg>
+    <div class="stats" id="stats"></div>
+    <div class="cue">Scroll to read it, and feel it<i></i></div>
+  </div>
+</section>
+
+<aside class="spine" id="spine" tabindex="0" role="slider" aria-label="Position in the article (arrow keys: sentence, Page Up/Down: section)" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="The whole article, sentence by sentence — click or drag to jump"><canvas id="spineCv"></canvas><div class="cur" id="cur"></div></aside>
+<aside class="rail" id="rail" aria-label="Mood and topics">
+  <h3>Mood here</h3>
+  <div class="moodword" id="moodWord">—</div>
+  <div class="needle" id="needle"><i></i></div>
+  <p class="where" id="where"></p>
+  <h3>Topics, as you meet them</h3>
+  <ul class="tl" id="topics"></ul>
+  <p class="hint">Bars lean the way each topic has felt so far. Click a topic to follow it to its next mention.</p>
+</aside>
+<nav class="toc" id="toc" aria-label="Outline" hidden></nav>
+<div class="pill" id="pill" aria-hidden="true"><b id="pillMood">—</b><span class="pt" id="pillTopics"></span></div>
+
+<main class="story" id="story" aria-label="Article"></main>
+
+<section class="finale" id="finale" aria-labelledby="finTitle">
+  <h2 id="finTitle">How the topics felt</h2>
+  <p class="sub" id="finSub"></p>
+  <div class="field" id="field"><div class="ax"></div><span class="lab" id="axLo" style="left:0">← Negative</span><span class="lab" id="axHi" style="right:0">Positive →</span></div>
+  <div class="moments" id="moments"></div>
+  <button class="again" type="button" id="again">Read it again ↑</button>
+</section>
+<canvas class="ink" id="ink" aria-hidden="true"></canvas>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="drop" id="drop" hidden><span>Drop a scored JSON file to tell its story</span></div>
+
+<script src="examples/demos.js"></script>
+<!-- the analyzer's core (window.SMCore): the same reading of a scored file on both pages -->
+<script src="sentiment-core.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
+const sg = v => (v < 0 ? 'neg' : v > 0 ? 'pos' : '');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+//<story-data>
+/* ---------- data: a scored JSON (docs/FORMAT.md) -> chapters / sentences / topics, on top of SMCore ---------- */
+const STOP = new Set(('about above after again against also although among another because been before being below between both could does doing down during each either even every from further have having here into itself just least less made make many more most much must near need other over same several should since some such than that their them then there these they this those through under until upon very were what when where which while will with within without would your year years last first second third remain remains continue continued including include however recent recently period across already around further given likely well high higher level levels part parts term terms time times overall based particular particularly according general generally indeed rather whether toward towards might shall like into onto').split(' '));
+
+function build(scored) {
+  if (!scored || !Array.isArray(scored.paragraphs)) throw new Error('Not a scored file (needs "paragraphs", see docs/FORMAT.md)');
+  /* one reading of the file for both pages: centre, sentence splitting, word placement (docs/FORMAT.md "Locating words"),
+     derived scores, heading levels and the colour scales (the file's scale, else the 90th percentile of non-zero
+     |scores|, else the default) all come from SMCore.docFromScored, exactly as the analyzer opens it */
+  const doc = SMCore.docFromScored(scored), cap = doc.cap;
+  const blocks = [], sents = [];
+  for (const cb of doc.blocks) {
+    const b = { type: cb.type, sents: [] };
+    if (b.type === 'h') b.level = cb.level;
+    for (const cs of cb.sents) {
+      const v = SMCore.sentValue(doc, cs);   /* paragraph-only files: a sentence stands for its paragraph (src 'para') */
+      const o = { id: sents.length, text: cs.text, toks: cs.toks, score: v.score, src: v.level, block: blocks.length, core: cs };
+      o.n = Math.max(-1, Math.min(1, v.score / cap[v.level]));
+      b.sents.push(o); if (b.type === 'p') sents.push(o);
+    }
+    blocks.push(b);
+  }
+  if (!sents.length) throw new Error('No body sentences in this file');
+
+  /* chapters and sections, from the two outline levels (FORMAT.md paragraphs[].level, as in the analyzer's outline):
+     a level-1 heading opens a chapter, a level-2 heading a section inside it. A run of level-1 headings folds into
+     kicker + title ("Chapter 1" / "The Global …"); a run of level-2 headings is one heading split across lines. */
+  const chapters = [], secs = []; let kick = null, kickH = [], cur = null, sec = null, run = null;
+  const chapter = (title, hs) => { cur = { id: chapters.length, title, kick, items: [], secs: [], hs: hs || [] }; kick = null; kickH = []; sec = null; chapters.push(cur); };
+  blocks.forEach((b, i) => {
+    if (b.type === 'h') {
+      const t = b.sents.map(s => s.text).join(' '), nx = blocks[i + 1];
+      if (b.level === 2 && run) { run.t += ' ' + t; run.hs.push(...b.sents); }
+      else run = { t, hs: [...b.sents] };
+      if (nx && nx.type === 'h' && nx.level === b.level) {
+        if (b.level === 1) { kick = kick ? kick + ' · ' + t : t; kickH.push(...b.sents); run = null; }
+        return;
+      }
+      if (b.level === 1) chapter(run.t, [...kickH, ...run.hs]);
+      else {
+        if (!cur) chapter(null);
+        sec = { id: secs.length, title: run.t, ch: cur.id, hs: run.hs, sents: [] };
+        secs.push(sec); cur.secs.push(sec); cur.items.push({ sec });
+      }
+      run = null; return;
+    }
+    run = null;
+    if (!cur) chapter(null);
+    cur.items.push({ para: b });
+    for (const s of b.sents) { s.ch = cur.id; s.sec = sec ? sec.id : -1; if (sec) sec.sents.push(s); }
+  });
+  const mean = a => (a.length ? a.reduce((x, s) => x + s.n, 0) / a.length : 0);
+  for (const c of chapters) { c.sents = c.items.flatMap(it => (it.para ? it.para.sents : [])); c.n = mean(c.sents); }
+  for (const s of secs) s.n = mean(s.sents);
+
+  /* outline rows: a chapter spans to the next chapter, a section to the next heading. The value is the plain sum
+     of the sentence scores in that span, heading included, like the analyzer's sectionScores. */
+  const sum = a => Math.round(a.reduce((x, s) => x + s.score, 0) * 100) / 100;
+  const outline = []; let no = 0;
+  for (const c of chapters) {
+    if (c.title) c.no = String(++no).padStart(2, '0');
+    if (c.title) outline.push({ level: 1, title: c.title, kick: c.kick, no: c.no, ch: c.id, sec: -1, sum: sum([...c.hs, ...c.secs.flatMap(s => s.hs), ...c.sents]), count: c.sents.length, first: c.sents.length ? c.sents[0].id : null });
+    for (const s of c.secs) outline.push({ level: 2, title: s.title, ch: c.id, sec: s.id, sum: sum([...s.hs, ...s.sents]), count: s.sents.length, first: s.sents.length ? s.sents[0].id : null });
+  }
+
+  /* topics: the most-mentioned content words of the body, counted once per sentence. Keys are the analyzer's
+     (normWord over the core's tokens), so SMCore.matches finds them and SMCore.topicScores sums them. */
+  const body = sents.map(s => s.core), cnt = new Map();
+  for (const cs of body) {
+    const seen = new Set();
+    for (const t of cs.wt) {
+      if (!t.word || !/\p{L}/u.test(t.text)) continue;
+      const k = SMCore.normWord(t.text); if (k.length < 4 || STOP.has(k) || seen.has(k)) continue; seen.add(k);
+      let e = cnt.get(k); if (!e) cnt.set(k, e = { key: k, n: 0, surf: new Map() });
+      e.n++; const sf = t.text.toLowerCase(); e.surf.set(sf, (e.surf.get(sf) || 0) + 1);
+    }
+  }
+  const picked = [...cnt.values()].filter(e => e.n >= 3).sort((a, b) => b.n - a.n || b.key.length - a.key.length).slice(0, 7)
+    .map(e => ({ key: e.key, sub: null, label: [...e.surf.entries()].sort((a, b) => b[1] - a[1])[0][0] }));
+  /* total and mean per topic: the analyzer's sentence-level summary, over body sentences (headings are not read here) */
+  const stats = SMCore.topicScores(doc, picked, { sents: body, n: 0 });
+  const topics = picked.map((t, i) => ({ i, key: t.key, sub: null, label: t.label, total: stats[i].count, mean: stats[i].mean }));
+  const tIndex = new Map(topics.map(t => [t.key, t.i]));
+  for (const s of sents) s.topics = topics.filter(t => SMCore.matches(s.core, t)).map(t => t.i);
+  /* prefix sums so the rail can answer "how has this topic felt up to sentence i" in O(topics) */
+  for (const t of topics) {
+    t.cnt = new Uint16Array(sents.length); t.sum = new Float32Array(sents.length); let c = 0, x = 0;
+    sents.forEach((s, i) => { if (s.topics.includes(t.i)) { c++; x += s.n; } t.cnt[i] = c; t.sum[i] = x; });
+  }
+  return { title: doc.title, sents, chapters, secs, outline, topics, tIndex, wScale: cap.word, sScale: cap.sent, pScale: cap.para, doc };
+}
+//</story-data>
+
+const MOODS = [[-0.6, 'Alarmed'], [-0.32, 'Tense'], [-0.1, 'Uneasy'], [0.1, 'Measured'], [0.32, 'Steady'], [0.6, 'Hopeful'], [Infinity, 'Buoyant']];
+const moodWord = n => MOODS.find(([t]) => n <= t)[1];
+
+/* ---------- rendering ---------- */
+let D = null, els = [], chHeads = [], secHeads = [], stickyTops = [], tops = [], cur = -2, storyTop = 0, storyH = 1;
+
+function plain(t) {   /* wrap topic words, tokenised and keyed as SMCore.matches sees them; escape everything */
+  return SMCore.rawTokens(t).map(k => {
+    const ti = k.word ? D.tIndex.get(SMCore.normWord(k.text)) : undefined;
+    return ti == null ? esc(k.text) : `<span class="tw" data-t="${ti}">${esc(k.text)}</span>`;
+  }).join('');
+}
+/* the sentence as the core laid it out: scored word spans (placed by docFromScored) and the text between them */
+function sentHTML(s) {
+  let out = '', d = 0;
+  for (const t of s.toks) {
+    if (!(t.word && t.score)) { out += plain(t.text); continue; }
+    const k = clamp(Math.abs(t.score) / D.wScale, 0, 1).toFixed(2), note = SMCore.noteText(t);
+    out += `<span class="m ${sg(t.score)}" style="--k:${k};--d:${d++}" title="${esc(t.text)} ${fmt(t.score)}${note ? ' · ' + esc(note) : ''}">${esc(t.text)}</span>`;
+  }
+  return `<span class="s" data-s="${s.id}">${out}</span>`;
+}
+function barStyle(n) { return n < 0 ? `left:${50 + 50 * n}%;width:${-50 * n}%;background:var(--neg)` : `left:50%;width:${50 * n}%;background:var(--pos)`; }
+
+function render() {
+  document.title = D.title + ' · SentimentMarker Story';
+  $('#title').innerHTML = D.title.split(/\s+/).map((w, i) => `<span style="--i:${i}">${esc(w)}</span>`).join(' ');
+  drawWave();
+  const nNeg = D.sents.filter(s => s.n < -0.05).length, nPos = D.sents.filter(s => s.n > 0.05).length, mean = D.sents.reduce((x, s) => x + s.n, 0) / D.sents.length;
+  $('#stats').innerHTML = `<span><b>${D.sents.length}</b>sentences</span><span class="neg"><b>${Math.round(nNeg / D.sents.length * 100)}%</b>negative</span><span class="pos"><b>${Math.round(nPos / D.sents.length * 100)}%</b>positive</span><span class="${sg(mean)}"><b>${moodWord(mean)}</b>overall</span>`;
+  if (!reduced.matches) $('#stats').querySelectorAll('b').forEach(b => {
+    const m = /^(\d+)(%?)$/.exec(b.textContent); if (!m) return;
+    const to = +m[1], t0 = performance.now() + 500; b.textContent = '0' + m[2];
+    const f = t => { const k = clamp((t - t0) / 1100, 0, 1); b.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + m[2]; if (k < 1 && b.isConnected) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  });
+
+  const moodLine = (n, k) => `<p class="ch-mood"><b class="${sg(n)}">${moodWord(n)}</b><span class="ch-bar"><i style="${barStyle(n)}"></i></span><span>${k} sentence${k === 1 ? '' : 's'}</span></p>`;
+  $('#story').innerHTML = D.chapters.map(c => {
+    const head = `<header class="ch-head${c.title && c.title.length > 70 ? ' long' : ''}" data-c="${c.id}">${c.kick ? `<span class="ch-kick">${esc(c.kick)}</span>` : ''}<h2>${c.no ? `<span class="ch-no">${c.no}</span>` : ''}${esc(c.title || 'Opening')}</h2>`
+      + (c.sents.length ? moodLine(c.n, c.sents.length) : '') + '<span class="ch-sub"></span></header>';
+    const body = c.items.map(({ para: p, sec: s }) => {
+      if (s) return `<header class="sec-head${s.title.length > 90 ? ' long' : ''}" data-k="${s.id}"><h3>${esc(s.title)}</h3>${s.sents.length ? moodLine(s.n, s.sents.length) : ''}</header>`;
+      const m = p.sents.reduce((x, t) => x + t.n, 0) / p.sents.length;
+      return `<p class="para ${sg(m)}" style="--pk:${Math.abs(m).toFixed(2)}">${p.sents.map(sentHTML).join(' ')}</p>`;
+    }).join('');
+    return `<section class="chapter" data-c="${c.id}">${head}${body}</section>`;
+  }).join('');
+  els = [...document.querySelectorAll('.s')];
+  chHeads = [...document.querySelectorAll('.ch-head')];
+  secHeads = [...document.querySelectorAll('.sec-head')];
+  renderToc();
+
+  $('#topics').innerHTML = D.topics.map(t => `<li><button type="button" class="tp unseen" data-t="${t.i}" title="Follow “${esc(t.label)}” to its next mention"><span class="tn">${esc(t.label)}</span><span class="tc"><b>0</b>/${t.total}</span><span class="tm" aria-hidden="true"><i></i></span></button></li>`).join('');
+  renderFinale();
+  paraObserver();
+  Play.stop(); FX.clear();
+  cur = -2; measure(); window.scrollTo({ top: 0, behavior: 'instant' }); tick(true);
+}
+
+/* ---------- outline ---------- */
+const fmt1 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+let tocOn = -1;
+function renderToc() {
+  const T = $('#toc'), rows = D.outline;
+  T.hidden = $('#tocBtn').hidden = !rows.length; tocOn = -1; closeToc();
+  if (!rows.length) { T.innerHTML = ''; return; }
+  T.innerHTML = `<h3>Outline</h3><ol>${rows.map((r, i) => {
+    const q = r.sum / Math.sqrt(r.sum * r.sum + 15);   /* the analyzer's squash, so long sections do not saturate */
+    return `<li class="lv${r.level}" style="--hue:var(--${q > 0 ? 'pos' : q < 0 ? 'neg' : 'muted'})"><button type="button" class="te ahead" data-r="${i}" title="${esc((r.kick ? r.kick + ' · ' : '') + r.title)} · ${r.count} sentences · sum ${fmt1(r.sum)}">`
+      + `<span class="tt">${r.no ? `<i>${r.no}</i>` : ''}${esc(r.title)}</span><span class="tv">${fmt1(r.sum)}</span><i class="tb${q < 0 ? ' n' : ''}" style="width:${Math.max(4, Math.round(Math.abs(q) * 100))}%"></i></button></li>`;
+  }).join('')}</ol>`;
+}
+/* the row you are in: the section of the sentence at the reading line, else its chapter */
+function updateToc(i) {
+  const s = D.sents[i], rows = D.outline;
+  let on = -1;
+  if (s) on = rows.findIndex(r => (s.sec >= 0 ? r.sec === s.sec : r.level === 1 && r.ch === s.ch));
+  if (on === tocOn) return; tocOn = on;
+  const bs = $('#toc').querySelectorAll('.te');   /* rows are in document order: before "on" is read, after it is ahead */
+  bs.forEach((b, k) => { b.classList.toggle('on', k === on); b.classList.toggle('ahead', k > on); });
+  const b = bs[on], T = $('#toc');
+  if (b && T.scrollHeight > T.clientHeight) {   /* keep the row in view inside the outline (its offsetParent), without moving the page */
+    const y = b.offsetTop - T.scrollTop;
+    if (y < 30 || y > T.clientHeight - 40) T.scrollTo({ top: b.offsetTop - T.clientHeight * 0.35, behavior: reduced.matches ? 'auto' : 'smooth' });
+  }
+}
+function goRow(r) {
+  const el = r.sec >= 0 ? secHeads[r.sec] : document.querySelector(`.chapter[data-c="${r.ch}"]`); if (!el) return;
+  const y = el.getBoundingClientRect().top + scrollY - (r.sec >= 0 ? parseFloat(getComputedStyle(el).scrollMarginTop) || 0 : stickyTops[r.ch] || 0) - 6;
+  scrollTo({ top: Math.max(0, y), behavior: reduced.matches ? 'auto' : 'smooth' });
+}
+const tocNarrow = matchMedia('(max-width:1359px)');
+function closeToc() { $('#toc').classList.remove('open'); $('#tocBtn').setAttribute('aria-expanded', 'false'); }
+$('#tocBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('#toc').classList.contains('open');
+  $('#toc').classList.toggle('open', open); $('#tocBtn').setAttribute('aria-expanded', String(open));
+  if (open) { tocOn = -1; updateToc(cur); const b = $('#toc .te.on') || $('#toc .te'); if (b) b.focus({ preventScroll: true }); }
+});
+$('#toc').addEventListener('click', e => {
+  const b = e.target.closest('.te'); if (!b) return;
+  goRow(D.outline[+b.dataset.r]);
+  if (tocNarrow.matches) { closeToc(); $('#tocBtn').focus({ preventScroll: true }); }
+});
+document.addEventListener('click', e => { if ($('#toc').classList.contains('open') && !e.target.closest('#toc')) closeToc(); });
+tocNarrow.addEventListener('change', closeToc);
+
+function drawWave() {
+  const W = 1000, H = 200, mid = 92, amp = 78, N = D.sents.length;
+  const sm = D.sents.map((s, i) => { let x = 0, w = 0; for (let j = -2; j <= 2; j++) { const t = D.sents[i + j]; if (t) { const k = 3 - Math.abs(j); x += t.n * k; w += k; } } return x / w; });
+  const X = i => (N === 1 ? W / 2 : i / (N - 1) * W), Y = v => mid - v * amp;
+  let d = `M${X(0)},${Y(sm[0])}`; for (let i = 1; i < N; i++) { const x0 = X(i - 1), x1 = X(i); d += ` C${(x0 + x1) / 2},${Y(sm[i - 1])} ${(x0 + x1) / 2},${Y(sm[i])} ${x1},${Y(sm[i])}`; }
+  const area = `${d} L${W},${mid} L0,${mid} Z`;
+  /* a tick where each outline row starts: tall for chapters, short for sections */
+  const ticks = D.outline.filter(r => r.first).map(r => `<line x1="${X(r.first)}" x2="${X(r.first)}" y1="${mid - (r.level === 1 ? 7 : 3)}" y2="${mid + (r.level === 1 ? 7 : 3)}" class="zero"/>`);
+  $('#wave').setAttribute('aria-label', 'Sentiment of the article from start to end: above the line positive, below negative');
+  $('#wave').innerHTML = `<defs><clipPath id="cpU"><rect x="0" y="0" width="${W}" height="${mid}"/></clipPath><clipPath id="cpD"><rect x="0" y="${mid}" width="${W}" height="${H - mid}"/></clipPath></defs>
+    <path class="fill fpos" d="${area}" clip-path="url(#cpU)"/><path class="fill fneg" d="${area}" clip-path="url(#cpD)"/>
+    <line class="zero" x1="0" x2="${W}" y1="${mid}" y2="${mid}"/>${ticks.join('')}<path class="ln" d="${d}"/>
+    <circle class="halo" r="11"><animateMotion dur="14s" begin="2.8s" repeatCount="indefinite" path="${d}"/></circle><circle class="scan" r="4"><animateMotion dur="14s" begin="2.8s" repeatCount="indefinite" path="${d}"/></circle>
+    <text x="0" y="${H - 6}">start</text><text x="${W}" y="${H - 6}" text-anchor="end">end</text>`;
+  const ln = $('#wave .ln'); ln.style.setProperty('--len', Math.ceil(ln.getTotalLength()));
+}
+
+/* topic bubbles: the axis is fitted to the data (topics often all lean one way). Bubbles sit in two lanes,
+   are nudged sideways just enough not to touch, and a pin line ties each one to its true place on the axis. */
+function layoutBubbles() {
+  const T = D.topics, field = $('#field'); field.querySelectorAll('.bub,.pins').forEach(b => b.remove());
+  if (!T.length) { field.style.setProperty('--fh', '80px'); return; }
+  const W = field.clientWidth || 800, maxN = Math.max(1, ...T.map(t => t.total));
+  /* t.mean is in score units (SMCore.topicScores); the floor is a quarter of the colour scale it is read on */
+  const M = Math.max(0.25 * (D.doc.has.sent ? D.sScale : D.pScale), ...T.map(t => Math.abs(t.mean))) * 1.15;
+  const items = T.map(t => { const d = Math.round(24 + 40 * Math.sqrt(t.total / maxN)), tx = (50 + t.mean / M * 44) / 100 * W, lw = t.label.length * 8.5 + 14;
+    return { t, d, tx, cx: tx, half: Math.max(d, lw) / 2 + 5 }; }).sort((a, b) => a.tx - b.tx);
+  const lanes = [[], []]; items.forEach((it, k) => { it.lane = k % 2; lanes[it.lane].push(it); });
+  for (const lane of lanes) for (let pass = 0; pass < 60; pass++) {   /* push neighbours apart, then keep them inside the field */
+    let moved = false;
+    for (let k = 1; k < lane.length; k++) { const a = lane[k - 1], b = lane[k], gap = a.half + b.half - (b.cx - a.cx); if (gap > 0.5) { a.cx -= gap / 2; b.cx += gap / 2; moved = true; } }
+    for (const it of lane) it.cx = clamp(it.cx, it.half, W - it.half);
+    if (!moved) break;
+  }
+  const maxD = Math.max(...items.map(it => it.d)), laneH = maxD + 46, axisY = 2 * laneH + 30;
+  field.style.setProperty('--fh', (axisY + 40) + 'px');
+  let pins = `<svg class="pins" width="${W}" height="${axisY + 8}" aria-hidden="true">`;
+  items.forEach((it, i) => {
+    const t = it.t, y = it.lane * laneH + (maxD - it.d) / 2, b = document.createElement('button');
+    b.type = 'button'; b.className = 'bub ' + sg(t.mean); b.dataset.t = t.i;
+    b.style.cssText = `--x:${(it.cx / W * 100).toFixed(2)}%;--y:${y}px;--d:${it.d}px;--k:${Math.min(1, Math.abs(t.mean) / M).toFixed(2)};--i:${i}`;
+    b.title = `${t.label}: mean ${fmt(t.mean)} over ${t.total} sentences — click to read the first`;
+    b.innerHTML = `<span>${esc(t.label)}<small>${fmt(t.mean)}</small></span>`;
+    field.appendChild(b);
+    const y0 = y + it.d + 40;
+    pins += `<path class="${sg(t.mean)}" style="--i:${i}" d="M${it.cx.toFixed(1)} ${y0} C${it.cx.toFixed(1)} ${(y0 + axisY) / 2} ${it.tx.toFixed(1)} ${(y0 + axisY) / 2} ${it.tx.toFixed(1)} ${axisY - 6}"/><circle class="${sg(t.mean)}" style="--i:${i}" cx="${it.tx.toFixed(1)}" cy="${axisY - 3}" r="3.5"/>`;
+  });
+  field.insertAdjacentHTML('afterbegin', pins + '</svg>');
+  field.style.setProperty('--axis', axisY + 'px');
+  $('#axLo').textContent = `← ${fmt(-M)}  Negative`; $('#axHi').textContent = `Positive  ${fmt(M)} →`;
+}
+function renderFinale() {
+  const T = D.topics, field = $('#field');
+  field.querySelectorAll('.bub').forEach(b => b.remove());
+  $('#finSub').textContent = T.length ? `Each bubble is a topic, placed by the average score of the sentences that mention it; size is how often it came up. A sentence that mentions two topics counts toward both.` : 'This article has no recurring topic words.';
+  layoutBubbles();
+  const byN = [...D.sents].sort((a, b) => a.n - b.n), neg = byN.filter(s => s.n < 0).slice(0, 3), pos = byN.filter(s => s.n > 0).reverse().slice(0, 3);
+  const card = (s, i) => `<button type="button" class="card ${sg(s.n)}" data-s="${s.id}" style="--i:${i}"><b>${fmt(s.score)} · ${esc(moodWord(s.n))}</b>${esc(cut(s.text, 220))}<small>${esc(placeOf(s, 70))}</small></button>`;
+  $('#moments').innerHTML = `<div><h3 class="neg">Sharpest negative moments</h3>${neg.map(card).join('') || '<p class="sub">None</p>'}</div><div><h3 class="pos">Brightest moments</h3>${pos.map(card).join('') || '<p class="sub">None</p>'}</div>`;
+  field.classList.remove('go'); $('#moments').classList.remove('go');
+}
+
+/* ---------- scroll engine ---------- */
+const readLine = () => innerHeight * 0.58;
+function measure() {
+  const sy = scrollY;
+  tops = els.map(e => e.getBoundingClientRect().top + sy);
+  const st = $('#story').getBoundingClientRect();
+  storyTop = st.top + sy; storyH = Math.max(1, st.height);
+  stickyTops = chHeads.map(h => parseFloat(getComputedStyle(h).top) || 0);
+  drawSpine();
+}
+function indexAt(y) {   /* last sentence whose top is above y (binary search) */
+  let lo = 0, hi = tops.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (tops[m] <= y) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+const narrow = matchMedia('(max-width:760px)');
+function drawSpine() {
+  const cv = $('#spineCv'), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H || !D) return;
+  const dpr = devicePixelRatio || 1; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cp = cssVar('--pos'), cn = cssVar('--neg'), line = cssVar('--line'), horiz = narrow.matches;
+  const along = horiz ? W : H, across = horiz ? H : W, c = across / 2;
+  g.fillStyle = line; if (horiz) g.fillRect(0, c - 0.5, W, 1); else g.fillRect(c - 0.5, 0, 1, H);
+  const pos = y => (y - storyTop) / storyH * along;
+  /* full-width rules at chapters, half-width at sections */
+  g.fillStyle = line;
+  for (const h of chHeads) { const p = pos(h.parentElement.getBoundingClientRect().top + scrollY); g.globalAlpha = .6; if (horiz) g.fillRect(p, 0, 1, H); else g.fillRect(0, p, W, 1); }
+  for (const h of secHeads) { const p = pos(h.getBoundingClientRect().top + scrollY); g.globalAlpha = .45; if (horiz) g.fillRect(p, H * .25, 1, H * .5); else g.fillRect(W * .25, p, W * .5, 1); }
+  D.sents.forEach((s, i) => {
+    if (!s.n) return;
+    const p = pos(tops[i]), len = Math.max(2, Math.abs(s.n) * (c - 2)), th = Math.max(1.5, along / D.sents.length * 0.7);
+    g.globalAlpha = 0.35 + Math.abs(s.n) * 0.65; g.fillStyle = s.n < 0 ? cn : cp;
+    if (horiz) g.fillRect(p, s.n > 0 ? c - len : c, th, len); else g.fillRect(s.n < 0 ? c - len : c, p, len, th);
+  });
+  g.globalAlpha = 1;
+}
+
+let mood = 0, moodT = 0, raf = 0, surgeT = 0, lastStuck = -1;
+function setCurrent(i) {
+  if (i === cur) return;
+  const prev = cur; cur = i;
+  for (let k = Math.max(Math.min(prev, i) + 1, 0), hi = Math.max(prev, i); k <= hi && k < els.length; k++) els[k].classList.toggle('lit', k <= i);
+  if (prev >= 0 && els[prev]) els[prev].classList.remove('now');
+  const s = D.sents[i];
+  updateToc(i);
+  if (!s) { moodT = 0; updateRail(-1); return; }
+  els[i].classList.add('now');
+  /* the room follows a short memory of the last few sentences, not just one */
+  let x = 0, w = 0; for (let j = 0; j < 4; j++) { const t = D.sents[i - j]; if (t) { x += t.n * (4 - j); w += 4 - j; } } moodT = x / w;
+  if (Math.abs(s.n) >= 0.85 && i > prev && !reduced.matches) { document.body.classList.remove('surge'); void document.body.offsetWidth; document.body.classList.add('surge'); clearTimeout(surgeT); surgeT = setTimeout(() => document.body.classList.remove('surge'), 950); }
+  updateRail(i, prev);
+  FX.sentence(i, prev);
+}
+const cut = (t, n) => (t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t);
+/* "Chapter › Section" for a sentence */
+function placeOf(s, n = 80) {
+  const ch = D.chapters[s.ch], sec = s.sec >= 0 ? D.secs[s.sec] : null;
+  return cut(ch.title || 'Opening', sec ? 44 : n) + (sec ? ' › ' + cut(sec.title, n - 30) : '');
+}
+function updateRail(i, prev) {
+  const s = D.sents[i], ch = s ? D.chapters[s.ch] : null;
+  const mw = s ? moodWord(moodT) : '—', cls = 'moodword ' + (s ? sg(Math.abs(moodT) < 0.1 ? 0 : moodT) : '');
+  const MW = $('#moodWord'); if (MW.textContent !== mw) { MW.textContent = mw; if (s && !reduced.matches && MW.animate) MW.animate([{ opacity: 0, transform: 'translateY(.35em)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }); } MW.className = cls;
+  $('#needle').style.setProperty('--m', s ? moodT.toFixed(3) : 0);
+  $('#where').textContent = s ? `${placeOf(s)} · sentence ${i + 1} of ${D.sents.length}` : 'Scroll into the article to begin.';
+  const PM = $('#pillMood'); if (PM.textContent !== mw) { PM.textContent = mw; if (s && !reduced.matches && PM.animate) PM.animate([{ opacity: 0, transform: 'translateY(.35em)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }); } PM.className = s ? sg(Math.abs(moodT) < 0.1 ? 0 : moodT) : '';
+  $('#pillTopics').textContent = s && s.topics.length ? s.topics.map(t => D.topics[t].label).join(' · ') : s ? (s.sec >= 0 ? D.secs[s.sec].title : ch.title) || '' : '';
+  document.querySelectorAll('#topics .tp').forEach(li => {
+    const t = D.topics[+li.dataset.t], c = i >= 0 ? t.cnt[i] : 0, m = c ? t.sum[i] / c : 0;
+    li.classList.toggle('unseen', !c);
+    li.querySelector('.tc b').textContent = c;
+    li.querySelector('.tm i').style.cssText = c ? barStyle(clamp(m, -1, 1)) : 'width:0';
+    li.style.setProperty('--hue', m < 0 ? 'var(--neg)' : 'var(--pos)');
+    if (s && i > prev && s.topics.includes(t.i)) { li.classList.remove('hit'); void li.offsetWidth; li.classList.add('hit'); }
+  });
+}
+
+function tick(force) {
+  raf = 0;
+  if (!D) return;
+  const y = scrollY, vh = innerHeight;
+  /* hero: recedes as you scroll; the chrome (spine, rail) fades in */
+  const hp = clamp(y / (vh * 0.8), 0, 1);
+  if (!reduced.matches) { const hi = $('#heroIn'); hi.style.transform = `translateY(${-hp * 90}px) scale(${1 - hp * 0.08})`; hi.style.opacity = String(1 - hp * 1.1); }
+  document.documentElement.style.setProperty('--chrome', clamp((y - vh * 0.35) / (vh * 0.4), 0, 1).toFixed(3));
+  const fin = $('#finale').getBoundingClientRect().top, chrome = clamp((y - vh * 0.35) / (vh * 0.4), 0, 1);
+  document.documentElement.style.setProperty('--railo', (chrome * clamp((fin - vh * 0.35) / (vh * 0.35), 0, 1)).toFixed(3));
+  $('#rail').style.visibility = $('#pill').style.visibility = chrome * clamp((fin - vh * 0.35) / (vh * 0.35), 0, 1) < 0.02 ? 'hidden' : '';
+  $('#toc').style.visibility = !tocNarrow.matches && $('#rail').style.visibility ? 'hidden' : '';   /* the wide column fades with the rail; the popover is always clickable */
+  document.documentElement.style.setProperty('--prog', clamp(y / Math.max(1, document.documentElement.scrollHeight - vh), 0, 1).toFixed(4));
+  setCurrent(indexAt(y + readLine()));
+  /* compact running head for the chapter that is stuck at the top */
+  let stuck = -1;
+  for (let k = 0; k < chHeads.length; k++) { const r = chHeads[k].getBoundingClientRect(), sec = chHeads[k].parentElement.getBoundingClientRect(); if (r.top <= stickyTops[k] + 1 && sec.top < r.top - 1 && sec.bottom > r.bottom + 40) stuck = k; }
+  if (stuck !== lastStuck) { chHeads.forEach((h, k) => h.classList.toggle('stuck', k === stuck)); lastStuck = stuck; }
+  /* the running head also names the section you are in */
+  if (stuck >= 0) {
+    const s = D.sents[cur], sub = s && s.ch === +chHeads[stuck].dataset.c && s.sec >= 0 ? D.secs[s.sec].title : '', el = chHeads[stuck].querySelector('.ch-sub');
+    if (el.textContent !== sub) el.textContent = sub;
+  }
+  /* spine cursor */
+  const along = narrow.matches ? $('#spine').clientWidth : $('#spine').clientHeight, pc = clamp((y + readLine() - storyTop) / storyH, 0, 1);
+  const curEl = $('#cur'); curEl.style.setProperty(narrow.matches ? '--x' : '--y', (pc * along).toFixed(1) + 'px'); curEl.dataset.pct = Math.round(pc * 100) + '%'; $('#spine').setAttribute('aria-valuenow', Math.round(pc * 100));
+  /* ease the room's tint toward the target mood */
+  mood += (moodT - mood) * (reduced.matches || force ? 1 : 0.08);
+  document.documentElement.style.setProperty('--n', clamp(-mood * 1.25, 0, 1).toFixed(3));
+  document.documentElement.style.setProperty('--p', clamp(mood * 1.25, 0, 1).toFixed(3));
+  const am = Math.abs(mood);
+  document.documentElement.style.setProperty('--mc', am < 0.04 ? 'var(--ink)' : `color-mix(in srgb,var(--${mood < 0 ? 'neg' : 'pos'}) ${Math.round(clamp(am * 170, 0, 100))}%,var(--ink))`);
+  if (Math.abs(moodT - mood) > 0.002) raf = requestAnimationFrame(() => tick());
+}
+const kick = () => { if (!raf) raf = requestAnimationFrame(() => tick()); };
+addEventListener('scroll', kick, { passive: true });
+let rz = 0; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { measure(); if (D) layoutBubbles(); tick(true); }, 120); });
+new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => { measure(); tick(true); }, 120); }).observe($('#story'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawSpine);
+if (document.fonts) document.fonts.ready.then(() => { measure(); tick(true); });
+
+let po = null;
+function paraObserver() {
+  if (po) po.disconnect();
+  po = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); po.unobserve(e.target); } }), { rootMargin: '0px 0px -15% 0px' });
+  document.querySelectorAll('.para,.ch-head').forEach(p => po.observe(p));
+}
+new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { $('#field').classList.add('go'); $('#moments').classList.add('go'); } }), { threshold: 0.25 }).observe($('#finale'));
+
+/* ---------- FX: the room (aurora) and the ink (motes, sparks, shockwaves) ----------
+   Aurora: four soft lights on a tiny canvas (1/12 size, scaled up), drifting slowly; warm ones swell with negative
+   mood, teal ones with positive, both glow on the hero and flare on a peak sentence.
+   Ink: when a sentence arrives at the reading line, each scored word sheds motes in its colour and sends one spark
+   to the mood needle (the pill on narrow screens), so you see the words move the mood. A peak sentence
+   (|score| >= 0.85 of scale) also throws a shockwave. All of it is off under prefers-reduced-motion. */
+const FX = (() => {
+  const au = $('#aurora'), ink = $('#ink'), ag = au.getContext('2d'), ig = ink.getContext('2d');
+  let on = false, W = 0, H = 0, dpr = 1, dark = false, parts = [], energy = 0, last = 0, frame = 0, dirty = false, lastPing = 0;
+  let col = { pos: [20, 165, 150], neg: [242, 128, 43], ink: [28, 33, 40] };
+  const hex = c => { const m = /^#([0-9a-f]{6})$/i.exec(c); const n = m ? parseInt(m[1], 16) : 0x888888; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const LIGHTS = [
+    { h: 'neg', x: .12, y: .95, ax: .10, ay: .08, f: .050, ph: 0.0, r: .62 },
+    { h: 'neg', x: .40, y: .78, ax: .16, ay: .10, f: .033, ph: 2.1, r: .40 },
+    { h: 'pos', x: .88, y: .04, ax: .10, ay: .08, f: .043, ph: 4.0, r: .62 },
+    { h: 'pos', x: .62, y: .26, ax: .16, ay: .10, f: .029, ph: 1.2, r: .40 }
+  ];
+  function theme() {
+    col = { pos: hex(cssVar('--pos')), neg: hex(cssVar('--neg')), ink: hex(cssVar('--ink')) };
+    const b = hex(cssVar('--bg')); dark = b[0] + b[1] + b[2] < 380;
+  }
+  function size() {
+    W = innerWidth; H = innerHeight; dpr = Math.min(2, devicePixelRatio || 1);
+    ink.width = Math.round(W * dpr); ink.height = Math.round(H * dpr);
+    au.width = Math.max(8, Math.ceil(W / 12)); au.height = Math.max(8, Math.ceil(H / 12));
+  }
+  function aurora(t) {
+    const w = au.width, h = au.height, m = Math.max(w, h);
+    const hero = clamp(1 - scrollY / (innerHeight * 0.8), 0, 1) * 0.42;
+    const n = clamp(-mood * 1.25, 0, 1), p = clamp(mood * 1.25, 0, 1);
+    ag.clearRect(0, 0, w, h);
+    for (const L of LIGHTS) {
+      const s = clamp((L.h === 'neg' ? n : p) + hero + energy * 0.35, 0, 1.2);
+      const a = (0.035 + 0.5 * s) * (dark ? 0.62 : 0.5);
+      const x = (L.x + Math.sin(t * L.f * 6.283 + L.ph) * L.ax) * w, y = (L.y + Math.cos(t * L.f * 5.1 + L.ph * 1.7) * L.ay) * h;
+      const r = (L.r * (0.7 + 0.45 * s) + 0.05 * Math.sin(t * 0.4 + L.ph)) * m;
+      const g = ag.createRadialGradient(x, y, 0, x, y, r), c = col[L.h];
+      g.addColorStop(0, rgba(c, a)); g.addColorStop(0.5, rgba(c, a * 0.45)); g.addColorStop(1, rgba(c, 0));
+      ag.fillStyle = g; ag.fillRect(0, 0, w, h);
+    }
+  }
+  const bez = (a, b, c, t) => { const u = 1 - t; return u * u * a + 2 * u * t * b + t * t * c; };
+  function drawInk(dt) {
+    if (!parts.length && !dirty) return;
+    ig.setTransform(dpr, 0, 0, dpr, 0, 0); ig.clearRect(0, 0, W, H); dirty = parts.length > 0;
+    ig.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+    const sy = scrollY; let k = 0;
+    for (const q of parts) {
+      if (q.delay > 0) { q.delay -= dt; parts[k++] = q; continue; }
+      q.t += dt / q.dur; if (q.t >= 1) { if (q.k === 'd') arrive(q); continue; }
+      const c = col[q.c], t = q.t;
+      if (q.k === 'm') {          /* mote: drifts up from the word, slows, fades */
+        q.x += q.vx * dt; q.y += q.vy * dt; q.vy *= 1 - 1.2 * dt; q.vx += Math.sin((t + q.ph) * 9) * 14 * dt;
+        const a = Math.sin(Math.PI * Math.min(1, t * 1.15)) * q.a, y = q.y - sy;
+        ig.fillStyle = rgba(c, a * 0.22); ig.beginPath(); ig.arc(q.x, y, q.r * 3.2, 0, 6.283); ig.fill();
+        ig.fillStyle = rgba(c, a); ig.beginPath(); ig.arc(q.x, y, q.r, 0, 6.283); ig.fill();
+      } else if (q.k === 'd') {   /* spark: flies from the word to the mood needle, leaving a short trail */
+        const e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const x0 = q.sx, y0 = q.sy - sy, x = bez(x0, q.cx, q.tx, e), y = bez(y0, q.cy - sy * q.cs, q.ty, e);
+        q.tr.push(x, y); if (q.tr.length > 16) q.tr.splice(0, 2);
+        ig.lineCap = 'round';
+        for (let j = 2; j < q.tr.length; j += 2) { ig.strokeStyle = rgba(c, 0.75 * j / q.tr.length); ig.lineWidth = q.r * 1.6 * j / q.tr.length; ig.beginPath(); ig.moveTo(q.tr[j - 2], q.tr[j - 1]); ig.lineTo(q.tr[j], q.tr[j + 1]); ig.stroke(); }
+        ig.fillStyle = rgba(c, 0.25); ig.beginPath(); ig.arc(x, y, q.r * 3.5, 0, 6.283); ig.fill();
+        ig.fillStyle = rgba(c, 0.95); ig.beginPath(); ig.arc(x, y, q.r, 0, 6.283); ig.fill();
+      } else {                    /* shockwave: an ellipse opening out from a peak sentence */
+        const e = 1 - Math.pow(1 - t, 3), g = 14 + e * q.grow;
+        ig.strokeStyle = rgba(c, (1 - t) * 0.6); ig.lineWidth = 1 + (1 - t) * 3.5;
+        ig.beginPath(); ig.ellipse(q.x, q.y - sy, q.w + g, q.h + g * 0.7, 0, 0, 6.283); ig.stroke();
+      }
+      parts[k++] = q;
+    }
+    parts.length = k; ig.globalCompositeOperation = 'source-over';
+  }
+  function arrive(q) {
+    const now = performance.now(); if (now - lastPing < 120) return; lastPing = now;
+    const el = q.el; if (el && el.animate) el.animate([{ boxShadow: `0 0 0 0 ${rgba(col[q.c], .8)}` }, { boxShadow: `0 0 0 .8rem ${rgba(col[q.c], 0)}` }], { duration: 520, easing: 'ease-out' });
+  }
+  function target() {   /* where sparks land: the needle on wide screens, the mood pill on narrow ones */
+    if (parseFloat(document.documentElement.style.getPropertyValue('--railo') || '0') < 0.5) return null;
+    for (const sel of ['#needle i', '#pillMood']) {
+      const el = $(sel), r = el.getBoundingClientRect();
+      if (r.width && getComputedStyle(el.closest('.rail,.pill')).display !== 'none') return { el, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    return null;
+  }
+  function sentence(i, prev) {
+    if (!on || !D || !(i > prev) || i - prev > 3 || document.hidden) return;
+    const s = D.sents[i], el = els[i]; if (!s || !el) return;
+    const cap = narrow.matches ? 110 : 280, tg = target(), sy = scrollY;
+    el.querySelectorAll('.m').forEach((m, d) => {
+      const r = m.getClientRects()[0]; if (!r || r.bottom < 0 || r.top > H || parts.length > cap) return;
+      const k = parseFloat(m.style.getPropertyValue('--k')) || 0, c = m.classList.contains('neg') ? 'neg' : 'pos', delay = 0.2 + d * 0.09;
+      for (let j = 0, nm = 2 + Math.round(k * 5); j < nm; j++)
+        parts.push({ k: 'm', c, x: rnd(r.left, r.right), y: r.top + r.height * rnd(.3, .8) + sy, vx: rnd(-14, 14), vy: -rnd(18, 55), r: rnd(.9, 2.2), a: 0.35 + 0.5 * k, t: 0, dur: rnd(.9, 1.9), delay: delay + rnd(0, .25), ph: Math.random() });
+      if (tg && k > 0.2) {
+        const sx = r.left + r.width / 2, sY = r.top + r.height / 2;
+        parts.push({ k: 'd', c, el: tg.el, sx, sy: sY + sy, tx: tg.x, ty: tg.y, cx: (sx + tg.x) / 2 + rnd(-50, 50), cy: Math.min(sY, tg.y) - rnd(50, 150) + sy, cs: 1, r: 1.6 + 1.6 * k, t: 0, dur: rnd(.85, 1.25), delay: delay + 0.2, tr: [] });
+      }
+    });
+    if (Math.abs(s.n) >= 0.85) {
+      const r = el.getBoundingClientRect(), c = s.n < 0 ? 'neg' : 'pos'; energy = 1;
+      for (let j = 0; j < 2; j++) parts.push({ k: 'r', c, x: r.left + r.width / 2, y: r.top + r.height / 2 + sy, w: r.width / 2, h: r.height / 2, grow: 150 + j * 70, t: 0, dur: 1.2 + j * 0.3, delay: j * 0.16 });
+      for (let j = 0; j < 22; j++) parts.push({ k: 'm', c, x: rnd(r.left, r.right), y: rnd(r.top, r.bottom) + sy, vx: rnd(-60, 60), vy: -rnd(30, 120), r: rnd(1, 2.8), a: .8, t: 0, dur: rnd(1, 2), delay: rnd(0, .2), ph: Math.random() });
+      const MW = $('#moodWord'); if (MW.animate) MW.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.22)', offset: .25 }, { transform: 'scale(1)' }], { duration: 700, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    }
+  }
+  function loop(t) {
+    if (!on) return;
+    const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; frame++;
+    energy *= Math.exp(-dt * 1.6);
+    if (!document.hidden) { if (frame % 2 === 0) aurora(t / 1000); drawInk(dt); }
+    requestAnimationFrame(loop);
+  }
+  function set() {
+    const want = !reduced.matches;
+    if (want === on) return; on = want; document.body.classList.toggle('fx', on);
+    if (on) { theme(); size(); last = performance.now(); requestAnimationFrame(loop); } else parts.length = 0;
+  }
+  addEventListener('resize', () => { if (on) size(); });
+  reduced.addEventListener('change', set);
+  const retheme = () => { theme(); drawSpine(); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  set();
+  return { sentence, clear: () => { parts.length = 0; energy = 0; } };
+})();
+
+/* ---------- autoplay: the page reads itself, lingering on strong sentences ---------- */
+const Play = (() => {
+  const SP = [70, 140, 280], btn = $('#play'), spd = $('#speed');
+  let playing = false, pos = 0, last = 0, si = 0;
+  function ui() {
+    btn.setAttribute('aria-pressed', String(playing)); $('#playLbl').textContent = playing ? 'Pause' : 'Play';
+    $('#playIco').setAttribute('d', playing ? 'M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z' : 'M4 2.5v11l9-5.5z');
+    spd.hidden = !playing; spd.textContent = (1 << si) + '×';
+  }
+  function frame(t) {
+    if (!playing) return;
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    const s = D && D.sents[cur], max = document.documentElement.scrollHeight - innerHeight;
+    pos += SP[si] * (s ? 1 - 0.5 * s.n * s.n : 1) * dt;
+    if (pos >= max) { scrollTo({ top: max, behavior: 'instant' }); return stop(); }
+    scrollTo({ top: pos, behavior: 'instant' }); requestAnimationFrame(frame);
+  }
+  function start() {
+    if (playing || !D) return;
+    if (scrollY >= document.documentElement.scrollHeight - innerHeight - 4) scrollTo({ top: 0, behavior: 'instant' });
+    playing = true; pos = scrollY; last = performance.now(); ui(); requestAnimationFrame(frame);
+  }
+  function stop() { if (!playing) return; playing = false; ui(); }
+  const toggle = () => (playing ? stop() : start());
+  btn.addEventListener('click', toggle);
+  spd.addEventListener('click', () => { si = (si + 1) % SP.length; ui(); });
+  /* any scroll of your own takes over */
+  addEventListener('wheel', stop, { passive: true });
+  addEventListener('pointerdown', e => { if (!e.target.closest('#play,#speed')) stop(); }, true);
+  addEventListener('keydown', e => {
+    if (e.key === ' ' && !e.target.closest('input,select,textarea,button,a')) { e.preventDefault(); toggle(); }
+    else if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) stop();
+  });
+  return { stop, start };
+})();
+
+/* ---------- interactions ---------- */
+function goSentence(id) {
+  const el = els[id]; if (!el) return;
+  Play.stop();
+  const y = el.getBoundingClientRect().top + scrollY - readLine() + 4;
+  scrollTo({ top: y, behavior: reduced.matches ? 'auto' : 'smooth' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+$('#topics').addEventListener('click', e => {
+  const li = e.target.closest('.tp'); if (!li) return;
+  const t = +li.dataset.t, from = cur;
+  let next = D.sents.findIndex((s, i) => i > from && s.topics.includes(t));
+  if (next < 0) { next = D.sents.findIndex(s => s.topics.includes(t)); toast(`Back to the first mention of “${D.topics[t].label}”`); }
+  document.body.classList.add('follow');
+  document.querySelectorAll('.tw').forEach(w => w.classList.toggle('tf', +w.dataset.t === t));
+  goSentence(next);
+});
+$('#field').addEventListener('click', e => { const b = e.target.closest('.bub'); if (!b) return; const t = +b.dataset.t; document.body.classList.add('follow'); document.querySelectorAll('.tw').forEach(w => w.classList.toggle('tf', +w.dataset.t === t)); goSentence(D.sents.findIndex(s => s.topics.includes(t))); });
+$('#moments').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) goSentence(+c.dataset.s); });
+$('#again').addEventListener('click', () => scrollTo({ top: 0, behavior: reduced.matches ? 'auto' : 'smooth' }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#toc').classList.contains('open')) { closeToc(); $('#tocBtn').focus({ preventScroll: true }); return; } document.body.classList.remove('follow'); document.querySelectorAll('.tf').forEach(w => w.classList.remove('tf')); } });
+
+/* spine: click / drag to scrub through the article */
+let scrub = false;
+const scrubTo = e => { const r = $('#spine').getBoundingClientRect(), f = narrow.matches ? (e.clientX - r.left) / r.width : (e.clientY - r.top) / r.height; scrollTo({ top: storyTop + clamp(f, 0, 1) * storyH - readLine() }); };
+$('#spine').addEventListener('pointerdown', e => { scrub = true; $('#spine').setPointerCapture(e.pointerId); scrubTo(e); });
+$('#spine').addEventListener('pointermove', e => { if (scrub) scrubTo(e); });
+$('#spine').addEventListener('pointerup', () => { scrub = false; });
+$('#spine').addEventListener('keydown', e => {
+  if (!D) return;
+  /* Page Up / Down step through the outline (chapters and sections), falling back to chapters without headings */
+  const here = Math.max(0, cur);
+  const starts = [...new Set([...D.outline.map(r => r.first), ...D.chapters.map(c => (c.sents[0] ? c.sents[0].id : null))].filter(v => v != null))].sort((a, b) => a - b);
+  let to = null;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') to = Math.min(D.sents.length - 1, cur + 1);
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') to = Math.max(0, cur - 1);
+  else if (e.key === 'PageDown') { const f = starts.find(v => v > here); if (f != null) to = f; }
+  else if (e.key === 'PageUp') { const f = starts.filter(v => v < here).pop(); if (f != null) to = f; }
+  else if (e.key === 'Home') to = 0; else if (e.key === 'End') to = D.sents.length - 1;
+  else return;
+  e.preventDefault(); if (to != null) goSentence(to);
+});
+$('#spine').addEventListener('pointercancel', () => { scrub = false; });
+
+let tt = 0;
+function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); if (ms) tt = setTimeout(() => { t.hidden = true; }, ms); }   /* ms 0: stays until replaced */
+
+function open(scored, label) {
+  try { D = build(scored); render(); $('#kicker').textContent = label ? `A sentiment reading · ${label}` : 'A sentiment reading'; return true; }
+  catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 5000); return false; }
+}
+const DEMOS = window.DEMOS || [];
+const pick = $('#pick');
+DEMOS.forEach((d, i) => { const o = document.createElement('option'); o.value = i; o.textContent = d.label; pick.appendChild(o); });
+/* demos.js inlines the small articles; the full review is a {label, file, src} stub whose classic script fills
+   window.DEMO_FILES the first time it is chosen (as in the analyzer; file:// blocks fetch). gen drops stale loads. */
+const demoLoads = {}; let demoGen = 0, shown = -1;
+function openDemo(i) {
+  const d = DEMOS[i]; if (!d) return;
+  const gen = ++demoGen, done = scored => { if (gen !== demoGen) return; if (open(scored, d.file)) { shown = i; $('#toast').hidden = true; } else pick.value = shown >= 0 ? String(shown) : ''; };
+  const cached = d.scored || (window.DEMO_FILES && window.DEMO_FILES[d.file]);
+  if (cached) return done(cached);
+  if (!d.src) return toast('Could not open: this demo has no scores', 5000);
+  toast('Opening ' + d.label + '…', 0);
+  demoLoads[d.src] = demoLoads[d.src] || new Promise((resolve, reject) => {
+    const s = document.createElement('script'); s.src = d.src;
+    s.onload = () => { const o = window.DEMO_FILES && window.DEMO_FILES[d.file]; if (o) resolve(o); else reject(new Error('the demo script did not publish ' + d.file)); };
+    s.onerror = () => reject(new Error('could not load ' + d.src));
+    document.head.appendChild(s);
+  });
+  demoLoads[d.src].then(done, err => {
+    delete demoLoads[d.src];   /* allow a retry */
+    if (gen !== demoGen) return;
+    pick.value = shown >= 0 ? String(shown) : ''; toast('Could not open: ' + err.message, 5000);
+  });
+}
+pick.addEventListener('change', () => { if (DEMOS[+pick.value]) { openDemo(+pick.value); history.replaceState(null, '', '?demo=' + pick.value); } pick.blur(); });
+
+/* drop a scored JSON of your own */
+let dd = 0;
+addEventListener('dragenter', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { dd++; $('#drop').hidden = false; } });
+addEventListener('dragleave', () => { dd = Math.max(0, dd - 1); if (!dd) $('#drop').hidden = true; });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', async e => {
+  e.preventDefault(); dd = 0; $('#drop').hidden = true;
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  try { const obj = JSON.parse(await f.text()); demoGen++; if (open(obj, f.name)) { pick.value = ''; shown = -1; } } catch (err) { toast('Story mode reads scored JSON files (docs/FORMAT.md). Open other files in the analyzer view.', 5000); }
+});
+
+const q = +(new URLSearchParams(location.search).get('demo') || 0);
+if (DEMOS.length) { const i = DEMOS[q] ? q : 0; pick.value = String(i); openDemo(i); }
+else toast('Missing examples/demos.js — drop a scored JSON file to begin', 6000);
+</script>
+</body>
+</html>

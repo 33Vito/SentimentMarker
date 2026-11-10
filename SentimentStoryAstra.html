@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SentimentMarker / Stability under pressure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#142a38;--paper:#f4f2ec;--muted:#69747b;--line:#cbd1cd;--risk:#b8492f;--buffer:#236c66;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--serif:'Literata',Georgia,serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}button,select,a{font:inherit}a{color:inherit}button,select{cursor:pointer}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #d99436;outline-offset:5px}
+.top{position:fixed;inset:0 0 auto;z-index:30;display:flex;align-items:center;gap:22px;padding:17px 4vw;background:#f4f2ecf2;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{font-weight:700;font-size:15px;letter-spacing:-.5px;margin-right:auto}.brand i{display:inline-block;width:9px;height:9px;background:var(--risk);margin-right:8px}.edition{font:10px var(--mono);letter-spacing:.12em}select{max-width:270px;background:none;border:0;font-size:11px;color:var(--muted)}.top a{font:11px var(--mono);text-decoration:none}.progress{position:absolute;bottom:-1px;left:0;height:2px;background:var(--risk);width:var(--progress,0%)}
+.cover{padding:145px 7vw 70px;min-height:100svh;display:grid;grid-template-columns:1.3fr 1fr;gap:4vw;align-items:center}.eyebrow{font:10px/1.6 var(--mono);text-transform:uppercase;letter-spacing:.16em}.red{color:var(--risk)}.cover h1{font:500 clamp(56px,6.7vw,104px)/.98 var(--serif);letter-spacing:-.065em;margin:32px 0}.cover h1 em{font-weight:400;color:var(--risk)}.deck{font:18px/1.7 var(--sans);max-width:490px;color:#52616a}.enter{display:inline-flex;gap:45px;padding:16px 0;border-bottom:1px solid var(--ink);font:11px var(--mono);text-decoration:none;margin-top:24px}.cover-right{align-self:stretch;display:flex;flex-direction:column;justify-content:center}.seal{font:10px var(--mono);display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px}
+.balance{position:relative;height:330px;overflow:hidden;margin-top:25px}.balance svg{width:100%;height:100%}.balance .pressure{stroke:var(--risk)}.balance .resilience{stroke:var(--buffer)}.balance path{fill:none;stroke-width:1.3;stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw 3s ease forwards}.balance path:nth-child(2n){animation-delay:.3s}.balance .axis{stroke:var(--line);stroke-dasharray:3 5;stroke-width:1}.diagram-note{font:10px/1.7 var(--mono);color:var(--muted)}.thesis{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin:25px 0}.thesis div{border-top:2px solid var(--buffer);padding-top:13px;font-size:13px;line-height:1.6}.thesis div+div{border-color:var(--risk)}.thesis b{display:block;font:9px var(--mono);letter-spacing:.1em;margin-bottom:10px;color:var(--muted)}
+.intro-strip{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:28px 7vw;gap:40px}.intro-strip p{font:13px/1.7 var(--sans);margin:8px 0}.intro-strip b{font:10px var(--mono);text-transform:uppercase;letter-spacing:.1em}
+.reader{position:relative;display:grid;grid-template-columns:38% 62%;border-bottom:1px solid var(--line)}.instrument{position:sticky;top:61px;height:calc(100svh - 61px);align-self:start;background:#132a37;color:#e5ece9;overflow:hidden;padding:42px 3.5vw;display:flex;flex-direction:column}.instrument::before{content:"";position:absolute;inset:0;background:linear-gradient(#ffffff03 1px,transparent 1px),linear-gradient(90deg,#ffffff03 1px,transparent 1px);background-size:32px 32px;pointer-events:none}.instrument>*{position:relative}.instrument .eyebrow{color:#9baeb7}.scene-no{font:100px/.95 var(--serif);color:#ffffff18;position:absolute;right:30px;top:25px;letter-spacing:-.08em}.instrument h2{font:400 clamp(29px,3vw,45px)/1.12 var(--serif);letter-spacing:-.035em;max-width:13ch;margin:30px 0 16px}.instrument .scene-caption{color:#acbfc6;font:13px/1.65 var(--sans);max-width:34ch;min-height:65px}.scope{font:9px/1.6 var(--mono);color:#8da6b1;margin-top:auto}.trace{margin:24px -5px 10px;height:150px;position:relative}.trace svg{width:100%;height:100%;overflow:visible}.trace .base{stroke:#ffffff22;stroke-width:1}.trace .neg{stroke:#ec977e}.trace .pos{stroke:#83c9b7}.trace line{transition:opacity .4s,stroke-width .4s}.trace .scan{stroke:#f3e6c0;stroke-width:1;transition:x1 .35s,x2 .35s}.legend{display:flex;justify-content:space-between;font:9px var(--mono);color:#b0c0c6}.legend i{display:inline-block;width:6px;height:6px;margin-right:5px;background:#ec977e}.legend .positive i{background:#83c9b7}.live-quote{border-left:2px solid #bd775e;padding-left:15px;margin-top:25px;font:14px/1.6 var(--serif);color:#e1e7e6;min-height:85px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}.chapter-nav{display:flex;align-items:center;gap:13px;margin-top:22px;font:10px var(--mono)}.chapter-nav button{background:transparent;color:#dce5e6;border:1px solid #ffffff3a;padding:8px 13px}.chapter-nav span{margin-right:auto}
+.article{padding:0 6vw 0 5vw}.section{padding:100px 0 70px;position:relative;border-bottom:1px solid var(--line)}.section:before{content:"";position:absolute;left:-5vw;right:-6vw;top:0;height:1px;background:var(--line)}.section-label{display:flex;gap:15px;align-items:center;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.section-label .num{color:var(--risk)}.section h2{font:500 clamp(28px,3vw,44px)/1.16 var(--serif);letter-spacing:-.035em;margin:24px 0 40px}.section .original-title{font:12px/1.7 var(--sans);color:var(--muted);padding:15px 0;border-top:1px solid var(--line);margin-bottom:35px}.para{font:400 17px/1.95 var(--serif);margin:0 0 30px;position:relative}.sentence{transition:color .35s,background .35s;color:#6e797e}.sentence.read{color:var(--ink)}.sentence.current{color:#0c2433;background:#e3e4d9;box-shadow:0 3px #e3e4d9,0 -3px #e3e4d9;box-decoration-break:clone;-webkit-box-decoration-break:clone}.sentence.current:before{content:"";position:absolute;left:-23px;width:4px;height:20px;background:var(--risk);margin-top:7px}.para mark{color:inherit;background:transparent;border-bottom:1px solid transparent;transition:border-color .4s}.sentence.current mark.negative{border-color:#ba5c48}.sentence.current mark.positive{border-color:#3c8981}.breakpoint{margin:45px 0;padding:28px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}.breakpoint .tag{font:9px var(--mono);letter-spacing:.14em;color:var(--risk)}.breakpoint p{font:500 23px/1.5 var(--serif);letter-spacing:-.02em;margin-bottom:0}.section.active .num{color:var(--risk)}.reveal{opacity:.25;transform:translateY(15px);transition:opacity .8s,transform .8s}.reveal.visible{opacity:1;transform:none}.footer{padding:80px 7vw;display:grid;grid-template-columns:1fr 1fr;gap:6vw}.footer h2{font:40px/1.15 var(--serif);letter-spacing:-.04em;margin-top:10px}.footer p{font:12px/1.8 var(--sans);color:var(--muted)}.footer a{font:11px var(--mono)}.closing-pair{display:grid;grid-template-columns:1fr 1fr;gap:25px}.closing-pair>div{padding:18px;border:1px solid var(--line)}.closing-pair b{font:10px var(--mono);text-transform:uppercase}.closing-pair p{font-size:13px}.mobile-status{display:none}.load-error{padding:120px 8vw}
+.argument-map{margin:20px 0 0;padding-top:15px;border-top:1px solid #ffffff20}.argument-map .eyebrow{font-size:8px;margin-bottom:10px}.argument-map svg{width:100%;height:128px;overflow:visible}.argument-map rect{fill:#193442;stroke:#7b949b;stroke-width:1}.argument-map .danger{stroke:#dc927e}.argument-map .support{stroke:#81bcae}.argument-map text{font:10px var(--sans);fill:#dfebe9}.argument-map path{fill:none;stroke:#b8c8c9;stroke-width:1;stroke-dasharray:300;stroke-dashoffset:300;animation:draw 1.5s ease forwards}.argument-map .support-path{stroke:#81bcae}.trace{height:105px;margin-top:16px}.live-quote{margin-top:15px;font-size:13px;min-height:64px}.instrument h2{margin-bottom:10px}.instrument .scene-caption{min-height:0}.argument-map .map-note{font:8px var(--mono);color:#9cb0b8;margin-top:2px}.instrument .scope{padding-top:12px}.topic-strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.topic-strip span{font:9px var(--mono);border:1px solid #ffffff2a;padding:4px 7px;color:#c5d5d8}.topic-strip b{font-weight:500}
+@media(max-height:800px) and (min-width:801px){.instrument{padding-top:25px}.instrument h2{font-size:30px;margin-top:18px}.scene-caption{font-size:12px!important}.argument-map{margin-top:12px}.argument-map svg{height:95px}.trace{height:80px}.live-quote{display:none}}
+@media(max-width:800px){.argument-map{display:none}.trace{height:100px;margin-top:30px}.topic-strip{display:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media(min-width:1600px){.article{padding-right:10vw}.para{font-size:19px}}
+@media(max-width:800px){.edition{display:none}.top{padding:15px 20px;gap:12px}.top select{max-width:130px;font-size:10px}.top a{font-size:10px}.cover{display:block;padding:115px 25px 45px;min-height:0}.cover h1{font-size:65px;max-width:9ch}.deck{font-size:16px}.cover-right{margin-top:55px}.balance{height:210px}.intro-strip{grid-template-columns:1fr;gap:20px;padding:25px}.intro-strip p{margin-bottom:0}.reader{display:block}.instrument{height:260px;top:58px;z-index:10;padding:20px 25px;display:grid;grid-template-columns:1fr 1fr;gap:5px 25px;border-bottom:2px solid #bd775e}.instrument .eyebrow{font-size:8px}.instrument h2{font-size:25px;margin:12px 0;max-width:14ch}.instrument .scene-caption{display:none}.scene-no{font-size:60px;top:12px;right:25px}.trace{height:100px;margin:30px 0 5px}.plot-wrap{grid-column:2;grid-row:1/4}.instrument .scope{font-size:8px;grid-column:1/-1;margin-top:0}.live-quote{display:none}.chapter-nav{margin:0;font-size:8px;gap:8px}.chapter-nav button{padding:5px 9px}.legend{font-size:7px}.article{padding:0 25px}.section{padding:65px 0 40px;scroll-margin-top:320px}.section:before{left:-25px;right:-25px}.section h2{font-size:32px}.para{font-size:16px;line-height:1.95}.sentence.current:before{left:-14px;width:3px}.breakpoint p{font-size:21px}.footer{display:block;padding:55px 25px}.closing-pair{margin-top:35px;gap:12px}.footer h2{font-size:34px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}.balance path{stroke-dashoffset:0}}
+</style></head>
+<body>
+<header class="top"><div class="brand"><i></i>SentimentMarker</div><div class="edition">THE STABILITY BRIEF / STORY EDITION</div><select id="pick" aria-label="Article"></select><a href="SentimentStoryDemo.html">Story</a><a href="SentimentStoryFable.html">Fable</a><a href="index.html">Analyzer ↗</a><div class="progress"></div></header>
+<main>
+<section class="cover" id="cover"><div><div class="eyebrow red">Financial Stability Review / October 2026</div><h1>Stability<br>under<br><em>pressure.</em></h1><p class="deck">A resilient financial system. A more demanding risk environment. Read the assessment through both lenses.</p><a class="enter" href="#reading">Enter the assessment <span>↓</span></a></div>
+<div class="cover-right"><div class="seal"><span>01 / THE CENTRAL TENSION</span><span>RISK × RESILIENCE</span></div><div class="balance" aria-hidden="true"><svg viewBox="0 0 480 320"><line class="axis" x1="0" y1="160" x2="480" y2="160"/><g id="coverLines"></g><text x="8" y="28" font-size="10" font-family="monospace" fill="#b8492f">EXTERNAL PRESSURES</text><text x="8" y="305" font-size="10" font-family="monospace" fill="#236c66">DOMESTIC BUFFERS</text></svg></div><p class="diagram-note">Conceptual illustration · opposing forces, not a quantitative risk model.</p><div class="thesis"><div><b>THE BUFFER</b>The system is well positioned to absorb shocks.</div><div><b>THE PRESSURE</b>External threats and operational vulnerabilities require vigilance.</div></div></div></section>
+<div class="intro-strip"><div><b>01 / Read the evidence</b><p>The report’s original sentences remain in order. Scroll to follow the argument, one passage at a time.</p></div><div><b>02 / Hold both views</b><p>Risk language and resilience language coexist. Neither alone describes the stability of the system.</p></div><div><b>03 / Interpret with care</b><p>The trace shows automated language tone, not measured financial risk or the RBA’s judgement.</p></div></div>
+<div class="reader" id="reading"><aside class="instrument" aria-label="Reading companion"><div><div class="eyebrow">PASSAGE / LIVE READING</div><span class="scene-no" id="sceneNo">01</span><h2 id="sceneTitle">The balanced assessment</h2><p class="scene-caption" id="sceneCaption"></p><div class="topic-strip" id="topicStrip" aria-label="Topic sentiment"></div></div><div class="plot-wrap"><div class="trace" id="trace"></div><div class="legend"><span><i></i>Negative language</span><span class="positive"><i></i>Positive language</span></div></div><div class="live-quote" id="liveQuote"></div><div class="scope">LANGUAGE TONE / EACH STROKE IS ONE SENTENCE<br>Not a risk index. Neutral language sits on the centre line.</div><div class="chapter-nav"><span id="position"></span><button id="prev" aria-label="Previous section">←</button><button id="next" aria-label="Next section">→</button></div></aside><article class="article" id="article" aria-label="Original report text"></article></div>
+<footer class="footer"><div><div class="eyebrow red">THE JUDGEMENT / HELD IN BALANCE</div><h2>Resilience is a position.<br>Vigilance is a practice.</h2><p id="sourceNote">Source: Reserve Bank of Australia, Financial Stability Review, October 2026. Text reproduced under CC BY 4.0. Sentiment analysis and this presentation are by SentimentMarker, not the RBA. The RBA does not endorse this project.</p><a href="https://www.rba.gov.au/publications/fsr/2026/oct/" target="_blank" rel="noopener">Read the original publication ↗</a><p>Reading notes and conceptual diagrams are editorial aids. Automated word polarity can misread negation, policy terminology and conditional scenarios; read the complete passage.</p></div><div><div class="closing-pair"><div><b>Capacity to absorb</b><p>Capital, liquidity, lending standards and borrower buffers support resilience.</p></div><div><b>Reasons to prepare</b><p>Interconnected risks, operational disruption and external shocks warrant continued action.</p></div></div><p>The two statements can be true at the same time. This is the tension the assessment asks the reader to hold.</p><a href="#cover">Return to the opening ↑</a></div></footer>
+</main>
+<script src="examples/demos.js"></script>
+<script src="sentiment-core.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const notes=[
+['The balanced assessment','The report weighs domestic resilience against mounting external threats. Both sides belong in the same frame.','READING NOTE','Domestic buffers and external threats can coexist.'],
+['A more demanding environment','Follow how geopolitical, technological and operational pressures interact. Scenarios describe possibilities, not forecasts.','READING NOTE','Conditional risks should be read as conditional.'],
+['From assessment to action','Preparedness, sound lending and liquidity management turn resilience into an ongoing responsibility.','READING NOTE','The response matters alongside the diagnosis.'],
+['Where vulnerabilities accumulate','The argument moves across sovereign debt, AI investment, market pricing and operational resilience.','READING NOTE','Interconnection can amplify a shock.'],
+['How shocks could travel','The passage traces possible transmission into funding, confidence and essential financial services.','READING NOTE','Transmission channels connect external shocks to domestic outcomes.'],
+['The domestic counterweight','Borrower buffers and bank capital sit alongside pockets of vulnerability. Preserve the qualifications on both.','READING NOTE','Limited systemic spillovers do not mean every borrower is insulated.'],
+['Resilience requires maintenance','Capital and liquidity need to be sustained; operational readiness requires continued investment and practice.','READING NOTE','Preparedness is a continuing task.'],
+['A framework, not a forecast','Distinguish vulnerabilities, the shocks that could activate them, and the resilience that could contain them.','READING NOTE','Vulnerability is not the same thing as an inevitable loss.']
+];
+let sections=[],all=[],active=-1,current=-1,pending=0,generation=0,spans=[],heads=[];
+let editorial=false;
+const maps=[
+ ['External threats','Financial system','Domestic buffers','Shock absorption'],
+ ['Geopolitics + technology','Complex connections','Operational readiness','Capacity to respond'],
+ ['Evolving risks','Industry preparedness','Lending + liquidity','Recovery planning'],
+ ['Leverage + concentration','Market repricing','Capital + preparedness','Spillover containment'],
+ ['External shock','Funding + confidence','Refinancing buffers','Domestic services'],
+ ['Cost + housing pressures','Households + banks','Savings + bank capital','Loss absorption'],
+ ['Operational disruption','Critical services','Contingency planning','Continuity + recovery'],
+ ['Vulnerabilities','Shock transmission','Resilience','Potential outcomes'],
+ ['Common service providers','Critical-service outage','Governance + coordination','Service continuity'],
+ ['Leverage + concentration','Forced asset sales','Liquidity + capital','Loss absorption'],
+ ['High sovereign debt','Sharp repricing','Liquidity facilities','Funding resilience'],
+ ['Household leverage','Debt-service stress','Equity + bank capital','Loss absorption'],
+ ['Concentrated liquid assets','Liquidity calls','Liquidity preparedness','Liquidity provision']
+];
+function argumentMap(i){
+ const m=editorial?maps[i]:null;if(!m)return '';
+ return '<div class="eyebrow">ARGUMENT MAP / EDITORIAL</div><svg viewBox="0 0 360 128" role="img" aria-label="Conceptual relationships: '+esc(m.join(', '))+'"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" style="fill:#b8c8c9;stroke:none;animation:none"/></marker></defs><path d="M156 22 H200" marker-end="url(#arrow)"/><path d="M278 42 V85" marker-end="url(#arrow)"/><path class="support-path" d="M156 105 H200" marker-end="url(#arrow)"/><rect class="danger" x="0" y="3" width="156" height="38"/><rect class="danger" x="200" y="3" width="156" height="38"/><rect class="support" x="0" y="86" width="156" height="38"/><rect class="support" x="200" y="86" width="156" height="38"/>'+m.map((label,k)=>'<text x="'+(k%2?278:78)+'" y="'+(k<2?26:109)+'" text-anchor="middle">'+esc(label)+'</text>').join('')+'</svg><div class="map-note">Possible channels and buffers · no numerical risk estimate</div>';
+}
+//<astra-data>
+function build(scored) {
+  const doc = SMCore.docFromScored(scored), cap = doc.cap;
+  const out = [];
+  let group = null;
+  for (const b of doc.blocks) {
+    if (b.type === 'h') {
+      group = { title: b.sents.map(s => s.text).join(' '), paras: [], sents: [] };
+      out.push(group);
+      continue;
+    }
+    if (!group) { group = { title: doc.title || 'Opening', paras: [], sents: [] }; out.push(group); }
+    const ss = b.sents.map(cs => {
+      const v = SMCore.sentValue(doc, cs);
+      const n = Math.max(-1, Math.min(1, v.score / cap[v.level]));
+      return { text: cs.text, toks: cs.toks, score: v.score, src: v.level, core: cs, n, tone: n };
+    });
+    group.paras.push(ss);
+    group.sents.push(...ss);
+  }
+  const sections = out.filter(g => g.sents.length);
+  const body = sections.flatMap(g => g.sents.map(s => s.core));
+  const topics = SMCore.extractTopics(doc, 8);
+  const stats = SMCore.topicScores(doc, topics, { sents: body });
+  return { title: doc.title, sections, topics: topics.map((t, i) => ({ label: t.label, count: stats[i].count, mean: stats[i].mean })), cap, doc };
+}
+//</astra-data>
+function marked(s) {
+  return s.toks.map(t => (!(t.word && t.score) ? esc(t.text) : '<mark class="' + (t.score < 0 ? 'negative' : 'positive') + '">' + esc(t.text) + '</mark>')).join('');
+}
+function noteFor(s,i){
+ const t=s.title.toLowerCase();
+ if(t==='endnotes')return ['Sources and qualifications','The references remain part of the reading. They provide context and support for the assessment.'];
+ if(i<notes.length)return notes[i];
+ return [s.title.length>65?s.title.split('(')[0].slice(0,65):s.title,'Read vulnerabilities, associated risks and resilience considerations together.'];
+}
+function render(data,isFSR){
+ editorial=isFSR&&/Assessment/i.test(data.title);
+ const built=build(data);
+ sections=built.sections;all=[];active=-1;current=-1;
+ sections.forEach((s,i)=>{s.note=editorial?noteFor(s,i):[s.title,'Read the complete passage alongside its automated language trace.'];s.sents.forEach(v=>{v.id=all.length;v.section=i;all.push(v);});});
+ $('#topicStrip').innerHTML=built.topics.map(t=>'<span>'+esc(t.label)+' <b>'+(t.mean>0?'+':t.mean<0?'−':'')+Math.abs(t.mean).toFixed(2)+'</b> · '+t.count+'</span>').join('');
+ $('#article').innerHTML=sections.map((s,i)=>'<section class="section" id="section-'+i+'"><div class="section-label"><span class="num">'+String(i+1).padStart(2,'0')+'</span><span>THE ASSESSMENT / '+s.sents.length+' SENTENCES</span></div><h2 class="reveal">'+esc(s.note[0])+'</h2><div class="original-title">'+esc(s.title)+'</div>'+s.paras.map((p,j)=>'<p class="para reveal">'+p.map(v=>'<span class="sentence" id="s-'+v.id+'" data-id="'+v.id+'">'+marked(v)+'</span>').join(' ')+'</p>'+(isFSR&&i<notes.length&&j===0?'<aside class="breakpoint reveal"><div class="tag">'+notes[i][2]+' / SENTIMENTMARKER</div><p>'+esc(notes[i][3])+'</p></aside>':'')).join('')+'</section>').join('');
+ spans=[...document.querySelectorAll('.sentence')];heads=[...document.querySelectorAll('.section')];
+ if(observer)observer.disconnect();
+ if(!$('#argumentMap')){const map=document.createElement('div');map.id='argumentMap';map.className='argument-map';$('.plot-wrap').before(map);}
+ if(!editorial)document.querySelectorAll('.breakpoint').forEach(el=>el.remove());
+ observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}}),{rootMargin:'0px 0px -5% 0px'});
+ document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
+ document.querySelector('.cover .eyebrow').textContent=isFSR?'Financial Stability Review / October 2026':'SentimentMarker / Document reading';
+ document.querySelector('.cover h1').innerHTML=isFSR?'Stability<br>under<br><em>pressure.</em>':'Read between<br><em>the lines.</em>';
+ document.querySelector('.deck').textContent=isFSR?'A resilient financial system. A more demanding risk environment. Read the assessment through both lenses.':data.title;
+ document.querySelector('.cover-right').hidden=!isFSR;
+ document.querySelector('.footer').hidden=!isFSR;
+ document.title=data.title+' / SentimentMarker';
+ updateSection(0);requestAnimationFrame(update);
+}
+let observer=null;
+function updateSection(i){
+ if(i===active||!sections[i])return;active=i;const s=sections[i];
+ $('#sceneNo').textContent=String(i+1).padStart(2,'0');$('#sceneTitle').textContent=s.note[0];$('#sceneCaption').textContent=s.note[1];
+ $('#argumentMap').innerHTML=argumentMap(i);$('#argumentMap').hidden=!argumentMap(i);
+ $('#position').textContent=String(i+1).padStart(2,'0')+' / '+String(sections.length).padStart(2,'0');
+ $('#prev').disabled=i===0;$('#next').disabled=i===sections.length-1;
+ const width=360, step=width/Math.max(1,s.sents.length-1);
+ $('#trace').innerHTML='<svg viewBox="-5 -65 370 130" role="img" aria-label="Sentence language tone in this section"><line class="base" x1="0" y1="0" x2="360" y2="0"/>'+s.sents.map((v,k)=>'<line data-id="'+v.id+'" class="'+(v.tone<0?'neg':'pos')+'" x1="'+(k*step)+'" x2="'+(k*step)+'" y1="0" y2="'+(-v.tone*52)+'" stroke-width="'+Math.max(1,Math.min(4,step*.45))+'"/>').join('')+'<line class="scan" id="scan" x1="0" x2="0" y1="-62" y2="62"/></svg>';
+ document.querySelectorAll('.section').forEach((e,k)=>e.classList.toggle('active',k===i));
+}
+function update(){
+ pending=0;if(!all.length)return;
+ const line=innerHeight<650?innerHeight*.75:innerWidth<801?340:innerHeight*.48;
+ let id=-1,lo=0,hi=spans.length-1;while(lo<=hi){const mid=(lo+hi)>>1;if(spans[mid].getBoundingClientRect().top<=line){id=mid;lo=mid+1;}else hi=mid-1;}
+ const section=id<0?0:all[id].section;updateSection(section);
+ if(id!==current){
+ current=id;spans.forEach((e,i)=>{e.classList.toggle('read',i<=id);e.classList.toggle('current',i===id);});
+ const sent=all[id];$('#liveQuote').textContent=sent?sent.text:sections[0].sents[0].text;
+ if(sent){const k=sections[active].sents.indexOf(sent),x=k*360/Math.max(1,sections[active].sents.length-1);$('#scan').setAttribute('x1',x);$('#scan').setAttribute('x2',x);
+ document.querySelectorAll('#trace line[data-id]').forEach(l=>l.style.opacity=Number(l.dataset.id)<=id?'1':'.25');}
+ }
+ document.documentElement.style.setProperty('--progress',(100*scrollY/Math.max(1,document.documentElement.scrollHeight-innerHeight))+'%');
+}
+addEventListener('scroll',()=>{if(!pending)pending=requestAnimationFrame(update);},{passive:true});addEventListener('resize',()=>requestAnimationFrame(update));
+$('#prev').onclick=()=>heads[Math.max(0,active-1)]?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'});
+$('#next').onclick=()=>heads[Math.min(heads.length-1,active+1)]?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'});
+for(let i=0;i<15;i++){let upper='M 0 '+(150-i*2),lower='M 0 '+(170+i*2);for(let x=0;x<=480;x+=8){const f=x/480,amp=(10+i*1.3)*f;upper+=' L '+x+' '+(150-i*2-Math.sin(f*12+i*.14)*amp-f*f*65);lower+=' L '+x+' '+(170+i*2+Math.sin(f*7+i*.1)*amp*.45+f*20);}$('#coverLines').insertAdjacentHTML('beforeend','<path class="pressure" opacity="'+(.2+i*.035)+'" d="'+upper+'"/><path class="resilience" opacity="'+(.2+i*.035)+'" d="'+lower+'"/>');}
+const demos=window.DEMOS||[];demos.forEach((d,i)=>$('#pick').insertAdjacentHTML('beforeend','<option value="'+i+'">'+esc(d.label)+'</option>'));
+async function openDemo(i){
+ const d=demos[i];if(!d)return;const gen=++generation;
+ try{let scored=d.scored||window.DEMO_FILES?.[d.file];if(!scored){await new Promise((resolve,reject)=>{const el=document.createElement('script');el.src=d.src;el.onload=resolve;el.onerror=()=>reject(new Error('Unable to load article'));document.head.append(el);});scored=window.DEMO_FILES?.[d.file];}
+ if(gen!==generation)return;if(!scored)throw new Error('Article data unavailable');render(scored,/fsr|financial.stability.review/i.test(d.file+' '+d.label));window.scrollTo({top:0,behavior:'instant'});}
+ catch(e){if(gen===generation){$('#article').innerHTML='<p class="load-error" role="alert">'+esc(e.message)+'. Choose another article to retry.</p>';}}
+}
+$('#pick').onchange=()=>openDemo(Number($('#pick').value));openDemo(0);
+</script></body></html>
