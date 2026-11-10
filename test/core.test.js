@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = process.argv[2] || require('path').join(__dirname, '..', 'index.html');
 const html = fs.readFileSync(path, 'utf8');
-const core = html.split('//<core>')[1].split('//</core>')[0];
+/* the core lives in sentiment-core.js next to index.html; both pages load it with <script src> */
+const corePath = require('path').join(require('path').dirname(path), 'sentiment-core.js');
+const coreFile = fs.readFileSync(corePath, 'utf8');
+const core = coreFile.split('//<core>')[1].split('//</core>')[0];
 const appSrc = html.split('//<app>')[1].split('//</app>')[0];
 const m = { exports: {} };
 new Function('module', core)(m);
@@ -330,6 +333,88 @@ fjson.reference.scores = fjson.reference.scores.filter(v => typeof v === 'number
 const fj = C.docFromScored(fjson);
 ok(noWarn(fj) && fj.words[0].text === 'better', 'FORMAT.md JSON example offsets are right');
 ok(noWarn(csvDoc), 'python CSV loads with no warnings');
+
+// 5b. the shared core file: one classic script for both pages, API on window.SMCore
+const fakeWin = {};
+new Function('window', 'module', coreFile)(fakeWin, undefined);
+ok(fakeWin.SMCore && typeof fakeWin.SMCore.topicScores === 'function' && typeof fakeWin.SMCore.docFromScored === 'function', 'sentiment-core.js as a classic script publishes window.SMCore');
+const storyHtml = fs.readFileSync(require('path').join(require('path').dirname(path), 'SentimentStoryDemo.html'), 'utf8');
+const loadsCore = (h, mark) => { const i = h.indexOf('<script src="sentiment-core.js"></script>'), j = h.indexOf(mark); return i >= 0 && j > i; };
+ok(loadsCore(html, '//<app>') && loadsCore(storyHtml, "'use strict'") && !/\/\/<core>/.test(html),'index.html and the story page both load sentiment-core.js before their own script; index.html no longer inlines a core');
+ok(!/function (docFromScored|placeWords)\b|const p90\b/.test(html + storyHtml), 'no second copy of the scored-file reader or the p90 scale in either page');
+
+// 5c. topicScores: sentence-level topic summary
+const tdoc = C.buildDoc('t', C.parseMarkdown('# Funding and team\n\nThe team was great. The funding was awful. The team and the funding were fine. Nothing here.\n'));
+const tTeam = C.makeTopic('team', tdoc), tFund = C.makeTopic('funding', tdoc), tNone = C.makeTopic('zebra', tdoc);
+const tsc = C.topicScores(tdoc, [tTeam, tFund, tNone]);
+const hitsOf = (d, t) => d.sents.filter(s => C.matches(s, t));
+const near = (a, b) => Math.abs(a - b) < 1e-9;
+ok(tsc.length === 3 && tsc[0].key === 'team' && tsc[1].label === 'funding', 'one row per topic, in the order given');
+ok(tsc[0].count === 3 && tsc[1].count === 3 && tsc[0].count === hitsOf(tdoc, tTeam).length, 'count = sentences matched through matches() (heading included): ' + tsc.map(r => r.count));
+const both = tdoc.sents.find(s => /team and the funding/.test(s.text));
+ok(tsc[0].topPos.some(x => x.id === both.id) && tsc[1].topPos.some(x => x.id === both.id) && tsc[0].shared === 2 && tsc[1].shared === 2, 'a sentence that mentions two topics counts toward each; shared counts the overlap');
+ok(near(tsc[0].mean, hitsOf(tdoc, tTeam).reduce((x, s) => x + s.score, 0) / 3) && near(tsc[1].sum, hitsOf(tdoc, tFund).reduce((x, s) => x + s.score, 0)), 'mean and sum are the plain average / sum of the hit sentences');
+ok(tsc[1].mean < 0 && tsc[0].mean > 0, 'team leans positive, funding negative: ' + tsc[0].mean.toFixed(3) + ' / ' + tsc[1].mean.toFixed(3));
+ok(tsc.every(r => r.pos + r.neg + r.neu === r.count) && tsc[0].neu >= 1, 'negative + neutral + positive = count; the unscored heading is neutral');
+ok(tsc[2].count === 0 && tsc[2].mean === 0 && tsc[2].sum === 0 && tsc[2].topPos.length === 0 && tsc[2].topNeg.length === 0 && tsc[2].pos + tsc[2].neg + tsc[2].neu === 0 && tsc[2].shared === 0, 'no hits -> zeros and an empty list, never NaN');
+ok(C.topicScores(tdoc, []).length === 0 && C.topicScores(tdoc, [tNone])[0].mean === 0, 'no topics -> no rows; a lone miss is still 0');
+/* topPos: score > 0, highest first; topNeg: score < 0, lowest first; equal scores in document order */
+const posOrd = l => l.every((x, i) => x.score > 0 && (!i || l[i - 1].score > x.score || (l[i - 1].score === x.score && l[i - 1].id < x.id)));
+const negOrd = l => l.every((x, i) => x.score < 0 && (!i || l[i - 1].score < x.score || (l[i - 1].score === x.score && l[i - 1].id < x.id)));
+ok(tsc.every(r => posOrd(r.topPos) && negOrd(r.topNeg)), 'topPos only positive, descending; topNeg only negative, ascending; zero scores in neither');
+ok(tsc[0].topPos.length === 2 && tsc[0].topNeg.length === 0 && tsc[1].topPos.length === 1 && tsc[1].topNeg.length === 1, 'each side holds only its own sign (team: 2 positive, no negative; funding: 1 + 1)');
+const tN1 = C.topicScores(tdoc, [tTeam], { n: 1 })[0];
+ok(tN1.topPos.length === 1 && tN1.topPos[0].id === tsc[0].topPos[0].id, 'n honoured; n = 1 keeps the strongest');
+ok(tsc.every(r => r.topPos.concat(r.topNeg).every(x => tdoc.sents[x.id].text === x.text && tdoc.sents[x.id].block === x.block)), 'each strong hit carries the sentence id and block to jump to');
+const tieScores = [-0.5, 0.5, 0.2, -0.9, 0.5, -0.5, 0.7, -0.1, 0];
+const tie = C.topicScores(C.docFromScored({ paragraphs: [{ sentences: tieScores.map((v, i) => ({ text: 'Rates moved ' + i + '.', score: v })) }] }), [{ key: 'rate', sub: null, label: 'rates' }])[0];
+ok(tie.topPos.map(x => x.id).join() === '6,1,4' && tie.topNeg.map(x => x.id).join() === '3,0,5', 'default n = 3 per side; equal scores in document order: pos ' + tie.topPos.map(x => x.id) + ' / neg ' + tie.topNeg.map(x => x.id));
+// external file docs (launch-week JSON, the Assessment, the full review)
+[d2, C.docFromScored(dlist[0].scored), full].forEach(d => {
+  const tps = C.extractTopics(d, 8), r = C.topicScores(d, tps);
+  const good = r.every((x, i) => {
+    const h = hitsOf(d, tps[i]);
+    return x.count === h.length && near(x.mean, h.length ? h.reduce((a, s) => a + s.score, 0) / h.length : 0)
+      && x.pos === h.filter(s => s.k >= C.NEUTRAL_K && s.score > 0).length && x.neg === h.filter(s => s.k >= C.NEUTRAL_K && s.score < 0).length
+      && posOrd(x.topPos) && negOrd(x.topNeg) && x.topPos.length === Math.min(3, h.filter(s => s.score > 0).length) && x.topNeg.length === Math.min(3, h.filter(s => s.score < 0).length)
+      && (!x.topPos.length || x.topPos[0].score === Math.max(...h.map(s => s.score))) && (!x.topNeg.length || x.topNeg[0].score === Math.min(...h.map(s => s.score)))
+      && x.topPos.concat(x.topNeg).every(t => d.sents[t.id].text === t.text);
+  });
+  ok(good && r.length === tps.length, 'external doc topics: counts, means, the header\'s neutral split and top 3 positive / negative agree with matches(): ' + d.title + ' · ' + r.slice(0, 3).map(x => x.label + ' ' + x.count + ' ' + x.mean.toFixed(2)).join(', '));
+});
+const bdoc = C.buildDoc('t', blocks), bt = C.extractTopics(bdoc, 8), bs = C.topicScores(bdoc, bt);
+ok(bs.every((x, i) => x.count === hitsOf(bdoc, bt[i]).length) && bs.find(x => x.label === 'product').count > 0 && bs.every(x => isFinite(x.mean)), 'built-in dictionary doc topics: ' + bs.slice(0, 4).map(x => x.label + ' ' + x.mean.toFixed(2)).join(', '));
+const paraOnly = C.docFromScored({ paragraphs: [{ text: 'Rates rose. Rates fell.', score: -0.4 }, { text: 'Rates held.', score: 0.2 }, { sentences: [{ text: 'Rates eased.', score: 0.1 }] }] });
+const po1 = C.topicScores(paraOnly, [C.makeTopic('rates', paraOnly)])[0];
+ok(po1.count === 4 && near(po1.mean, (-0.4 - 0.4 + 0.2 + 0.1) / 4) && po1.topNeg[0].score === -0.4 && po1.topNeg.length === 2 && po1.topPos.map(x => x.score).join() === '0.2,0.1', 'paragraph-only file: a sentence without its own score stands for its paragraph; one with a score keeps it');
+// outline x topics
+const stDoc = C.buildDoc('t', C.parseMarkdown('# Alpha\n\nThe rates were great.\n\n## Beta\n\nThe rates were awful. The team was fine.\n\n# Delta\n\nThe team was terrible.\n'));
+const tRates = C.makeTopic('rates', stDoc), tT = C.makeTopic('team', stDoc), sts = C.sectionTopicScores(stDoc, [tRates]);
+const scoreOf = re => stDoc.sents.find(s => re.test(s.text)).score;
+ok(sts.map(r => r.blockId).join() === C.sectionScores(stDoc).map(r => r.blockId).join() && C.sectionSpans(stDoc).length === sts.length, 'section x topic rows line up with the outline rows');
+ok(sts[0].count === 2 && near(sts[0].mean, (scoreOf(/great/) + scoreOf(/awful/)) / 2) && sts[1].count === 1 && near(sts[1].mean, scoreOf(/awful/)) && sts[2].count === 0 && sts[2].mean === 0, 'per section: an h1 includes its h2s, an empty section is 0 not NaN');
+ok(C.sectionTopicScores(stDoc, [tRates, tT]).map(r => r.count).join() === '3,2,1', 'several topics: the union of their sentences, as the dim filter shows them');
+
+// 5d. the story page reads a scored file through the same core: same scales (incl. the automatic p90), words, topic means
+const storyRegion = storyHtml.split('//<story-data>')[1].split('//</story-data>')[0];
+const storyBuild = new Function('SMCore', "'use strict';\n" + storyRegion + '\nreturn build;')(C);
+const noScale = o => { const c = JSON.parse(JSON.stringify(o)); delete c.scale; return c; };
+const p90Case = { paragraphs: [{ sentences: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map((v, i) => ({ text: 'Rate move ' + i + '.', score: i % 2 ? v : -v })) }] };
+[['launch-week JSON', pyJson], ['launch-week without scale', noScale(pyJson)], ['Assessment', dlist[0].scored], ['Assessment without scale', noScale(dlist[0].scored)], ['synthetic', dlist[2].scored], ['FORMAT.md example', fjson], ['ten sentences, no scale', p90Case], ['paragraph-only', { paragraphs: [{ text: 'Rates rose. Rates fell.', score: -0.4 }, { text: 'Rates held.', score: 0.2 }] }]].forEach(([name, obj]) => {
+  const d = C.docFromScored(obj), sd = storyBuild(obj);
+  ok(sd.wScale === d.cap.word && sd.sScale === d.cap.sent && sd.pScale === d.cap.para, `story and analyzer share the colour scale (${name}): word ${sd.wScale} sent ${+sd.sScale.toPrecision(4)} para ${+sd.pScale.toPrecision(4)} · ${d.capSrc.sent}`);
+});
+ok(C.docFromScored(p90Case).capSrc.sent === 'auto' && storyBuild(p90Case).sScale === 1, 'automatic scale = 90th percentile of non-zero |scores| on both pages (10 values -> the 10th)');
+const sdA = storyBuild(dlist[0].scored), dA = C.docFromScored(dlist[0].scored), bodyA = dA.sents.filter(s => dA.blocks[s.block].type === 'p');
+const spansOf = toks => toks.map(t => (t.word && t.score ? `[${t.text}:${t.score}]` : t.text)).join('');
+ok(sdA.sents.length === bodyA.length && sdA.sents.every((s, i) => s.text === bodyA[i].text && s.score === bodyA[i].score && spansOf(s.toks) === spansOf(bodyA[i].toks)), 'story body sentences are the analyzer\'s: same text, score and word placement');
+const lastI = sdA.sents.length - 1;
+ok(sdA.topics.length > 0 && sdA.topics.every(t => { const r = C.topicScores(dA, [t], { sents: bodyA })[0]; return t.total === r.count && t.cnt[lastI] === r.count && near(t.mean, r.mean); }), 'story topic totals and means come from topicScores, and the rail\'s running count ends on the same total: ' + sdA.topics.slice(0, 3).map(t => t.label + ' ' + t.total + ' ' + t.mean.toFixed(2)).join(', '));
+ok(sdA.sents.every(s => s.topics.every(i => C.matches(s.core, sdA.topics[i]))), 'story sentence -> topic membership is matches()');
+// app wiring for the topic summary (the UI itself is not driven here)
+ok(/S\.tstats = topicScores\(S\.doc, S\.topics\)/.test(appSrc) && /sectionTopicScores\(S\.doc, act\)/.test(appSrc) && /data-more=/.test(appSrc) && /jumpSent\(\+b\.dataset\.sent\)/.test(appSrc), 'chips, outline and the topic popover are wired to topicScores / sectionTopicScores / jumpSent');
+ok(/group\('Positive', st\.topPos\)/.test(appSrc) && /group\('Negative', st\.topNeg\)/.test(appSrc) && /<p class="none">none<\/p>/.test(appSrc) && !/st\.top\b(?!Pos|Neg)/.test(appSrc), 'popover lists Positive and Negative groups, each "none" when empty; no caller of the old top list');
+ok(/if \(!E\.tpop\.hidden\) closeTpop\(true\)/.test(appSrc) && /e\.key === '1'\) setLevel\('word'\)/.test(appSrc), 'Escape closes the topic popover first; level shortcuts unchanged');
 
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
