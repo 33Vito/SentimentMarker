@@ -303,53 +303,41 @@ body.follow .tf{text-decoration:underline solid var(--ink) 2px;text-underline-of
 <div class="drop" id="drop" hidden><span>Drop a scored JSON file to tell its story</span></div>
 
 <script src="examples/demos.js"></script>
+<!-- the analyzer's core (window.SMCore): the same reading of a scored file on both pages -->
+<script src="sentiment-core.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const fmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
 const sg = v => (v < 0 ? 'neg' : v > 0 ? 'pos' : '');
-const p90 = arr => { const a = arr.filter(v => v).map(Math.abs).sort((x, y) => x - y); return a.length ? a[Math.floor((a.length - 1) * 0.9)] : 1; };
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-/* ---------- data: a scored JSON (docs/FORMAT.md) -> chapters / sentences / topics ---------- */
+//<story-data>
+/* ---------- data: a scored JSON (docs/FORMAT.md) -> chapters / sentences / topics, on top of SMCore ---------- */
 const STOP = new Set(('about above after again against also although among another because been before being below between both could does doing down during each either even every from further have having here into itself just least less made make many more most much must near need other over same several should since some such than that their them then there these they this those through under until upon very were what when where which while will with within without would your year years last first second third remain remains continue continued including include however recent recently period across already around further given likely well high higher level levels part parts term terms time times overall based particular particularly according general generally indeed rather whether toward towards might shall like into onto').split(' '));
-const stem = w => { w = w.toLowerCase().replace(/[’']s$/, ''); if (w.length > 4 && /s$/.test(w) && !/ss$/.test(w)) w = /ies$/.test(w) ? w.slice(0, -3) + 'y' : w.slice(0, -1); return w; };
-const WORD_RE = /[A-Za-z][A-Za-z’'-]*[A-Za-z]|[A-Za-z]/g;
-const splitCrude = t => t.match(/[^.!?。！？]+[.!?。！？]*["”’)]*\s*/g)?.map(x => x.trim()).filter(Boolean) || [t];
 
 function build(scored) {
   if (!scored || !Array.isArray(scored.paragraphs)) throw new Error('Not a scored file (needs "paragraphs", see docs/FORMAT.md)');
-  const lvl = (o, k) => (o == null ? null : typeof o === 'number' ? o : num(o[k]));
-  const cW = lvl(scored.center, 'word') || 0, cS = lvl(scored.center, 'sentence') || 0, cP = lvl(scored.center, 'paragraph') || 0;
+  /* one reading of the file for both pages: centre, sentence splitting, word placement (docs/FORMAT.md "Locating words"),
+     derived scores, heading levels and the colour scales (the file's scale, else the 90th percentile of non-zero
+     |scores|, else the default) all come from SMCore.docFromScored, exactly as the analyzer opens it */
+  const doc = SMCore.docFromScored(scored), cap = doc.cap;
   const blocks = [], sents = [];
-  for (const p of scored.paragraphs) {
-    let ss = Array.isArray(p.sentences) && p.sentences.length ? p.sentences : p.text ? splitCrude(p.text) : [];
-    ss = ss.map(s => (typeof s === 'string' ? { text: s } : s)).filter(s => s && typeof s.text === 'string' && s.text.trim());
-    if (!ss.length) continue;
-    const b = { type: p.type === 'h' ? 'h' : 'p', sents: [] };
-    if (b.type === 'h') b.level = Number(p.level) >= 2 ? 2 : 1;   /* FORMAT.md paragraphs[].level: >= 2 flattens to 2, anything else is 1 */
-    for (const s of ss) {
-      const words = (Array.isArray(s.words) ? s.words : []).filter(w => w && typeof w.text === 'string' && w.text && num(w.score) != null && w.score - cW !== 0).map(w => ({ ...w, score: w.score - cW }));
-      let score = num(s.score);
-      let src = 'sent';
-      if (score != null) score -= cS;
-      else if (words.length) { const S = words.reduce((x, w) => x + w.score, 0); score = S / Math.sqrt(S * S + 15); }
-      else if (num(p.score) != null) { score = p.score - cP; src = 'para'; }   /* paragraph-only files */
-      else score = 0;
-      const o = { id: sents.length, text: s.text, words, score, src, block: blocks.length };
+  for (const cb of doc.blocks) {
+    const b = { type: cb.type, sents: [] };
+    if (b.type === 'h') b.level = cb.level;
+    for (const cs of cb.sents) {
+      const v = SMCore.sentValue(doc, cs);   /* paragraph-only files: a sentence stands for its paragraph (src 'para') */
+      const o = { id: sents.length, text: cs.text, toks: cs.toks, score: v.score, src: v.level, block: blocks.length, core: cs };
+      o.n = Math.max(-1, Math.min(1, v.score / cap[v.level]));
       b.sents.push(o); if (b.type === 'p') sents.push(o);
     }
     blocks.push(b);
   }
   if (!sents.length) throw new Error('No body sentences in this file');
-  const wScale = lvl(scored.scale, 'word') || p90(sents.flatMap(s => s.words.map(w => w.score)));
-  const sScale = lvl(scored.scale, 'sentence') || p90(sents.filter(s => s.src === 'sent').map(s => s.score));
-  const pScale = lvl(scored.scale, 'paragraph') || p90(sents.filter(s => s.src === 'para').map(s => s.score));
-  for (const s of sents) s.n = clamp(s.score / (s.src === 'para' ? pScale : sScale), -1, 1);
 
   /* chapters and sections, from the two outline levels (FORMAT.md paragraphs[].level, as in the analyzer's outline):
      a level-1 heading opens a chapter, a level-2 heading a section inside it. A run of level-1 headings folds into
@@ -392,28 +380,33 @@ function build(scored) {
     for (const s of c.secs) outline.push({ level: 2, title: s.title, ch: c.id, sec: s.id, sum: sum([...s.hs, ...s.sents]), count: s.sents.length, first: s.sents.length ? s.sents[0].id : null });
   }
 
-  /* topics: the most-mentioned content words, counted once per sentence */
-  const cnt = new Map();
-  for (const s of sents) {
+  /* topics: the most-mentioned content words of the body, counted once per sentence. Keys are the analyzer's
+     (normWord over the core's tokens), so SMCore.matches finds them and SMCore.topicScores sums them. */
+  const body = sents.map(s => s.core), cnt = new Map();
+  for (const cs of body) {
     const seen = new Set();
-    for (const m of s.text.match(WORD_RE) || []) {
-      const k = stem(m); if (k.length < 4 || STOP.has(k) || seen.has(k)) continue; seen.add(k);
+    for (const t of cs.wt) {
+      if (!t.word || !/\p{L}/u.test(t.text)) continue;
+      const k = SMCore.normWord(t.text); if (k.length < 4 || STOP.has(k) || seen.has(k)) continue; seen.add(k);
       let e = cnt.get(k); if (!e) cnt.set(k, e = { key: k, n: 0, surf: new Map() });
-      e.n++; const sf = m.toLowerCase(); e.surf.set(sf, (e.surf.get(sf) || 0) + 1);
+      e.n++; const sf = t.text.toLowerCase(); e.surf.set(sf, (e.surf.get(sf) || 0) + 1);
     }
   }
-  const topics = [...cnt.values()].filter(e => e.n >= 3).sort((a, b) => b.n - a.n || b.key.length - a.key.length).slice(0, 7)
-    .map((e, i) => ({ i, key: e.key, label: [...e.surf.entries()].sort((a, b) => b[1] - a[1])[0][0], total: e.n }));
+  const picked = [...cnt.values()].filter(e => e.n >= 3).sort((a, b) => b.n - a.n || b.key.length - a.key.length).slice(0, 7)
+    .map(e => ({ key: e.key, sub: null, label: [...e.surf.entries()].sort((a, b) => b[1] - a[1])[0][0] }));
+  /* total and mean per topic: the analyzer's sentence-level summary, over body sentences (headings are not read here) */
+  const stats = SMCore.topicScores(doc, picked, { sents: body, n: 0 });
+  const topics = picked.map((t, i) => ({ i, key: t.key, sub: null, label: t.label, total: stats[i].count, mean: stats[i].mean }));
   const tIndex = new Map(topics.map(t => [t.key, t.i]));
-  for (const s of sents) { s.topics = [...new Set((s.text.match(WORD_RE) || []).map(stem).filter(k => tIndex.has(k)).map(k => tIndex.get(k)))]; }
+  for (const s of sents) s.topics = topics.filter(t => SMCore.matches(s.core, t)).map(t => t.i);
   /* prefix sums so the rail can answer "how has this topic felt up to sentence i" in O(topics) */
   for (const t of topics) {
     t.cnt = new Uint16Array(sents.length); t.sum = new Float32Array(sents.length); let c = 0, x = 0;
     sents.forEach((s, i) => { if (s.topics.includes(t.i)) { c++; x += s.n; } t.cnt[i] = c; t.sum[i] = x; });
-    t.mean = c ? x / c : 0;
   }
-  return { title: scored.title || 'Untitled', sents, chapters, secs, outline, topics, tIndex, wScale, sScale };
+  return { title: doc.title, sents, chapters, secs, outline, topics, tIndex, wScale: cap.word, sScale: cap.sent, pScale: cap.para, doc };
 }
+//</story-data>
 
 const MOODS = [[-0.6, 'Alarmed'], [-0.32, 'Tense'], [-0.1, 'Uneasy'], [0.1, 'Measured'], [0.32, 'Steady'], [0.6, 'Hopeful'], [Infinity, 'Buoyant']];
 const moodWord = n => MOODS.find(([t]) => n <= t)[1];
@@ -421,47 +414,21 @@ const moodWord = n => MOODS.find(([t]) => n <= t)[1];
 /* ---------- rendering ---------- */
 let D = null, els = [], chHeads = [], secHeads = [], stickyTops = [], tops = [], cur = -2, storyTop = 0, storyH = 1;
 
-/* word placement, as docs/FORMAT.md "Locating words": an offset counts only if the text there matches the word
-   (NFC, case-insensitive); otherwise, or without offsets, search after the previous word, then from the start,
-   taking the first spot not already claimed. Overlapping or unfound words are skipped. */
-function placeWords(s, cps) {
-  const claimed = new Uint8Array(cps.length), out = [];
-  const at = (a, b) => cps.slice(a, b).join('').normalize('NFC').toLowerCase();
-  let from = 0;
-  for (const w of s.words) {
-    const wt = w.text.replace(/^##/, ''); if (!wt) continue;
-    const want = wt.normalize('NFC').toLowerCase(), L = Array.from(wt).length;
-    const free = (a, b) => { for (let k = a; k < b; k++) if (claimed[k]) return false; return true; };
-    /* NFC-equal spans can differ in code-point length (é vs e + combining accent), so try nearby lengths */
-    const lens = [L, L + 1, L + 2, L + 3, L - 1, L - 2].filter(n => n > 0);
-    const find = st => { for (let k = st; k < cps.length; k++) { if (claimed[k]) continue; for (const n of lens) if (k + n <= cps.length && at(k, k + n) === want && free(k, k + n)) return [k, k + n]; } return null; };
-    let a = num(w.start), b = num(w.end);
-    if (!(a != null && b != null && Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b <= cps.length && a < b && at(a, b) === want)) {
-      const hit = find(from) || find(0); if (!hit) continue; [a, b] = hit;
-    }
-    if (!free(a, b)) continue;
-    claimed.fill(1, a, b); from = b; out.push({ a, b, w });
-  }
-  return out.sort((x, y) => x.a - y.a);
+function plain(t) {   /* wrap topic words, tokenised and keyed as SMCore.matches sees them; escape everything */
+  return SMCore.rawTokens(t).map(k => {
+    const ti = k.word ? D.tIndex.get(SMCore.normWord(k.text)) : undefined;
+    return ti == null ? esc(k.text) : `<span class="tw" data-t="${ti}">${esc(k.text)}</span>`;
+  }).join('');
 }
-function plain(t) {   /* wrap topic words; escape everything */
-  let out = '', last = 0;
-  t.replace(WORD_RE, (m, off) => {
-    const ti = D.tIndex.get(stem(m)); if (ti == null) return m;
-    out += esc(t.slice(last, off)) + `<span class="tw" data-t="${ti}">${esc(m)}</span>`; last = off + m.length; return m;
-  });
-  return out + esc(t.slice(last));
-}
+/* the sentence as the core laid it out: scored word spans (placed by docFromScored) and the text between them */
 function sentHTML(s) {
-  const cps = Array.from(s.text);
-  const ws = placeWords(s, cps);
-  let out = '', i = 0, d = 0;
-  for (const { a, b, w } of ws) {
-    const k = clamp(Math.abs(w.score) / D.wScale, 0, 1).toFixed(2);
-    out += plain(cps.slice(i, a).join('')) + `<span class="m ${sg(w.score)}" style="--k:${k};--d:${d++}" title="${esc(w.text || '')} ${fmt(w.score)}${w.note ? ' · ' + esc(w.note) : ''}">${esc(cps.slice(a, b).join(''))}</span>`;
-    i = b;
+  let out = '', d = 0;
+  for (const t of s.toks) {
+    if (!(t.word && t.score)) { out += plain(t.text); continue; }
+    const k = clamp(Math.abs(t.score) / D.wScale, 0, 1).toFixed(2), note = SMCore.noteText(t);
+    out += `<span class="m ${sg(t.score)}" style="--k:${k};--d:${d++}" title="${esc(t.text)} ${fmt(t.score)}${note ? ' · ' + esc(note) : ''}">${esc(t.text)}</span>`;
   }
-  return `<span class="s" data-s="${s.id}">${out + plain(cps.slice(i).join(''))}</span>`;
+  return `<span class="s" data-s="${s.id}">${out}</span>`;
 }
 function barStyle(n) { return n < 0 ? `left:${50 + 50 * n}%;width:${-50 * n}%;background:var(--neg)` : `left:50%;width:${50 * n}%;background:var(--pos)`; }
 
@@ -564,7 +531,8 @@ function layoutBubbles() {
   const T = D.topics, field = $('#field'); field.querySelectorAll('.bub,.pins').forEach(b => b.remove());
   if (!T.length) { field.style.setProperty('--fh', '80px'); return; }
   const W = field.clientWidth || 800, maxN = Math.max(1, ...T.map(t => t.total));
-  const M = Math.max(0.25, ...T.map(t => Math.abs(t.mean))) * 1.15;
+  /* t.mean is in score units (SMCore.topicScores); the floor is a quarter of the colour scale it is read on */
+  const M = Math.max(0.25 * (D.doc.has.sent ? D.sScale : D.pScale), ...T.map(t => Math.abs(t.mean))) * 1.15;
   const items = T.map(t => { const d = Math.round(24 + 40 * Math.sqrt(t.total / maxN)), tx = (50 + t.mean / M * 44) / 100 * W, lw = t.label.length * 8.5 + 14;
     return { t, d, tx, cx: tx, half: Math.max(d, lw) / 2 + 5 }; }).sort((a, b) => a.tx - b.tx);
   const lanes = [[], []]; items.forEach((it, k) => { it.lane = k % 2; lanes[it.lane].push(it); });
@@ -594,7 +562,7 @@ function layoutBubbles() {
 function renderFinale() {
   const T = D.topics, field = $('#field');
   field.querySelectorAll('.bub').forEach(b => b.remove());
-  $('#finSub').textContent = T.length ? `Each bubble is a topic, placed by the average mood of the sentences that mention it; size is how often it came up.` : 'This article has no recurring topic words.';
+  $('#finSub').textContent = T.length ? `Each bubble is a topic, placed by the average score of the sentences that mention it; size is how often it came up. A sentence that mentions two topics counts toward both.` : 'This article has no recurring topic words.';
   layoutBubbles();
   const byN = [...D.sents].sort((a, b) => a.n - b.n), neg = byN.filter(s => s.n < 0).slice(0, 3), pos = byN.filter(s => s.n > 0).reverse().slice(0, 3);
   const card = (s, i) => `<button type="button" class="card ${sg(s.n)}" data-s="${s.id}" style="--i:${i}"><b>${fmt(s.score)} · ${esc(moodWord(s.n))}</b>${esc(cut(s.text, 220))}<small>${esc(placeOf(s, 70))}</small></button>`;
