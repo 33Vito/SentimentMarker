@@ -6,6 +6,7 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 - Three levels - word / sentence / paragraph - switchable with the 1 / 2 / 3 keys
 - A weak-signal filter slider, so you can look only at strong sentiment
 - Topic filter: high-frequency words are extracted automatically and you can add your own; sentences that do not mention a topic word are dimmed
+- Topic sentiment summary: each topic shows how many sentences mention it, the mean score, whether it leans positive or negative, and the three strongest positive and negative source sentences (click to jump). A sentence that names two topics counts toward both. Chips and outline rows carry a positive/negative marker.
 - Click a sentence or paragraph to see each word's score and how negation, boosters and contrasts affected it
 - A heat strip on the right shows the sentiment distribution of the whole document; click or drag it to jump
 - An outline panel for long articles: two heading levels, each row carrying a sentiment bar and the running sum of its section, click to jump, the current section stays highlighted
@@ -44,10 +45,7 @@ The "Sample article" dropdown in the top bar offers three built-in demos: the As
 - `examples/financial-stability-review-2026-10.pdf`: the unmodified RBA publication. It includes the Reserve Bank logo and third-party graphs and tables, which the Reserve Bank excludes from CC BY 4.0 (https://www.rba.gov.au/copyright/). This project does not relicense that file.
 
 
-The script inside `index.html` is split into two sections, marked by comments:
-
-- `//<core>`: input parsing (PDF line rejoining, Markdown, plain text) and the sentiment engine - DOM-free and testable under Node
-- `//<app>`: rendering and interaction
+The scoring engine lives in `core.js` (DOM-free, testable under Node). `index.html` and `SentimentStoryDemo.html` both load it. The UI in `index.html` is the `//<app>` section.
 
 ## Tests
 

@@ -1,10 +1,10 @@
 const fs = require('fs');
-const path = process.argv[2] || require('path').join(__dirname, '..', 'index.html');
-const html = fs.readFileSync(path, 'utf8');
-const core = html.split('//<core>')[1].split('//</core>')[0];
+const htmlPath = process.argv[2] || require('path').join(__dirname, '..', 'index.html');
+const html = fs.readFileSync(htmlPath, 'utf8');
+const coreSrc = fs.readFileSync(require('path').join(__dirname, '..', 'core.js'), 'utf8');
 const appSrc = html.split('//<app>')[1].split('//</app>')[0];
 const m = { exports: {} };
-new Function('module', core)(m);
+new Function('module', coreSrc)(m);
 const C = m.exports;
 let fail = 0;
 const ok = (c, msg) => { if (!c) { fail++; console.log('FAIL:', msg); } else console.log('ok  :', msg); };
@@ -333,5 +333,73 @@ ok(noWarn(csvDoc), 'python CSV loads with no warnings');
 
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
+
+// 7. shared core.js: both pages load it; Story has no private docFromScored
+ok(/src=["']core\.js["']/.test(html), 'index.html loads core.js');
+ok(!/\/\/<core>/.test(html), 'index.html no longer inlines the core');
+ok(/^\(function \(global\)/.test(coreSrc.trim()), 'core.js IIFE keeps STOP and CAP off the page global lexical environment');
+const storyHtml = fs2.readFileSync(require('path').join(__dirname, '..', 'SentimentStoryDemo.html'), 'utf8');
+ok(/src=["']core\.js["']/.test(storyHtml), 'SentimentStoryDemo.html loads core.js');
+ok(!/function docFromScored\s*\(/.test(storyHtml) && /docFromScored\s*\(/.test(storyHtml), 'story uses shared docFromScored');
+ok(!/const p90\s*=/.test(storyHtml), 'story dropped its private p90 scale default');
+
+// 8. autoCap: missing scale uses nearest-rank 90th percentile, then CAP
+ok(C.autoCap([]) === 0 && C.autoCap([0, 0]) === 0, 'autoCap empty / all-zero is 0');
+ok(C.autoCap([1]) === 1, 'autoCap n=1');
+ok(C.autoCap([1, 10]) === 10, 'autoCap n=2 nearest-rank 90th is the larger value');
+const ten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+ok(C.autoCap(ten) === 9, 'autoCap n=10 nearest-rank 90th is 9, not the max');
+ok(C.autoCap([-4, -2, 1, 2, 3, 4, 5, 6, 8, 10]) === 8, 'autoCap uses |score| and drops zeros');
+const noScale = C.docFromScored({ paragraphs: [{ score: 0.4, sentences: [
+  { text: 'A.', score: 0.1 }, { text: 'B.', score: 0.2 }, { text: 'C.', score: 0.3 }, { text: 'D.', score: 0.4 },
+  { text: 'E.', score: 0.5 }, { text: 'F.', score: 0.6 }, { text: 'G.', score: 0.7 }, { text: 'H.', score: 0.8 },
+  { text: 'I.', score: 0.9 }, { text: 'J.', score: 1.0 }
+] }] });
+ok(noScale.cap.sent === 0.9 && noScale.capSrc.sent === 'auto', 'missing scale: sentence cap is autoCap of sentence scores');
+ok(noScale.cap.para === 0.4 && noScale.capSrc.para === 'auto', 'missing scale: paragraph cap is autoCap of the paragraph scores');
+const zeroDoc = C.docFromScored({ paragraphs: [{ sentences: [{ text: 'Hello there.' }] }] });
+ok(zeroDoc.cap.word === C.CAP.word && zeroDoc.cap.sent === C.CAP.sent && zeroDoc.capSrc.word === 'default', 'all-zero missing scale falls back to CAP, not 1');
+ok(C.docFromScored({ scale: 2, paragraphs: [{ sentences: [{ text: 'A.', score: 9 }] }] }).cap.sent === 2, 'explicit scale still wins over autoCap');
+
+// 9. topic sentiment summary
+const tsDoc = C.docFromScored({ paragraphs: [{ sentences: [
+  { text: 'Banks failed badly.', score: -0.9 },
+  { text: 'Households recovered well.', score: 0.6 },
+  { text: 'Banks and households both struggled.', score: -0.5 },
+  { text: 'Households were strong and banks were strong too.', score: 0.8 },
+  { text: 'Unrelated weather today.', score: 0.1 },
+  { text: 'Banks crashed again.', score: -0.6 },
+  { text: 'Households thrived.', score: 0.4 },
+  { text: 'Banks improved.', score: 0.4 },
+  { text: 'Households slipped.', score: -0.2 },
+  { text: 'Banks rallied.', score: 0.2 }
+] }] });
+const tBanks = C.makeTopic('banks', tsDoc);
+const tHouse = C.makeTopic('households', tsDoc);
+const tNone = C.makeTopic('unicorns', tsDoc);
+const sBanks = C.topicSentiment(tsDoc, tBanks);
+const sHouse = C.topicSentiment(tsDoc, tHouse);
+ok(tBanks.count === 6 && tHouse.count === 5, 'makeTopic counts sentences, not tokens');
+ok(sBanks.count === 6 && sHouse.count === 5, 'topicSentiment count is sentences that mention the topic');
+const dual = tsDoc.sents.filter(s => C.matches(s, tBanks) && C.matches(s, tHouse));
+const either = tsDoc.sents.filter(s => C.matches(s, tBanks) || C.matches(s, tHouse));
+ok(dual.length === 2 && sBanks.count + sHouse.count === either.length + dual.length, 'a sentence that names two topics counts toward both');
+ok(Math.abs(sBanks.mean - ((-0.9 + -0.5 + 0.8 + -0.6 + 0.4 + 0.2) / 6)) < 1e-9, 'banks mean is the unweighted mean of matching sentence scores');
+ok(sBanks.lean === 'neg' && sHouse.lean === 'pos', 'lean follows the sign of the mean');
+ok(C.topicSentiment(tsDoc, tNone).count === 0 && C.topicSentiment(tsDoc, tNone).lean === 'neu' && C.topicSentiment(tsDoc, tNone).mean === 0, 'unknown topic is empty and neutral');
+ok(sBanks.pos.length === 3 && sBanks.pos[0].score === 0.8 && sBanks.pos[1].score === 0.4 && sBanks.pos[2].score === 0.2, 'three strongest positive banks sentences, highest first');
+ok(sBanks.neg.length === 3 && sBanks.neg[0].score === -0.9 && sBanks.neg[1].score === -0.6 && sBanks.neg[2].score === -0.5, 'three strongest negative banks sentences, lowest first');
+ok(sBanks.pos[0].id === tsDoc.sents.find(s => s.score === 0.8).id && sBanks.pos[0].text.includes('Households were strong'), 'source rows carry sentence id and text for jump-to');
+ok(sHouse.pos.length === 3 && sHouse.neg.length === 2, 'fewer than 3 of a sign yields a shorter list, not padding');
+const tied = C.docFromScored({ paragraphs: [{ sentences: [
+  { text: 'Alpha good one.', score: 0.5 }, { text: 'Alpha good two.', score: 0.5 }, { text: 'Alpha good three.', score: 0.5 }
+] }] });
+const sAlpha = C.topicSentiment(tied, C.makeTopic('alpha', tied));
+ok(sAlpha.pos.map(x => x.id).join() === '0,1,2' && sAlpha.lean === 'pos', 'equal scores keep document order');
+const sums = C.topicSentiments(tsDoc, [tBanks, tHouse]);
+ok(sums.length === 2 && sums[0].key === tBanks.key && sums[1].count === sHouse.count, 'topicSentiments maps in topic order');
+ok(/id="tsum"/.test(html) && /A sentence that names two topics counts toward both/.test(html + appSrc), 'summary panel states the dual-count rule');
+ok(/topicSentiments\(/.test(appSrc) && /id="tsum"/.test(html), 'app renders the core summary into #tsum');
+ok(/t\.lean/.test(appSrc) && /renderChips/.test(appSrc), 'topic chips carry a pos/neg lean class');
 console.log(fail ? `\n${fail} FAILED` : '\nALL OK');
 process.exit(fail ? 1 : 0);
