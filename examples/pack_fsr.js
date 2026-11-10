@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Pack the RBA Financial Stability Review demos.
-   Uses the page's own itemsToLines / linesToBlocks (eval'd from index.html) and
+   Uses the shared itemsToLines / linesToBlocks from core.js and
    pdfjs-dist 3.11.174, the same version as the cdnjs script in index.html.
    Do not point this at a newer pdf.js: the joiner is sensitive to glyph metrics.
 
@@ -34,11 +34,7 @@ const ATTR = [
 ].join(' ');
 
 function loadCore() {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const core = html.split('//<core>')[1].split('//</core>')[0];
-  const m = { exports: {} };
-  new Function('module', core)(m);
-  return m.exports;
+  return require(path.join(root, 'core.js'));
 }
 
 function loadPdfjs() {

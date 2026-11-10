@@ -1,13 +1,13 @@
 const fs = require('fs');
 const path = process.argv[2] || require('path').join(__dirname, '..', 'index.html');
 const html = fs.readFileSync(path, 'utf8');
-const core = html.split('//<core>')[1].split('//</core>')[0];
+const corePath = require('path').resolve(require('path').dirname(path), 'core.js');
+const core = fs.readFileSync(corePath, 'utf8');
 const appSrc = html.split('//<app>')[1].split('//</app>')[0];
-const m = { exports: {} };
-new Function('module', core)(m);
-const C = m.exports;
+const C = require(corePath);
 let fail = 0;
-const ok = (c, msg) => { if (!c) { fail++; console.log('FAIL:', msg); } else console.log('ok  :', msg); };
+let checks = 0;
+const ok = (c, msg) => { checks++; if (!c) { fail++; console.log('FAIL:', msg); } else console.log('ok  :', msg); };
 
 // 1. sentence splitting
 const sp = t => C.splitSentences(t).map(s => s.text);
@@ -52,6 +52,56 @@ ok(topics.some(t => t.label === 'product') && topics.some(t => t.label === 'team
 const tp = C.makeTopic('funding', doc);
 ok(tp && tp.count >= 2, 'custom topic funding count ' + (tp && tp.count));
 ok(C.makeTopic('runway', doc).count === 1, 'custom topic runway');
+
+// 3b. topic sentiment: sentence attribution, the header's neutral cutoff, and strongest passages
+const topicDoc = C.buildDoc('Topics', C.parseText('Products and service are wonderful. Products products are terrible. Service is on the table. Productive work.'));
+const topicList = ['products', 'service', 'missing', 'and service'].map(t => C.makeTopic(t, topicDoc));
+const topicSnapshot = JSON.stringify({ doc: topicDoc, topics: topicList });
+const topicRows = C.topicScores(topicDoc, topicList);
+const [productRow, serviceRow, missingRow, phraseRow] = topicRows;
+ok(productRow.topic === topicList[0] && productRow.count === 2 && serviceRow.count === 2,
+  'topic mentions count sentences once, reuse plural matching, and exclude substring Productive');
+ok(productRow.topPositive.some(s => s.id === 0) && serviceRow.topPositive.some(s => s.id === 0),
+  'overlapping topics each receive the full shared sentence');
+ok(Math.abs(productRow.mean - (topicDoc.sents[0].score + topicDoc.sents[1].score) / 2) < 1e-9 && productRow.positive === 1 && productRow.negative === 1 && productRow.neutral === 0,
+  'built-in topic mean and positive / negative split use sentence scores');
+ok(missingRow.count === 0 && missingRow.mean === null && missingRow.positive === 0 && missingRow.negative === 0 && missingRow.neutral === 0 && missingRow.topPositive.length === 0 && missingRow.topNegative.length === 0,
+  'zero-mention topic has no mean or passages and zero counts');
+ok(phraseRow.count === 1 && phraseRow.topPositive[0].id === 0,
+  'topic summary uses the same phrase matching as the topic filter');
+ok(JSON.stringify({ doc: topicDoc, topics: topicList }) === topicSnapshot,
+  'topicScores leaves the document, sentence order, and topics unchanged');
+const neutralDoc = C.buildDoc('Neutral', C.parseText('The table is here. Tables are there.'));
+const neutralRow = C.topicScores(neutralDoc, [C.makeTopic('table', neutralDoc)])[0];
+ok(neutralRow.count === 2 && neutralRow.mean === 0 && neutralRow.neutral === 2 && neutralRow.positive === 0 && neutralRow.negative === 0,
+  'neutral-only mentions have a zero mean and an entirely neutral split');
+const scoredTopics = C.docFromScored({ center: { sentence: 3 }, scale: { sentence: 10 }, paragraphs: [{ sentences: [
+  { text: 'The launch is awful.', score: 11, words: [{ text: 'awful', score: -4 }] },
+  { text: 'The launch is wonderful.', score: -5, words: [{ text: 'wonderful', score: 4 }] },
+  { text: 'The launch has a date.', score: 4 },
+  { text: 'The launch has a room.', score: 2 },
+  { text: 'The launch has a table.', score: 3 },
+  { text: 'The launch window is here.', score: 7 },
+  { text: 'The launch has a time.', score: 5 },
+] }] });
+const launchTopic = C.makeTopic('launch', scoredTopics);
+const launchRow = C.topicScores(scoredTopics, [launchTopic], { topN: 4 })[0];
+ok(launchRow.count === 7 && Math.abs(launchRow.mean - 6 / 7) < 1e-9 && launchRow.positive === 3 && launchRow.negative === 1 && launchRow.neutral === 3,
+  'external scores keep their centred values and use the scale-relative 20% neutral cutoff, including the boundary');
+ok(launchRow.topPositive.map(s => s.id).join() === '0,5,6,2' && launchRow.topPositive.map(s => s.score).join() === '8,4,2,1' && launchRow.topNegative.map(s => s.id).join() === '1,3' && launchRow.topNegative.map(s => s.score).join() === '-8,-1' && launchRow.topPositive[0].text === scoredTopics.sents[0].text,
+  'strongest passages rank separately by sign and include ids, text and supplied scores');
+ok(C.topicScores(scoredTopics, [launchTopic])[0].topPositive.length === 3 && C.topicScores(scoredTopics, [launchTopic], { topN: 0 })[0].topPositive.length === 0 && C.topicScores(scoredTopics, [launchTopic], { topN: 0 })[0].topNegative.length === 0,
+  'strongest passages default to three per sign; topN zero suppresses both lists');
+ok(C.topicScores(scoredTopics, [launchTopic], { neutralThreshold: 0 })[0].neutral === 1,
+  'a zero neutral threshold still treats zero scores as neutral');
+ok(C.topicScores(scoredTopics, []).length === 0 && C.topicScores(C.buildDoc('Empty', []), [launchTopic])[0].mean === null,
+  'empty topics and empty documents are supported');
+const rankedDoc = C.docFromScored({ paragraphs: [{ sentences: [3, -2, 3, -5, 1, -5, 4, -1, 0].map(score => ({ text: 'Launch.', score })) }] });
+const rankedSnapshot = JSON.stringify(rankedDoc);
+const rankedRow = C.topicScores(rankedDoc, [C.makeTopic('launch', rankedDoc)])[0];
+ok(rankedRow.topPositive.map(s => s.id).join() === '6,0,2' && rankedRow.topNegative.map(s => s.id).join() === '3,5,1',
+  'three strongest of each sign are independent, keep document order on ties, and omit zero');
+ok(JSON.stringify(rankedDoc) === rankedSnapshot, 'ranking both signs leaves the scored document unchanged');
 
 // 4. PDF line reconstruction
 const mk = (str, x, y, w = str.length * 5, h = 10) => ({ str, transform: [h, 0, 0, h, x, y], width: w, height: h });
@@ -148,6 +198,35 @@ ok(secs.length === 4 && secs.map(r => r.blockId).join() === '0,2,4,6' && secs.ma
 ok(secs[1].score === rsum(2, 4) && secs[1].count === 2, 'an h2 section is its heading plus the paragraphs until the next heading');
 ok(secs[0].score === rsum(0, 6) && secs[0].count === 6, 'an h1 section runs through its nested h2s until the next h1');
 ok(secs[3].score === rsum(6, 8) && secs[3].count === 2, 'the last h1 owns only its own block');
+const sectionDoc = C.docFromScored({ center: { sentence: 2 }, paragraphs: [
+  { type: 'h', sentences: [{ text: 'Launch', score: 4 }] },
+  { sentences: [{ text: 'Launch and service.', score: 10 }, { text: 'Other.', score: -20 }] },
+  { type: 'h', level: 2, sentences: [{ text: 'Child', score: 2 }] },
+  { sentences: [{ text: 'Service.', score: -2 }, { text: 'Launch.', score: 0 }] },
+  { type: 'h', level: 2, sentences: [{ text: 'No mentions', score: 2 }] },
+  { sentences: [{ text: 'Other.', score: 20 }] },
+  { type: 'h', sentences: [{ text: 'Next', score: 2 }] },
+  { sentences: [{ text: 'Service.', score: 2 }] },
+] });
+const sectionTopics = ['launch', 'service'].map(t => ({ ...C.makeTopic(t, sectionDoc), on: true }));
+const sectionSnapshot = JSON.stringify({ doc: sectionDoc, topics: sectionTopics });
+const sectionRows = C.sectionTopicScores(sectionDoc, sectionTopics);
+ok(sectionRows.map(r => r.blockId).join() === C.sectionScores(sectionDoc).map(r => r.blockId).join() && sectionRows[0].count === 4 && sectionRows[0].mean === 1,
+  'section topic mean uses centred scores, includes heading and nested sections, counts shared mentions once');
+ok(sectionRows[1].count === 2 && sectionRows[1].mean === -3 && sectionRows[2].count === 0 && sectionRows[2].mean === null,
+  'section topic means stop at sibling headings and omit non-mention sentences');
+ok(sectionRows[3].count === 1 && sectionRows[3].mean === 0,
+  'a zero topic mean is distinct from a section without mentions, and h1 boundaries are respected');
+ok(C.sectionTopicScores(sectionDoc, sectionTopics.map(t => ({ ...t, on: false }))).every(r => r.count === 0 && r.mean === null) && C.sectionTopicScores(sectionDoc, []).every(r => r.mean === null),
+  'inactive and cleared topics produce no section markers');
+ok(C.sectionTopicScores(sectionDoc, [sectionTopics[0], { ...sectionTopics[1], on: false }])[0].mean === 8 / 3,
+  'inactive topics do not contribute to a section topic mean');
+ok(C.sectionTopicScores(sectionDoc, [{ ...C.makeTopic('and service', sectionDoc), on: true }])[0].mean === 8,
+  'section topic means reuse phrase matching');
+ok(C.sectionTopicScores(C.buildDoc('Empty', []), sectionTopics).length === 0 && C.sectionTopicScores(topicDoc, sectionTopics).length === 0,
+  'section topic means support empty and headingless documents');
+ok(JSON.stringify({ doc: sectionDoc, topics: sectionTopics }) === sectionSnapshot,
+  'sectionTopicScores leaves document scores, sentence order, and active topics unchanged');
 const lvlDoc = C.docFromScored({ version: 1, title: 't', paragraphs: [
   { type: 'h', sentences: [{ text: 'Head one' }] },
   { type: 'h', level: 2, sentences: [{ text: 'Head two' }] },
@@ -331,7 +410,68 @@ const fj = C.docFromScored(fjson);
 ok(noWarn(fj) && fj.words[0].text === 'better', 'FORMAT.md JSON example offsets are right');
 ok(noWarn(csvDoc), 'python CSV loads with no warnings');
 
+// Shared classic core: story adaptation calls the same implementation as the reader.
+const vm = require('vm');
+const storyHtml = fs.readFileSync(require('path').join(require('path').dirname(path), 'SentimentStoryDemo.html'), 'utf8');
+const storySrc = storyHtml.split('<script>')[1].split('</script>')[0];
+const loadsCoreFirst = source => source.indexOf('<script src="core.js"></script>') >= 0 && source.indexOf('<script src="core.js"></script>') < source.indexOf('<script>');
+ok(loadsCoreFirst(html) && loadsCoreFirst(storyHtml), 'both pages load the shared classic core before their app (file:// compatible)');
+try { new vm.Script(core + '\n' + appSrc); new vm.Script(core + '\n' + storySrc); ok(true, 'shared core and both apps parse without global declaration collisions'); }
+catch (e) { ok(false, 'shared core/app parse error: ' + e.message); }
+const storyContext = vm.createContext({ matchMedia: () => ({ matches: true }) });
+vm.runInContext(core, storyContext);
+let sharedBuildCalls = 0;
+storyContext.docFromScored = input => { sharedBuildCalls++; return C.docFromScored(input); };
+vm.runInContext(storySrc.slice(0, storySrc.indexOf('const MOODS =')), storyContext);
+const storyBuild = input => { storyContext.input = input; return vm.runInContext('build(input)', storyContext); };
+const noScaleInput = { center: 2, paragraphs: [
+  { type: 'h', sentences: [{ text: 'Launch', score: 50, words: [{ text: 'Launch', score: 30 }] }] },
+  { sentences: [3, 4, 5, 6, 7, 8, 9, 10, 11, 22].map(score => ({ text: 'Good launch.', score, words: [{ text: 'Good', score }] })) },
+] };
+const sharedNoScale = C.docFromScored(noScaleInput), storyNoScale = storyBuild(noScaleInput);
+ok(sharedBuildCalls === 1 && storyNoScale.wScale === sharedNoScale.cap.word && storyNoScale.sScale === sharedNoScale.cap.sent && storyNoScale.sents.every((s, i) => s.score === sharedNoScale.blocks[1].sents[i].score && s.n === Math.max(-1, Math.min(1, s.score / sharedNoScale.cap.sent))),
+  'missing-scale defaults in StoryDemo use shared docFromScored, including centring, headings and percentile boundaries');
+const zeroScaleInput = { paragraphs: [{ sentences: [{ text: 'Quiet.', score: 0 }] }] };
+const storyZero = storyBuild(zeroScaleInput);
+ok(storyZero.wScale === C.CAP.word && storyZero.sScale === C.CAP.sent && storyZero.sents[0].n === 0,
+  'all-zero missing scales use shared built-in defaults without NaN');
+const paragraphInput = { center: { paragraph: 3 }, paragraphs: [{ text: 'Quiet. Still here.', score: -2 }] };
+const paragraphCore = C.docFromScored(paragraphInput), paragraphStory = storyBuild(paragraphInput);
+ok(paragraphStory.sents.length === 2 && paragraphStory.sents.every(s => s.src === 'para' && s.score === -5 && s.n === -5 / paragraphCore.cap.para),
+  'StoryDemo keeps paragraph-only fallback with shared centring and paragraph scale');
+const demoFiles = vm.createContext({ window: {} });
+vm.runInContext(djs, demoFiles);
+vm.runInContext(fs.readFileSync(exDir + '/fsr-2026-10.demo.js', 'utf8'), demoFiles);
+// Exercise the actual story templates without a browser; layout/animation are separate.
+const storyElements = new Map();
+storyContext.document = {
+  querySelector: selector => {
+    if (!storyElements.has(selector)) storyElements.set(selector, { innerHTML: '' });
+    return storyElements.get(selector);
+  },
+  querySelectorAll: () => [],
+};
+storyContext.window = { scrollTo: () => {} };
+for (const name of ['drawWave', 'renderToc', 'renderFinale', 'paraObserver', 'measure', 'tick']) storyContext[name] = () => {};
+vm.runInContext(storySrc.slice(storySrc.indexOf('const MOODS ='), storySrc.indexOf('/* ---------- outline ---------- */')), storyContext);
+for (const demo of demoFiles.window.DEMOS) {
+  const input = demo.scored || demoFiles.window.DEMO_FILES[demo.file];
+  const result = storyBuild(input);
+  ok(result.sents.length > 0 && result.sents.every((s, i) => s.id === i && Number.isFinite(s.n) && s.ch >= 0 && s.ch < result.chapters.length) && result.chapters.flatMap(c => c.sents).length === result.sents.length && result.outline.length > 0 && result.sents.some(s => s.words.length),
+    'StoryDemo builds demo data with contiguous navigation ids, chapters, outline, word scores and finite moods: ' + demo.file);
+  storyContext.renderInput = result;
+  vm.runInContext('D = renderInput; render();', storyContext);
+  const storyMarkup = storyElements.get('#story').innerHTML;
+  const renderedIds = [...storyMarkup.matchAll(/class="s" data-s="(\d+)"/g)].map(m => +m[1]);
+  ok(renderedIds.length === result.sents.length && renderedIds.every((id, i) => id === i) &&
+    (storyMarkup.match(/class="m (?:pos|neg)"/g) || []).length === result.sents.reduce((n, s) => n + s.words.length, 0) &&
+    (storyMarkup.match(/class="chapter"/g) || []).length === result.chapters.length &&
+    storyElements.get('#stats').innerHTML.includes(`<b>${result.sents.length}</b>sentences`) &&
+    !/NaN|undefined/.test(storyMarkup),
+    'StoryDemo renders demo sentence ids, word highlights, chapters and statistics: ' + demo.file);
+}
+
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
-console.log(fail ? `\n${fail} FAILED` : '\nALL OK');
+console.log(fail ? `\n${fail} FAILED (${checks} checks)` : `\nALL OK (${checks} checks)`);
 process.exit(fail ? 1 : 0);
