@@ -435,7 +435,6 @@ const mixStat = C.topicScores(paraOnly, [C.makeTopic('rates', paraOnly)])[0], mi
 ok(mixStat.byPara === 3 && /&lt; <b>0\.02<\/b> for sentence scores, &lt; <b>0\.08<\/b> for paragraph-only scores \(20% of the colour scales <b>±0\.1<\/b> \/ <b>±0\.4<\/b>\)/.test(mixText), 'mixed file: both thresholds stated: ' + mixText);
 ok(/if \(!E\.tpop\.hidden\) closeTpop\(true\)/.test(appSrc) && /e\.key === '1'\) setLevel\('word'\)/.test(appSrc), 'Escape closes the topic popover first; level shortcuts unchanged');
 
-// 5e. extra Story presentations load the shared core and the demo list
 const rootDir = require('path').dirname(path);
 const fableHtml = fs.readFileSync(require('path').join(rootDir, 'SentimentStoryFable.html'), 'utf8');
 const astraHtml = fs.readFileSync(require('path').join(rootDir, 'SentimentStoryAstra.html'), 'utf8');
