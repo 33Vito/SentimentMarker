@@ -11,9 +11,11 @@
      data/sentiment-model.json  canonical form: keys sorted (modelVersion first), negators / contrast words sorted,
                                 sources.vocabularies.<name> = word count + sha256 of the canonical content
      sentiment-core.js          the region between //<model> and //</model>: rules, parameters, profile metadata
-                                and the general vocabulary, so it is there synchronously when the core loads
+                                (with the expected sha256 of each lazy vocabulary) and the general vocabulary, so
+                                General is there synchronously when the core loads
      lexicon/<name>.js          every vocabulary with an `asset`: a classic script calling SMCore.registerLexicon,
-                                inserted by the page the first time that dictionary is needed (works under file://)
+                                inserted by the page the first time that dictionary is needed (works under file://).
+                                registerLexicon recomputes the sha256 of the words it receives and refuses a mismatch
 
    Canonical vocabulary content (what the sha256 covers): one line "word<TAB>score\n" per entry, words sorted by
    UTF-16 code unit, score written as JavaScript String(number). */
@@ -28,6 +30,7 @@ const CORE_PATH = path.join(ROOT, 'sentiment-core.js');
 const BEGIN = '//<model>', END = '//</model>';
 
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const LEVELS = ['word', 'sentence', 'paragraph'];
 const sha256 = s => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
 const fail = msg => { throw new Error(msg); };
 
@@ -81,11 +84,13 @@ function canonical(model) {
   if (!Number.isInteger(P.lookBack) || P.lookBack < 1) fail('params.lookBack must be a positive integer');
   if (!Array.isArray(P.booster && P.booster.distanceDecay) || P.booster.distanceDecay.length !== P.lookBack || !P.booster.distanceDecay.every(isNum))
     fail('params.booster.distanceDecay needs one number per look-back position');
-  for (const k of ['negation.positiveFactor', 'negation.negativeFactor', 'contrast.before', 'contrast.after', 'caps.factor', 'caps.minLength', 'exclamation.perMark', 'exclamation.maxMarks', 'wordClip', 'sentenceNormAlpha', 'cjkMaxWordLength', 'display.scale.word', 'display.scale.sentence', 'display.scale.paragraph', 'display.neutralShare'])
+  for (const k of ['negation.positiveFactor', 'negation.negativeFactor', 'contrast.before', 'contrast.after', 'caps.factor', 'caps.minLength', 'exclamation.perMark', 'exclamation.maxMarks', 'wordClip', 'sentenceNormAlpha', 'cjkMaxWordLength', 'display.defaultScale.word', 'display.defaultScale.sentence', 'display.defaultScale.paragraph', 'display.neutralShare'])
     if (!isNum(k.split('.').reduce((o, p) => (o == null ? o : o[p]), P))) fail('params.' + k + ' must be a number');
   if (typeof P.negation.suffix !== 'string') fail('params.negation.suffix must be a string');
   const words = (k, a) => { if (!Array.isArray(a) || !a.every(x => typeof x === 'string' && x && !/\s/.test(x))) fail(k + ' must be a list of words'); const s = [...new Set(a)].sort(cmp); if (s.length !== a.length) fail(k + ' has duplicates'); return s; };
   m.negators = words('negators', m.negators);
+  const covered = m.negators.filter(w => w.endsWith(P.negation.suffix));
+  if (covered.length) fail(`negators ${covered.join(', ')} end with "${P.negation.suffix}", which already negates: drop them`);
   m.contrastWords = words('contrastWords', m.contrastWords);
   if (!m.boosters || typeof m.boosters !== 'object' || !Object.values(m.boosters).every(v => isNum(v) && v > 0)) fail('boosters must be {word: multiplier > 0}');
   const V = m.vocabularies || fail('vocabularies missing');
@@ -102,6 +107,8 @@ function canonical(model) {
     } else if (sp.type !== 'exact') fail(`vocabularies.${name}.suffixPolicy.type must be "suffix" or "exact"`);
     for (const k of ['label', 'referenceName']) if (typeof voc[k] !== 'string' || !voc[k]) fail(`vocabularies.${name}.${k} must be a string`);
     if (!Array.isArray(voc.referenceExamples)) fail(`vocabularies.${name}.referenceExamples must be a list`);
+    if (!voc.scale || Object.keys(voc.scale).sort(cmp).join() !== [...LEVELS].sort(cmp).join() || !LEVELS.every(l => voc.scale[l] === 'auto' || (isNum(voc.scale[l]) && voc.scale[l] > 0)))
+      fail(`vocabularies.${name}.scale needs word, sentence and paragraph, each a number > 0 or "auto"`);
     if (voc.asset != null && (typeof voc.asset !== 'string' || !/^[\w./-]+\.js$/.test(voc.asset) || voc.asset.includes('..'))) fail(`vocabularies.${name}.asset must be a relative .js path`);
     const entries = vocabEntries(name, voc.words);
     voc.words = Object.fromEntries(entries);
@@ -123,13 +130,13 @@ function coreRegion(m, stats) {
   const V = m.vocabularies;
   const profiles = {};
   for (const name of Object.keys(V).sort((a, b) => (a === 'general' ? -1 : b === 'general' ? 1 : cmp(a, b)))) {
-    const v = V[name], p = { label: v.label, referenceName: v.referenceName, referenceExamples: v.referenceExamples, suffixPolicy: v.suffixPolicy, size: stats[name].words, sha256: stats[name].sha256 };
-    if (v.asset) p.asset = v.asset;
+    const v = V[name], p = { label: v.label, referenceName: v.referenceName, referenceExamples: v.referenceExamples, scale: v.scale, suffixPolicy: v.suffixPolicy };
+    if (v.asset) Object.assign(p, { asset: v.asset, size: stats[name].words, sha256: stats[name].sha256 });
     profiles[name] = p;
   }
   const rules = { modelVersion: m.modelVersion, params: m.params, negators: m.negators, boosters: Object.fromEntries(Object.keys(m.boosters).sort(cmp).map(k => [k, m.boosters[k]])),
-    contrastWords: m.contrastWords, neutralPhrases: m.neutralPhrases, profiles };
-  return BEGIN + ' generated by tools/build-lexicon.js from data/sentiment-model.json - do not edit by hand\n'
+    contrastWords: m.contrastWords, neutralPhrases: m.neutralPhrases.map(({ note, ...ph }) => ph), profiles };
+  return BEGIN + ' generated from data/sentiment-model.json by tools/build-lexicon.js; do not edit\n'
     + 'const MODEL = {\n' + Object.entries(rules).map(([k, v]) => JSON.stringify(k) + ':' + JSON.stringify(k === 'profiles' ? Object.fromEntries(Object.entries(v).map(([n, p]) => [n, sorted(p)])) : sorted(v))).join(',\n') + '\n};\n'
     + 'const GENERAL_WORDS = ' + groupLines(grouped(stats.general.entries)) + ';\n'
     + END;
@@ -141,11 +148,11 @@ function assetFile(m, name, stats) {
     `SentimentMarker "${name}" dictionary: ${stats.words} words, ${v.suffixPolicy.type === 'exact' ? 'exact match only' : 'suffix fallback'}. ${v.description || ''}`.trim(),
     ...Object.keys(up).sort(cmp).map(k => { const u = up[k]; return `Upstream: ${u.name}${u.version ? ' ' + u.version : ''}${u.file ? ' (' + u.file + ', sha256 ' + u.sha256 + ')' : ''}. Licence: ${u.licence || 'see data/sentiment-model.json'}`; }),
     src.licence ? 'Licence note: ' + src.licence : '',
-    `Vocabulary sha256 (canonical content): ${stats.sha256}`,
+    `sha256 of the canonical content (one "word<TAB>score" line per entry, sorted): ${stats.sha256}. sentiment-core.js recomputes it from the words below and refuses a mismatch.`,
     'Loaded on demand by sentiment-core.js (SMCore.ensureLexicon) as a classic script, so it also works from file://.',
   ].filter(Boolean);
   return '/* ' + lines.join('\n   ').replace(/\*\//g, '* /') + ' */\n'
-    + 'SMCore.registerLexicon(' + JSON.stringify(name) + ', {"sha256":' + JSON.stringify(stats.sha256) + ',"words":' + groupLines(grouped(stats.entries)) + '});\n';
+    + 'SMCore.registerLexicon(' + JSON.stringify(name) + ', {"words":' + groupLines(grouped(stats.entries)) + '});\n';
 }
 
 function build(model) {

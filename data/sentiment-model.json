@@ -42,7 +42,7 @@
   },
   "contrastWords": ["but", "however", "nevertheless", "nonetheless", "不过", "但是", "可是", "然而"],
   "description": "SentimentMarker scoring model: one rule set, named vocabularies. Canonical source; tools/build-lexicon.js generates the browser assets from it.",
-  "negators": ["ain't", "aint", "aren't", "arent", "can't", "cannot", "cant", "couldn't", "couldnt", "didn't", "didnt", "doesn't", "doesnt", "don't", "dont", "hadn't", "hadnt", "hardly", "hasn't", "hasnt", "haven't", "havent", "isn't", "isnt", "neither", "never", "no", "nobody", "none", "nor", "not", "nothing", "nowhere", "scarcely", "shouldn't", "shouldnt", "wasn't", "wasnt", "weren't", "werent", "without", "won't", "wont", "wouldn't", "wouldnt", "不", "不是", "别", "并非", "无", "未", "没", "没有", "非"],
+  "negators": ["aint", "arent", "cannot", "cant", "couldnt", "didnt", "doesnt", "dont", "hadnt", "hardly", "hasnt", "havent", "isnt", "neither", "never", "no", "nobody", "none", "nor", "not", "nothing", "nowhere", "scarcely", "shouldnt", "wasnt", "werent", "without", "wont", "wouldnt", "不", "不是", "别", "并非", "无", "未", "没", "没有", "非"],
   "neutralPhrases": [
     {
       "neutral": [1],
@@ -65,12 +65,12 @@
       "before": 0.5
     },
     "display": {
-      "neutralShare": 0.2,
-      "scale": {
+      "defaultScale": {
         "paragraph": 0.3,
         "sentence": 0.6,
         "word": 3
-      }
+      },
+      "neutralShare": 0.2
     },
     "exclamation": {
       "maxMarks": 3,
@@ -127,6 +127,11 @@
       "label": "Finance dictionary (LM × VADER)",
       "referenceExamples": ["losses", "vulnerabilities", "disruption", "stress", "resilient", "stable", "favourable", "strong"],
       "referenceName": "LM × VADER finance vocabulary",
+      "scale": {
+        "paragraph": "auto",
+        "sentence": "auto",
+        "word": 2.5
+      },
       "suffixPolicy": {
         "type": "exact"
       },
@@ -3519,6 +3524,11 @@
       "label": "General dictionary",
       "referenceExamples": ["terrible", "bad", "poor", "problem", "serious", "active", "helpful", "good", "great", "wonderful"],
       "referenceName": "Built-in dictionary ({n} words, demo only)",
+      "scale": {
+        "paragraph": 0.3,
+        "sentence": 0.6,
+        "word": 3
+      },
       "suffixPolicy": {
         "minStemLength": 3,
         "rules": [

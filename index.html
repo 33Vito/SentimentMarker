@@ -350,7 +350,7 @@ button{cursor:pointer}
 /* ========== APP: rendering + interaction ========== */
 const { buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, docFromScored, docToJSON, docToCSV, csvToScored,
   buildSpec, rankText, noteText, scaleText, sectionScores, outlineWorthy, topicScores, sectionTopicScores, strength, NEUTRAL_K,
-  ensureLexicon, hasLexicon, dictionaries, insertScript } = window.SMCore;
+  ensureLexicon, hasLexicon, dictionaries } = window.SMCore;
 const SAMPLE_TITLE = 'Launch Week Retrospective';
 const SAMPLE_MD = `## Monday: the launch
 We shipped the new reader on Monday, and the first day went better than anyone expected. Early users loved the clean layout, and several told us it was the most pleasant product they had tried this year. The team was thrilled, although nobody had slept much.
@@ -1175,6 +1175,17 @@ async function loadFile(file) {
     if (note) toast(warnMsg ? note + '；' + warnMsg : note, 8000);   /* keep the truncation notice; never cleared by the progress check */
     else if (toastBusy) toast('');
   } catch (err) { toast('Could not open: ' + (err && err.message ? err.message : err), 6000); }
+}
+/* Classic-script insertion, for the lazy demo file and the lazy dictionaries alike. fetch() is not used:
+   file:// blocks it. A failed script is removed so a retry inserts it afresh. */
+function insertScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => { s.remove(); reject(new Error('could not load ' + src)); };
+    document.head.appendChild(s);
+  });
 }
 /* article picker. Small demos are inline on window.DEMOS. The full review is a classic
    script (d.src) assigned onto window.DEMO_FILES, inserted the first time it is opened.

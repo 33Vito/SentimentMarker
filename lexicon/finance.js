@@ -3,9 +3,9 @@
    Upstream: Loughran-McDonald Master Dictionary as shipped in pysentiment2 0.1.1 (the package does not state the LM release) (pysentiment2/static/LM.csv, sha256 8fc9dbfc2e66e0c1a99e8f03fb30f5e255f7bd401d33b63facd2c85a2d061729). Licence: Free for non-commercial / academic use only; commercial use requires a licence from the authors (Tim Loughran and Bill McDonald).
    Upstream: VADER sentiment lexicon vaderSentiment 3.3.2 (vaderSentiment/vader_lexicon.txt, sha256 1ec9c6e9ee19aade328f8beb393a6afa71a5bb3acf7d3cc22d4ef568df374bf5). Licence: MIT
    Licence note: The finance vocabulary derives from the Loughran-McDonald Master Dictionary, which its authors (Tim Loughran and Bill McDonald, University of Notre Dame) make available free of charge for non-commercial / academic use only; commercial use requires a licence from the authors (https://sraf.nd.edu/loughranmcdonald-master-dictionary/). Strengths come from the VADER lexicon (C.J. Hutto and Eric Gilbert), MIT licence. The general vocabulary is SentimentMarker's own hand-written demo list.
-   Vocabulary sha256 (canonical content): 0c9333a780944b3ad9d31bd728c2d2e450ce0db475fa9441bbb0e0bb21b2be07
+   sha256 of the canonical content (one "word<TAB>score" line per entry, sorted): 0c9333a780944b3ad9d31bd728c2d2e450ce0db475fa9441bbb0e0bb21b2be07. sentiment-core.js recomputes it from the words below and refuses a mismatch.
    Loaded on demand by sentiment-core.js (SMCore.ensureLexicon) as a classic script, so it also works from file://. */
-SMCore.registerLexicon("finance", {"sha256":"0c9333a780944b3ad9d31bd728c2d2e450ce0db475fa9441bbb0e0bb21b2be07","words":[
+SMCore.registerLexicon("finance", {"words":[
 [3.4,"aml ilu ily magnificently"],
 [3.3,"ecstacy euphoria hearts lya sweetheart"],
 [3.2,"best cheerfullest elated euphoric freedom glee glorious greatest happiest heart love lovingly paradise perfectly"],
