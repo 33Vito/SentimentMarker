@@ -295,6 +295,7 @@ button{cursor:pointer}
       <button class="btn solid" id="btnOpen" type="button">Open File</button>
       <button class="btn" id="btnPaste" type="button">Paste Text</button>
       <select class="btn" id="selDemo" title="Choose a demo article" aria-label="Demo articles"><option value="">Demo articles…</option></select>
+      <select class="btn" id="selDict" title="Dictionary for text this page scores itself (pasted or opened text). Files with their own scores are shown as they are." aria-label="Scoring dictionary"></select>
     </div>
   </div>
   <div class="row ctl">
@@ -348,7 +349,8 @@ button{cursor:pointer}
 //<app>
 /* ========== APP: rendering + interaction ========== */
 const { buildDoc, extractTopics, makeTopic, matches, parseMarkdown, parseText, itemsToLines, linesToBlocks, docFromScored, docToJSON, docToCSV, csvToScored,
-  buildSpec, rankText, noteText, scaleText, sectionScores, outlineWorthy, topicScores, sectionTopicScores, strength, NEUTRAL_K } = window.SMCore;
+  buildSpec, rankText, noteText, scaleText, sectionScores, outlineWorthy, topicScores, sectionTopicScores, strength, NEUTRAL_K,
+  ensureLexicon, hasLexicon, dictionaries, insertScript } = window.SMCore;
 const SAMPLE_TITLE = 'Launch Week Retrospective';
 const SAMPLE_MD = `## Monday: the launch
 We shipped the new reader on Monday, and the first day went better than anyone expected. Early users loved the clean layout, and several told us it was the most pleasant product they had tried this year. The team was thrilled, although nobody had slept much.
@@ -369,16 +371,16 @@ Thanks to the whole team for an exhausting, difficult, and ultimately encouragin
 const MAX_PAGES = 200;
 
 const $ = s => document.querySelector(s);
-const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), toc: $('#toc'), tpop: $('#tpop'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec'), btnToc: $('#btnToc') };
+const E = { bar: $('#bar'), head: $('#dochead'), doc: $('#doc'), th: $('#th'), thOut: $('#thOut'), chips: $('#chips'), topics: $('#topics'), mm: $('#mm'), mmc: $('#mmCanvas'), vp: $('#vp'), insp: $('#insp'), toc: $('#toc'), tpop: $('#tpop'), tip: $('#tip'), toast: $('#toast'), drop: $('#drop'), paste: $('#paste'), pasteText: $('#pasteText'), file: $('#file'), match: $('#matchCount'), kw: $('#kwInput'), seg: $('#seg'), btnTopics: $('#btnTopics'), spec: $('#spec'), btnSpec: $('#btnSpec'), btnToc: $('#btnToc'), dict: $('#selDict') };
 /* specWanted: the user's own open/close choice for the spectrum panel (null = untouched, follow the screen width) */
 /* hits: ids of sentences matching the active topic words (document order); hitCur: index of the hit last
    navigated to (used to keep the place inside a selected paragraph); hitKey: hits as a string, to detect changes */
-const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, tocWanted: null, tocRows: [], tocClick: null, hits: [], hitCur: -1, hitKey: '', tstats: [], tpop: null };
-const BADGE_TIP = { 'Sample': 'Built-in example text, scored by the simple in-browser dictionary', 'Built-in': 'Scored by the simple in-browser dictionary — demo only', 'External': 'Scores come from the JSON / CSV file you provided' };
+const S = { level: 'sent', pol: 'all', th: 0.15, doc: null, topics: [], sel: null, sample: false, name: '', avg: 0, badge: '', spec: undefined, specWanted: null, tocWanted: null, tocRows: [], tocClick: null, hits: [], hitCur: -1, hitKey: '', tstats: [], tpop: null, dict: 'general', src: null };
+const BADGE_TIP = { 'Sample': 'Built-in example text, scored by the simple in-browser dictionary', 'Built-in': 'Scored by the simple in-browser dictionary — demo only', 'Finance': 'Scored in the browser by the finance dictionary (Loughran-McDonald × VADER, exact match; LM is free for non-commercial / academic use only)', 'External': 'Scores come from the JSON / CSV file you provided' };
 const wideMQ = window.matchMedia('(min-width:1360px)');
 let els = { w: [], s: [], b: [] }, pos = { s: [], b: [] }, visS = [], visB = [];
 /* prefs in localStorage: theme, level, threshold, spectrum. Topics are not stored. */
-const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec', toc: 'sm.toc' };
+const PREF_KEY = { theme: 'sm.theme', level: 'sm.level', th: 'sm.th', spec: 'sm.spec', toc: 'sm.toc', dict: 'sm.dict' };
 function prefGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function prefSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) {} }
 const THEME_CYCLE = ['system', 'light', 'dark'];
@@ -416,6 +418,8 @@ function rememberToc() {
   prefSet(PREF_KEY.toc, S.tocWanted === null ? null : S.tocWanted ? '1' : '0');
 }
 function restorePrefs() {
+  const dict = prefGet(PREF_KEY.dict);
+  if (dictionaries().some(d => d.name === dict)) S.dict = dict;   /* only the choice: a lazy dictionary still loads on first use */
   const theme = prefGet(PREF_KEY.theme);
   applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system', false);
   const lv = prefGet(PREF_KEY.level);
@@ -1054,9 +1058,10 @@ E.doc.addEventListener('pointerleave', () => { E.tip.hidden = true; });
 
 /* loading documents */
 function openDoc(title, blocks, meta) {
-  const doc = meta.scored ? docFromScored(meta.scored) : buildDoc(title, blocks);
+  const doc = meta.scored ? docFromScored(meta.scored) : buildDoc(title, blocks, { profile: meta.profile });
   if (!doc.sents.length) throw new Error('No text found to analyse');
-  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? 'Sample' : 'Built-in');
+  S.doc = doc; S.sample = !!meta.sample; S.name = meta.name || doc.title; S.badge = meta.badge || (meta.sample ? 'Sample' : doc.profile === 'finance' ? 'Finance' : 'Built-in');
+  S.src = meta.scored ? null : { title, blocks, meta };
   closeTpop();
   S.topics = extractTopics(doc, 8); S.sel = null; S.spec = undefined; S.hits = []; S.hitKey = ''; S.hitCur = -1;
   if (!doc.has[S.level]) S.level = doc.has.sent ? 'sent' : doc.has.para ? 'para' : 'word';
@@ -1078,7 +1083,42 @@ function openDoc(title, blocks, meta) {
   if (msg) toast(msg, 8000);
   return msg;
 }
+/* Text the page scores itself (paste, .txt / .md / .pdf), with the dictionary chosen in #selDict. A lazy dictionary
+   (finance) is loaded first: one cached load, retried after a failure. Scored files never come through here, so
+   showing them never downloads a dictionary. Returns the openDoc message, or null when nothing was opened
+   (the load failed, or a newer document was opened while it ran). */
+async function openText(title, blocks, meta) {
+  const profile = S.dict, gen = ++demoOpenGen;
+  if (!hasLexicon(profile)) {
+    toast(`Loading the ${dictLabel(profile)}…`, 0, true);
+    try { await ensureLexicon(profile, insertScript); }
+    catch (err) { if (gen === demoOpenGen) dictFailed(profile, err); return null; }
+    if (gen !== demoOpenGen) return null;
+  }
+  const msg = openDoc(title, blocks, Object.assign({}, meta, { profile }));
+  if (!msg && toastBusy) toast('');
+  return msg;
+}
+const dictLabel = name => (dictionaries().find(d => d.name === name) || { label: name }).label;
+/* the load failed: say so, and put the picker back on the dictionary the open document was scored with */
+function dictFailed(profile, err) {
+  const shown = S.src && S.doc && S.doc.profile || 'general';
+  S.dict = shown; E.dict.value = shown; prefSet(PREF_KEY.dict, shown);
+  toast(`Could not load the ${dictLabel(profile)} (${err && err.message ? err.message : err}). Choose it again to retry, or keep the General dictionary.`, 9000);
+}
+function initDictSel() {
+  for (const d of dictionaries()) { const o = document.createElement('option'); o.value = d.name; o.textContent = d.label; E.dict.appendChild(o); }
+  E.dict.value = S.dict;
+  E.dict.addEventListener('change', () => {
+    S.dict = E.dict.value; prefSet(PREF_KEY.dict, S.dict); E.dict.blur();
+    if (S.src) {                     /* re-score the text on screen; it keeps its name and parsed blocks */
+      const { title, blocks, meta } = S.src;
+      openText(title, blocks, { name: meta.name, sample: meta.sample }).catch(err => toast('Analysis failed: ' + err.message, 6000));
+    } else if (S.doc) toast(`${dictLabel(S.dict)}: used for text you paste or open. This document keeps the scores from its file.`, 5000);
+  });
+}
 function openScoredText(text, kind, name) {
+  ++demoOpenGen;                     /* a dictionary still loading for an earlier paste must not replace this file */
   let obj;
   if (kind === 'json') { try { obj = JSON.parse(text); } catch (e) { throw new Error('JSON parse failed: ' + e.message); } }
   else obj = csvToScored(text);
@@ -1129,7 +1169,8 @@ async function loadFile(file) {
       let blocks;
       if (ext === 'pdf' || file.type === 'application/pdf') ({ blocks, note } = await readPDF(file));
       else { const t = await file.text(); blocks = (ext === 'md' || ext === 'markdown') ? parseMarkdown(t) : parseText(t); }
-      warnMsg = openDoc(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+      warnMsg = await openText(file.name.replace(/\.[^.]+$/, ''), blocks, { name: file.name });
+      if (warnMsg === null) return;  /* the dictionary failed to load (already reported) or a newer document won */
     }
     if (note) toast(warnMsg ? note + '；' + warnMsg : note, 8000);   /* keep the truncation notice; never cleared by the progress check */
     else if (toastBusy) toast('');
@@ -1164,15 +1205,10 @@ function loadDemo(i) {
   if (!d.src) return fail(new Error('missing scores'));
   toast('Opening the full review…', 0, true);
   if (!demoScriptLoads[d.src]) {
-    const load = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = d.src;
-      s.onload = () => {
-        const obj = window.DEMO_FILES && window.DEMO_FILES[d.file];
-        if (obj) resolve(obj); else reject(new Error('demo script did not publish ' + d.file));
-      };
-      s.onerror = () => reject(new Error('could not load ' + d.src));
-      document.head.appendChild(s);
+    const load = insertScript(d.src).then(() => {
+      const obj = window.DEMO_FILES && window.DEMO_FILES[d.file];
+      if (obj) return obj;
+      throw new Error('demo script did not publish ' + d.file);
     });
     /* A rejected load must not stick: the next choice inserts the script again. */
     demoScriptLoads[d.src] = load;
@@ -1207,12 +1243,12 @@ $('#btnOpen').addEventListener('click', () => E.file.click());
 E.file.addEventListener('change', () => { const f = E.file.files[0]; if (f) loadFile(f); E.file.value = ''; });
 $('#btnPaste').addEventListener('click', () => { E.paste.hidden = false; E.pasteText.focus(); });
 $('#pasteCancel').addEventListener('click', () => { E.paste.hidden = true; });
-$('#pasteGo').addEventListener('click', () => {
+$('#pasteGo').addEventListener('click', async () => {
   const t = E.pasteText.value.trim(); if (!t) return;
   try {
     if (/^\{/.test(t)) openScoredText(t, 'json', 'Pasted JSON');
     else if (/^level\s*,/i.test(t)) openScoredText(t, 'csv', 'Pasted CSV');
-    else openDoc('Pasted text', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: 'Pasted text' });
+    else if (await openText('Pasted text', /^#{1,6}\s/m.test(t) ? parseMarkdown(t) : parseText(t), { name: 'Pasted text' }) === null) return;   /* dialog stays open */
     E.paste.hidden = true;
   } catch (err) { toast('Analysis failed: ' + err.message, 6000); }
 });
@@ -1255,6 +1291,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { la
 
 mountThemeButton();
 restorePrefs();
+initDictSel();
 initDemoSel();
 syncBar();
 //</app>
