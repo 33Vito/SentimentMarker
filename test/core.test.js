@@ -276,7 +276,7 @@ const sw2 = C.buildSpec(Object.assign(mini({}), { ref: { name: 'r', scores: [-4,
 ok(sw1.scaleWarn && !sw2.scaleWarn && !C.buildSpec(Object.assign(mini({}), { ref: null })).scaleWarn, 'scale mismatch flagged only when ratio is far off');
 // item 11: colour scale shown with its source
 ok(/From file/.test(C.scaleText(d2)) && /±3/.test(C.scaleText(d2)), 'scale text (file): ' + C.scaleText(d2).replace(/<[^>]+>/g, ''));
-ok(/Auto/.test(C.scaleText(mini({}))) && /Built-in/.test(C.scaleText(doc)), 'scale text (auto / built-in)');
+ok(/Auto/.test(C.scaleText(mini({}))) && /\(General dictionary\)$/.test(C.scaleText(doc)) && !/Built-in dictionary/.test(C.scaleText(doc)), 'scale text (auto / the profile that scored the text): ' + C.scaleText(doc).replace(/<[^>]+>/g, ''));
 ok(/Sentence.*From file/.test(C.scaleText(mini({ scale: { sentence: 1 } }))), 'mixed scale sources labelled per level');
 // items 6 / 7: app wiring (checked in the source; the UI itself is checked with Playwright)
 ok(/matchMedia\('\(min-width:1360px\)'\)/.test(appSrc) && /@media \(min-width:1360px\)/.test(html) && !/min-width:1520px/.test(html), 'wide breakpoint is 1360px in CSS and JS');
@@ -418,7 +418,7 @@ ok(/group\('Positive', st\.topPos\)/.test(appSrc) && /group\('Negative', st\.top
 ok(/\$\{esc\(t\.label\)\} <small>\$\{st\.count\}<\/small>/.test(appSrc) && !/<small>\$\{t\.count\}<\/small>/.test(appSrc), 'topic chip shows the sentence count from topicScores, not word occurrences');
 const chipDoc = C.docFromScored(dlist[0].scored), chipTopics = C.extractTopics(chipDoc, 8), chipStats = C.topicScores(chipDoc, chipTopics);
 const finIdx = chipTopics.findIndex(t => t.label === 'financial');
-ok(finIdx >= 0 && chipTopics[finIdx].count === 92 && chipStats[finIdx].count === 64, 'Assessment "financial": 92 occurrences, 64 sentences -> the chip now reads 64 like the popover');
+ok(finIdx >= 0 && chipTopics[finIdx].count === 92 && chipStats[finIdx].count === 68, 'Assessment "financial": 92 occurrences, 68 sentences -> the chip reads 68 like the popover');
 ok(chipTopics.every((t, i) => chipStats[i].count === chipDoc.sents.filter(s => C.matches(s, t)).length), 'chip count = the match total prev/next walks with that topic alone selected');
 // the popover states the neutral rule tally() applies, with this document's numbers
 const neuSrc = appSrc.slice(appSrc.indexOf('function neutralText('), appSrc.indexOf('\n}\n', appSrc.indexOf('function neutralText(')) + 2);
@@ -453,7 +453,7 @@ ok(aA.topics.length > 0 && aA.topics.every((t, i) => { const r = C.topicScores(d
 ok(/href="SentimentStoryFable.html"/.test(html) && /href="SentimentStoryAstra.html"/.test(html), 'analyzer toolbar links to Fable and Astra');
 
 // 5e. lexicon unification: one model file, generated assets, vocabulary profiles, lazy finance, golden vectors
-const P_ = require('path'), cp = require('child_process'), repo = P_.join(__dirname, '..');
+const P_ = require('path'), cp = require('child_process'), util = require('util'), crypto = require('crypto'), repo = P_.join(__dirname, '..');
 const gen = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'build-lexicon.js'), '--check'], { encoding: 'utf8' });
 ok(gen.status === 0, 'tools/build-lexicon.js --check: generated files match data/sentiment-model.json ' + (gen.stdout + gen.stderr).trim());
 const model = JSON.parse(fs.readFileSync(P_.join(repo, 'data', 'sentiment-model.json'), 'utf8'));
@@ -464,6 +464,43 @@ const lexSrc = coreFile.slice(coreFile.indexOf('function lexLookup('), coreFile.
 ok(!/\.has\(/.test(lexSrc) && (lexSrc.match(/M\.get\(/g) || []).length === 2 && /!== undefined/.test(lexSrc), 'lexLookup: one Map.get per candidate, tested with !== undefined (no has + get)');
 const finAsset = fs.readFileSync(P_.join(repo, 'lexicon', 'finance.js'), 'utf8');
 ok(/non-commercial \/ academic use only/.test(finAsset) && /MIT/.test(finAsset) && /^SMCore\.registerLexicon\("finance", /m.test(finAsset), 'finance asset: licence note in the header, a classic script that registers itself');
+// 5f. general compatibility: the general profile must score exactly like main 56f66cb's engine (test/fixtures), deep-equal
+const fixture = fs.readFileSync(P_.join(__dirname, 'fixtures', 'sentiment-core-56f66cb.js'), 'utf8');
+ok(crypto.createHash('sha256').update(fixture).digest('hex') === '171dd8708826416a8fc9666826a519d6c2d5906dcb72fa14c280aa338f4e08ae', 'fixture is git show 56f66cb:sentiment-core.js, byte for byte');
+const O = (() => { const mm = { exports: {} }; new Function('module', fixture.split('//<core>')[1].split('//</core>')[0])(mm); return mm.exports; })();
+const exFiles = fs.readdirSync(exDir).filter(f => /\.(txt|md)$/.test(f)).sort();
+const goldenTexts = JSON.parse(fs.readFileSync(P_.join(__dirname, 'golden.json'), 'utf8')).cases.map(c => c.text);
+const edge = ['', ' ', '!!!', 'NOT GOOD', "can't stand it", 'isn’t bad', 'won’t fail!!!', 'Very, very good.', 'not, good', 'good but', 'But good.', 'However good, terrible.', 'good, nevertheless awful',
+  '🎉 Great launch!', '100% success', 'e-mail failed', 'well-being improved', 'HAPPY happy', 'A', 'ok', 'Café is GOOD.', '他很开心但是价格不好', '没有问题', '不是很好', '非常非常好', '这不是不好。', '有点担心，不过还算满意！',
+  'tab\tseparated good', 'line\nbreak bad', "rock 'n' roll", 'goods bridging happily recovered failing simply hopes excitedly', 'extremely utterly absolutely completely wonderful', 'good '.repeat(60), 'so so good',
+  "don't", "n't", 'nevertheless', 'greatest strongest kindly', 'stability financial stability risk', 'Good. Bad! Ugly?', 'The goods were not cheap, but quality was SUPERB!!!', 'not not good', 'never ever bad', 'hardly a good start',
+  'scarcely helpful', 'without fear', 'No problem.', 'nothing bad', 'Mr. Smith was happy. Dr. Who was sad.', 'U.S. growth slowed; however, jobs held up.', '“Terrible,” she said.', 'risks risked risking', 'improvements'];
+const strip = d => { const c = Object.assign({}, d); delete c.profile; delete c.profileLabel; delete c.model; return c; };
+const noModel = j => { const c = Object.assign({}, j); delete c.model; return c; };
+let nSent = 0, nDoc = 0; const cmpBad = [];
+const sameSentence = t => { nSent++; if (!util.isDeepStrictEqual(C.analyzeSentence(t), O.analyzeSentence(t)) || !util.isDeepStrictEqual(C.rawTokens(t), O.rawTokens(t))) cmpBad.push('sentence ' + JSON.stringify(t.slice(0, 60))); };
+for (const f of exFiles) {
+  const raw = fs.readFileSync(P_.join(exDir, f), 'utf8');
+  for (const [kind, parse] of [['md', 'parseMarkdown'], ['text', 'parseText']]) {
+    const bl = C[parse](raw);
+    if (!util.isDeepStrictEqual(bl, O[parse](raw))) cmpBad.push(`${f} ${parse}`);
+    for (const b of bl) { const ss = C.splitSentences(b.text); if (!util.isDeepStrictEqual(ss, O.splitSentences(b.text))) cmpBad.push(`${f} split`); ss.forEach(s => sameSentence(s.text)); }
+    const dn = C.buildDoc(f, bl), dold = O.buildDoc(f, bl); nDoc++;
+    if (!util.isDeepStrictEqual(strip(dn), dold)) cmpBad.push(`${f} (${kind}) buildDoc`);
+    if (JSON.stringify(noModel(C.docToJSON(dn))) !== JSON.stringify(O.docToJSON(dold)) || C.docToCSV(dn) !== O.docToCSV(dold)) cmpBad.push(`${f} (${kind}) export`);
+    if (!util.isDeepStrictEqual(C.extractTopics(dn, 12), O.extractTopics(dold, 12))) cmpBad.push(`${f} (${kind}) topics`);
+  }
+}
+goldenTexts.concat(edge).forEach(sameSentence);
+const edgeDoc = C.buildDoc('e', edge.filter(t => t.trim()).map(text => ({ type: 'p', text })));
+if (!util.isDeepStrictEqual(strip(edgeDoc), O.buildDoc('e', edge.filter(t => t.trim()).map(text => ({ type: 'p', text }))))) cmpBad.push('edge-case doc');
+for (const f of fs.readdirSync(exDir).filter(f => /\.scored\.(json|csv)$/.test(f)).sort()) {
+  const t = fs.readFileSync(P_.join(exDir, f), 'utf8'), o = f.endsWith('.csv') ? C.csvToScored(t) : JSON.parse(t);
+  const dn = C.docFromScored(o), dold = O.docFromScored(o); nDoc++;
+  if (!util.isDeepStrictEqual(strip(dn), dold) || JSON.stringify(noModel(C.docToJSON(dn))) !== JSON.stringify(O.docToJSON(dold))) cmpBad.push(`${f} docFromScored / export`);
+}
+ok(!cmpBad.length && nSent > 2000, `general profile == 56f66cb engine, deep-equal: ${nSent} sentences (analyzeSentence + rawTokens), ${nDoc} documents (buildDoc / docFromScored, export JSON + CSV, topics) from ${exFiles.length} example texts, ${goldenTexts.length} golden inputs, ${edge.length} edge cases` + (cmpBad.length ? ' — DIFFERS: ' + cmpBad.slice(0, 8).join('; ') : ''));
+
 // lazy load: scoring before the load throws; a failed load is not cached; a good one is, and later calls reuse it
 const thrown = (() => { try { C.analyzeSentence('not strong', 'finance'); return ''; } catch (e) { return e.message; } })();
 ok(/not loaded.*ensureLexicon\('finance'\)/.test(thrown), 'finance before loading: a clear error, not general scores: ' + thrown);
@@ -485,25 +522,66 @@ const asyncTests = (async () => {
   ok(loads.length === 2, 'once loaded, ensureLexicon does not insert the script again');
   const silent = (() => { const d = C.dictionaries().find(x => x.name === 'finance'); return d.loaded && d.size === 3381; })();
   ok(silent, 'finance registered with all 3381 words');
-  ok((() => { try { C.registerLexicon('finance', { sha256: 'stale', words: [] }); return false; } catch (e) { return /does not match/.test(e.message); } })(), 'a stale asset (sha256 mismatch with the core) is refused');
+  /* registerLexicon hashes the words it receives (canonical content), it does not trust a claim in the asset */
+  const finWords = model.vocabularies.finance.words;
+  const refused = data => { try { C.registerLexicon('finance', data); return ''; } catch (e) { return e.message; } };
+  const asGroups = ws => Object.entries(ws).map(([w, v]) => [v, w]);
+  const tampered = Object.assign({}, finWords, { strong: 2.4 }), extra = Object.assign({}, finWords, { zzzz: 1 });
+  ok(/content sha256 \w+… is not the 0c9333a78094… this sentiment-core\.js expects/.test(refused({ words: asGroups(tampered) })) && /is not the/.test(refused({ words: asGroups(extra) })) && /is not the/.test(refused({ words: [] })),
+    'a changed score, an extra word or an empty asset is refused by the sha256 of its content: ' + refused({ words: asGroups(tampered) }));
+  ok(C.analyzeSentence('strong', 'finance').scored[0].base === 2.3, 'a refused asset leaves the loaded vocabulary in place');
+  ok(refused({ words: asGroups(finWords).reverse() }) === '', 'the same words grouped and ordered differently hash the same (it is the content, not the file, that is checked)');
+  ok(crypto.createHash('sha256').update(Object.keys(finWords).sort().map(w => w + '\t' + finWords[w] + '\n').join('')).digest('hex') === model.sources.vocabularies.finance.sha256, 'model sha256 = node:crypto over the canonical content the core hashes');
+  ok(!/"sha256"\s*:/.test(finAsset.slice(finAsset.indexOf('SMCore.registerLexicon'))), 'the asset carries no hash of its own to compare against');
   /* profiles are separate Maps: loading finance changes nothing for general */
   ok(C.analyzeSentence('The goods arrived.').scored.length === 1 && C.analyzeSentence('The goods arrived.', 'finance').scored.length === 0, 'goods: general suffix fallback still applies; finance is exact');
   ok(C.buildDoc('t', blocks).words.length === doc.words.length && C.buildDoc('t', blocks).sents.every((s, i) => s.score === doc.sents[i].score), 'general buildDoc unchanged after the finance load');
   const fdoc = C.buildDoc('t', C.parseText('Financial stability is strong. Losses rose.'), { profile: 'finance' });
   ok(fdoc.profile === 'finance' && fdoc.ref.name === 'LM × VADER finance vocabulary' && fdoc.ref.scores.length === 3381 && fdoc.words.map(t => t.text).join() === 'strong,Losses', 'finance doc: own reference spectrum, "financial stability" neutral: ' + fdoc.words.map(t => t.text));
   ok(C.docFromScored(C.docToJSON(fdoc)).words.length === 2, 'finance doc exports and re-imports');
+  // colour scale per profile (data/sentiment-model.json vocabularies.<name>.scale)
+  const gdoc = C.buildDoc('t', blocks);
+  ok(model.vocabularies.general.scale.word === 3 && util.isDeepStrictEqual(gdoc.cap, { word: 3, sent: 0.6, para: 0.3 }) && util.isDeepStrictEqual(gdoc.cap, C.CAP) && Object.values(gdoc.capSrc).every(s => s === 'builtin'), 'general keeps its fixed scale 3 / 0.6 / 0.3');
+  const fbig = C.buildDoc('t', C.parseText(assessmentText.slice(0, 6000)), { profile: 'finance' });
+  const p90of = arr => { const a = arr.map(Math.abs).filter(v => v > 0).sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(a.length * 0.9))]; };
+  ok(model.vocabularies.finance.scale.word === 2.5 && fbig.cap.word === 2.5 && fbig.capSrc.word === 'builtin' && fbig.capSrc.sent === 'auto' && fbig.cap.sent === p90of(fbig.sents.map(s => s.score)) && fbig.cap.para === p90of(fbig.blocks.map(b => b.score)),
+    'finance: word ±2.5 from the model, sentence / paragraph "auto" = 90th percentile: ' + JSON.stringify(fbig.cap));
+  ok(fbig.words.every(t => t.k === Math.min(1, Math.abs(t.score) / 2.5)) && fbig.sents.every(s => s.k === Math.min(1, Math.abs(s.score) / fbig.cap.sent)), 'colour strength uses the profile scale');
+  const fst = C.scaleText(fbig).replace(/<[^>]+>/g, '');
+  ok(/Word ±2\.5（Finance dictionary \(LM × VADER\)）/.test(fst) && !/Built-in dictionary/.test(fst) && /Auto/.test(fst), 'the finance scale line names the finance dictionary, not "Built-in dictionary": ' + fst);
+  const fre = C.docFromScored(C.docToJSON(fbig));
+  ok(['word', 'sent', 'para'].every(k => Math.abs(fre.cap[k] - fbig.cap[k]) < 1e-4), 'export -> import keeps the finance colour scale');
+  // provenance: model {version, profile} on text scored here; kept through import / export; never invented
+  const ver = C.modelVersion;
+  ok(util.isDeepStrictEqual(C.docToJSON(gdoc).model, { version: ver, profile: 'general' }) && util.isDeepStrictEqual(C.docToJSON(fbig).model, { version: ver, profile: 'finance' }), 'Export JSON of text scored here carries model {version, profile}');
+  ok(Object.keys(C.docToJSON(fbig)).slice(0, 3).join() === 'version,title,model', 'model sits right after the title');
+  const rt1 = C.docToJSON(C.docFromScored(C.docToJSON(fbig)));
+  ok(util.isDeepStrictEqual(rt1.model, { version: ver, profile: 'finance' }) && util.isDeepStrictEqual(C.docToJSON(C.docFromScored(rt1)).model, rt1.model), 'model survives import -> export -> import');
+  ok(C.docToJSON(d2).model === undefined && pyJson.model === undefined, 'an external file without model (VADER launch-week) exports without one');
+  const withM = o => C.docFromScored(Object.assign({ paragraphs: [{ sentences: [{ text: 'Good.', score: 0.5 }] }] }, o));
+  const keptM = withM({ model: { version: '0.9.0', profile: 'my-model' } });
+  ok(noWarn(keptM) && util.isDeepStrictEqual(C.docToJSON(keptM).model, { version: '0.9.0', profile: 'my-model' }), 'a file that carries model keeps it as given (unknown profile fine, no warnings)');
+  ok([{ model: 'x' }, { model: { version: 1, profile: 'finance' } }, { model: { profile: 'finance' } }, { model: null }].every(o => { const d = withM(o); return noWarn(d) && C.docToJSON(d).model === undefined; }), 'a malformed model is ignored, not an error, and not written back');
+  ok([dlist[0].scored, dlist[2].scored, fullObj].every(o => util.isDeepStrictEqual(o.model, { version: ver, profile: 'finance' })) && noWarn(C.docFromScored(dlist[0].scored)), 'regenerated finance examples carry model {version, finance} and load cleanly');
   // golden vectors, JS direct (test/test_golden.py runs the same file through Python -> Node)
   const golden = JSON.parse(fs.readFileSync(P_.join(__dirname, 'golden.json'), 'utf8'));
   ok(golden.modelVersion === C.modelVersion && golden.cases.length >= 40, 'golden file: ' + golden.cases.length + ' cases for model ' + golden.modelVersion);
-  const project = a => ({ score: a.score, words: a.scored.map(t => { const w = { text: t.text, base: t.base, score: t.score }, n = C.noteText(t); if (n) w.note = n; return w; }) });
-  const bad = golden.cases.filter(c => JSON.stringify(project(C.analyzeSentence(c.text, c.profile))) !== JSON.stringify(c.expected));
-  ok(!bad.length, 'golden vectors match the JS engine' + (bad.length ? ': ' + bad.map(c => c.name).join('; ') : ''));
+  /* every field: score, raw, each word's offsets / base / effective score / notes / note text, and the cues */
+  const { detail } = require(P_.join(repo, 'tools', 'score-cli.js'));
+  const bad = golden.cases.filter(c => !util.isDeepStrictEqual(detail(C, C.analyzeSentence(c.text, c.profile)), c.expected));
+  ok(!bad.length, 'golden vectors match the JS engine in every field' + (bad.length ? ': ' + bad.map(c => c.name).join('; ') : ''));
+  const offBad = golden.cases.filter(c => c.expected.words.concat(c.expected.cues).some(w => [...c.text].slice(w.start, w.end).join('') !== w.text));
+  ok(!offBad.length && golden.cases.every(c => c.expected.words.every(w => Array.isArray(w.notes) && typeof w.base === 'number') && typeof c.expected.raw === 'number'), 'golden offsets are code points into the text; every word carries base, notes; every case raw');
+  const a0 = C.analyzeSentence('It is NOT GOOD at all!!!');
+  ok(a0.raw === golden.cases.find(c => c.text === a0.text).expected.raw && a0.score === a0.raw / Math.sqrt(a0.raw * a0.raw + 15), 'raw is the pre-squash sum: score = raw / sqrt(raw² + 15)');
+  const kinds = new Set(golden.cases.flatMap(c => c.expected.cues.map(q => q.kind).concat(c.expected.words.flatMap(w => w.notes.map(n => n.t)))));
+  ok(['negator', 'booster', 'neutral', 'neg', 'boost', 'but', 'caps'].every(k => kinds.has(k)), 'golden exercises every cue kind and note kind: ' + [...kinds].join());
   const need = ['not strong', 'very strong', 'financial stability'];
   ok(need.every(t => ['general', 'finance'].every(p => golden.cases.some(c => c.text === t && c.profile === p))), 'golden covers not strong / very strong / financial stability under both profiles');
   // the batch CLI is the same engine
   const cli = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'score-cli.js')], { input: JSON.stringify({ jobs: [{ profile: 'finance', sentences: golden.cases.filter(c => c.profile === 'finance').map(c => c.text) }, { profile: 'finance', title: 't', paragraphs: [{ type: 'p', text: 'Financial stability is strong. Losses rose.' }] }] }), encoding: 'utf8' });
   const cr = cli.status === 0 && JSON.parse(cli.stdout).results;
-  ok(cr && cr[0].sentences.every((s, i) => s.score === golden.cases.filter(c => c.profile === 'finance')[i].expected.score), 'tools/score-cli.js sentence jobs give the golden scores');
+  ok(cr && cr[0].sentences.every((s, i) => { const c = golden.cases.filter(g => g.profile === 'finance')[i]; const { text, ...rest } = s; return text === c.text && util.isDeepStrictEqual(rest, c.expected); }), 'tools/score-cli.js sentence jobs give the golden detail, every field');
   ok(cr && JSON.stringify(cr[1].doc) === JSON.stringify(C.docToJSON(fdoc)), 'tools/score-cli.js document jobs give the page\'s Export JSON');
   // index.html: the dictionary picker; only text the page scores itself goes through the lazy load
   ok(/<select[^>]*id="selDict"/.test(html) && /initDictSel\(\);/.test(appSrc), 'analyzer has a dictionary picker');

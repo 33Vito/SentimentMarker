@@ -10,6 +10,7 @@ the Node path still runs.
 """
 import json, os, sys, tempfile
 
+sys.dont_write_bytecode = True   # no __pycache__ in tools/ or examples/
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -35,14 +36,8 @@ def skip(msg):
 
 
 def project(r):
-    """the CLI's sentence result in the golden shape (offsets are checked separately)"""
-    words = []
-    for w in r["words"]:
-        x = {"text": w["text"], "base": w["base"], "score": w["score"]}
-        if "note" in w:
-            x["note"] = w["note"]
-        words.append(x)
-    return {"score": r["score"], "words": words}
+    """the CLI's sentence result minus its echoed text: every other field is compared"""
+    return {k: v for k, v in r.items() if k != "text"}
 
 
 def batch():
@@ -57,15 +52,19 @@ def batch():
 
 
 def test_golden_vectors_identical_through_node():
+    """score, raw, every word (offsets, base, effective score, notes, note) and every cue, exactly"""
     got = batch()
-    bad = [c["name"] for i, c in enumerate(GOLDEN["cases"]) if project(got[i]) != c["expected"]]
+    bad = [c["name"] for i, c in enumerate(GOLDEN["cases"]) if got[i]["text"] != c["text"] or project(got[i]) != c["expected"]]
     assert not bad, "golden mismatch via Python -> Node: " + "; ".join(bad)
+    # exact float equality, not just ==: the JSON round trip must give the same doubles (repr is shortest round-trip)
+    for i, c in enumerate(GOLDEN["cases"]):
+        assert repr(got[i]["score"]) == repr(c["expected"]["score"]) and repr(got[i]["raw"]) == repr(c["expected"]["raw"]), c["name"]
 
 
 def test_offsets_are_code_points():
     got = batch()
     for i, c in enumerate(GOLDEN["cases"]):
-        for w in got[i]["words"]:
+        for w in got[i]["words"] + got[i]["cues"]:
             assert c["text"][w["start"]:w["end"]] == w["text"], (c["name"], w)
 
 
@@ -86,8 +85,13 @@ def test_score_financial_uses_the_engine():
         doc = score_financial.build(f.name, "t")
     finally:
         os.unlink(f.name)
-    assert list(doc) == ["version", "title", "scale", "reference", "paragraphs"]
-    assert doc["scale"] == {"word": 2.5} and doc["reference"]["name"] == "LM × VADER finance vocabulary"
+    assert list(doc) == ["version", "title", "model", "scale", "reference", "paragraphs"]
+    with open(os.path.join(ROOT, "data", "sentiment-model.json"), encoding="utf-8") as f:
+        model = json.load(f)
+    fin = model["vocabularies"]["finance"]["scale"]
+    assert doc["model"] == {"version": model["modelVersion"], "profile": "finance"}
+    assert doc["scale"] == {k: v for k, v in fin.items() if v != "auto"} == {"word": 2.5}   # from the model, auto levels left to the reader
+    assert doc["reference"]["name"] == "LM × VADER finance vocabulary"
     assert len(doc["reference"]["scores"]) == 3381
     assert [p["type"] for p in doc["paragraphs"]] == ["h", "p", "h", "p"] and doc["paragraphs"][2]["level"] == 2
     sents = [s for p in doc["paragraphs"] for s in p["sentences"]]

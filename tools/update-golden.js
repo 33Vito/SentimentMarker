@@ -7,14 +7,11 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { engine } = require('./score-cli.js');
+const { engine, detail } = require('./score-cli.js');
 
 const FILE = path.join(__dirname, '..', 'test', 'golden.json');
-/* the shape both test runners compare: sentence score + scored word tokens (text, base, effective score, note) */
-function expected(C, profile, text) {
-  const a = C.analyzeSentence(text, profile);
-  return { score: a.score, words: a.scored.map(t => { const w = { text: t.text, base: t.base, score: t.score }, n = C.noteText(t); if (n) w.note = n; return w; }) };
-}
+/* what both test runners compare: score-cli's full sentence detail (scores, offsets, notes, cues) */
+const expected = (C, profile, text) => detail(C, C.analyzeSentence(text, profile));
 function format(g) {
   return '{\n"comment": ' + JSON.stringify(g.comment) + ',\n"modelVersion": ' + JSON.stringify(g.modelVersion) + ',\n"cases": [\n'
     + g.cases.map(c => JSON.stringify(c)).join(',\n') + '\n]\n}\n';
