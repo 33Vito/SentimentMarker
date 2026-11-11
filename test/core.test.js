@@ -452,7 +452,71 @@ ok(astraSents.length === bodyA2.length && astraSents.every((s, i) => s.text === 
 ok(aA.topics.length > 0 && aA.topics.every((t, i) => { const r = C.topicScores(dA2, C.extractTopics(dA2, 8), { sents: bodyA2 })[i]; return t.label === r.label && t.count === r.count && near(t.mean, r.mean); }), 'Astra topic means come from topicScores over body sentences');
 ok(/href="SentimentStoryFable.html"/.test(html) && /href="SentimentStoryAstra.html"/.test(html), 'analyzer toolbar links to Fable and Astra');
 
+// 5e. lexicon unification: one model file, generated assets, vocabulary profiles, lazy finance, golden vectors
+const P_ = require('path'), cp = require('child_process'), repo = P_.join(__dirname, '..');
+const gen = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'build-lexicon.js'), '--check'], { encoding: 'utf8' });
+ok(gen.status === 0, 'tools/build-lexicon.js --check: generated files match data/sentiment-model.json ' + (gen.stdout + gen.stderr).trim());
+const model = JSON.parse(fs.readFileSync(P_.join(repo, 'data', 'sentiment-model.json'), 'utf8'));
+ok(Object.keys(model.vocabularies.general.words).length === 348 && Object.keys(model.vocabularies.finance.words).length === 3381, 'model: general 348 entries (293 English + 55 Chinese), finance 3381');
+ok(model.vocabularies.general.suffixPolicy.type === 'suffix' && model.vocabularies.finance.suffixPolicy.type === 'exact', 'suffix fallback for general, exact match for finance');
+ok(C.dictionaries().map(d => d.name + ':' + d.loaded).join() === 'general:true,finance:false', 'general is there synchronously, finance is not loaded until asked for');
+const lexSrc = coreFile.slice(coreFile.indexOf('function lexLookup('), coreFile.indexOf('\n}\n', coreFile.indexOf('function lexLookup(')));
+ok(!/\.has\(/.test(lexSrc) && (lexSrc.match(/M\.get\(/g) || []).length === 2 && /!== undefined/.test(lexSrc), 'lexLookup: one Map.get per candidate, tested with !== undefined (no has + get)');
+const finAsset = fs.readFileSync(P_.join(repo, 'lexicon', 'finance.js'), 'utf8');
+ok(/non-commercial \/ academic use only/.test(finAsset) && /MIT/.test(finAsset) && /^SMCore\.registerLexicon\("finance", /m.test(finAsset), 'finance asset: licence note in the header, a classic script that registers itself');
+// lazy load: scoring before the load throws; a failed load is not cached; a good one is, and later calls reuse it
+const thrown = (() => { try { C.analyzeSentence('not strong', 'finance'); return ''; } catch (e) { return e.message; } })();
+ok(/not loaded.*ensureLexicon\('finance'\)/.test(thrown), 'finance before loading: a clear error, not general scores: ' + thrown);
+const assessmentDoc = C.docFromScored(dlist[0].scored);
+C.topicScores(assessmentDoc, C.extractTopics(assessmentDoc, 8)); C.buildSpec(assessmentDoc); C.docToJSON(assessmentDoc);
+ok(assessmentDoc.words.length > 0 && !C.hasLexicon('finance'),'showing an already scored file (the finance-scored Assessment) does not load the finance dictionary');
+const loads = [];
+const asyncTests = (async () => {
+  const failing = src => { loads.push('fail ' + src); return Promise.reject(new Error('offline')); };
+  const p1 = C.ensureLexicon('finance', failing), p2 = C.ensureLexicon('finance', failing);
+  ok(p1 === p2, 'concurrent requests share one cached Promise');
+  const e1 = await p1.then(() => null, e => e.message);
+  ok(e1 === 'offline' && loads.length === 1 && !C.hasLexicon('finance'), 'a failed load rejects once and leaves finance unloaded');
+  const good = src => { loads.push('ok ' + src); new Function('SMCore', finAsset)(C); return Promise.resolve(); };
+  const p3 = C.ensureLexicon('finance', good);
+  ok(p3 !== p1, 'after a failure the cache is cleared, so a retry starts a new load');
+  ok(await p3 === 'finance' && C.hasLexicon('finance') && loads.join() === 'fail lexicon/finance.js,ok lexicon/finance.js', 'retry loads the asset and registers it: ' + loads.join());
+  await C.ensureLexicon('finance', good);
+  ok(loads.length === 2, 'once loaded, ensureLexicon does not insert the script again');
+  const silent = (() => { const d = C.dictionaries().find(x => x.name === 'finance'); return d.loaded && d.size === 3381; })();
+  ok(silent, 'finance registered with all 3381 words');
+  ok((() => { try { C.registerLexicon('finance', { sha256: 'stale', words: [] }); return false; } catch (e) { return /does not match/.test(e.message); } })(), 'a stale asset (sha256 mismatch with the core) is refused');
+  /* profiles are separate Maps: loading finance changes nothing for general */
+  ok(C.analyzeSentence('The goods arrived.').scored.length === 1 && C.analyzeSentence('The goods arrived.', 'finance').scored.length === 0, 'goods: general suffix fallback still applies; finance is exact');
+  ok(C.buildDoc('t', blocks).words.length === doc.words.length && C.buildDoc('t', blocks).sents.every((s, i) => s.score === doc.sents[i].score), 'general buildDoc unchanged after the finance load');
+  const fdoc = C.buildDoc('t', C.parseText('Financial stability is strong. Losses rose.'), { profile: 'finance' });
+  ok(fdoc.profile === 'finance' && fdoc.ref.name === 'LM × VADER finance vocabulary' && fdoc.ref.scores.length === 3381 && fdoc.words.map(t => t.text).join() === 'strong,Losses', 'finance doc: own reference spectrum, "financial stability" neutral: ' + fdoc.words.map(t => t.text));
+  ok(C.docFromScored(C.docToJSON(fdoc)).words.length === 2, 'finance doc exports and re-imports');
+  // golden vectors, JS direct (test/test_golden.py runs the same file through Python -> Node)
+  const golden = JSON.parse(fs.readFileSync(P_.join(__dirname, 'golden.json'), 'utf8'));
+  ok(golden.modelVersion === C.modelVersion && golden.cases.length >= 40, 'golden file: ' + golden.cases.length + ' cases for model ' + golden.modelVersion);
+  const project = a => ({ score: a.score, words: a.scored.map(t => { const w = { text: t.text, base: t.base, score: t.score }, n = C.noteText(t); if (n) w.note = n; return w; }) });
+  const bad = golden.cases.filter(c => JSON.stringify(project(C.analyzeSentence(c.text, c.profile))) !== JSON.stringify(c.expected));
+  ok(!bad.length, 'golden vectors match the JS engine' + (bad.length ? ': ' + bad.map(c => c.name).join('; ') : ''));
+  const need = ['not strong', 'very strong', 'financial stability'];
+  ok(need.every(t => ['general', 'finance'].every(p => golden.cases.some(c => c.text === t && c.profile === p))), 'golden covers not strong / very strong / financial stability under both profiles');
+  // the batch CLI is the same engine
+  const cli = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'score-cli.js')], { input: JSON.stringify({ jobs: [{ profile: 'finance', sentences: golden.cases.filter(c => c.profile === 'finance').map(c => c.text) }, { profile: 'finance', title: 't', paragraphs: [{ type: 'p', text: 'Financial stability is strong. Losses rose.' }] }] }), encoding: 'utf8' });
+  const cr = cli.status === 0 && JSON.parse(cli.stdout).results;
+  ok(cr && cr[0].sentences.every((s, i) => s.score === golden.cases.filter(c => c.profile === 'finance')[i].expected.score), 'tools/score-cli.js sentence jobs give the golden scores');
+  ok(cr && JSON.stringify(cr[1].doc) === JSON.stringify(C.docToJSON(fdoc)), 'tools/score-cli.js document jobs give the page\'s Export JSON');
+  // index.html: the dictionary picker; only text the page scores itself goes through the lazy load
+  ok(/<select[^>]*id="selDict"/.test(html) && /initDictSel\(\);/.test(appSrc), 'analyzer has a dictionary picker');
+  const fnSrc = name => appSrc.slice(appSrc.indexOf('function ' + name + '('), appSrc.indexOf('\n}\n', appSrc.indexOf('function ' + name + '(')));
+  ok(/await ensureLexicon\(profile, insertScript\)/.test(fnSrc('openText')) && /gen !== demoOpenGen/.test(fnSrc('openText')), 'openText awaits the dictionary before the synchronous scorer, and a newer open wins');
+  ok(!/ensureLexicon|openText/.test(fnSrc('openScoredText') + fnSrc('loadDemo') + fnSrc('openDoc')), 'scored files and demos never load a dictionary');
+  ok(/await openText\('Pasted text'/.test(appSrc) && /await openText\(file\.name/.test(appSrc), 'pasted and opened text are scored through openText');
+  ok(/if \(S\.src\)/.test(fnSrc('initDictSel')) && /dictFailed\(profile, err\)/.test(fnSrc('openText')), 'switching re-scores page-scored text; a failed load is reported');
+})();
+asyncTests.catch(e => ok(false, 'async tests threw: ' + e.stack)).then(() => {
+
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
 console.log(fail ? `\n${fail} FAILED` : '\nALL OK');
 process.exit(fail ? 1 : 0);
+});

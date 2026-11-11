@@ -24,7 +24,7 @@ import argparse, csv, json, os, re, sys
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 except ImportError:
-    sys.exit("Missing dependency: pip install vaderSentiment"
+    sys.exit("Missing dependency: pip install vaderSentiment")
 
 vader = SentimentIntensityAnalyzer()
 LEX = vader.lexicon                      # {word: valence in about -4 .. +4}

@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Score finance prose with a graded word list built from Loughran-McDonald (finance-specific
-polarity) and VADER (graded strength), and write a SentimentMarker JSON file.
+"""Score finance prose with the finance dictionary (Loughran-McDonald polarity x VADER strength) and write a
+SentimentMarker JSON file.
 
-    pip install vaderSentiment pysentiment2
-    python score_financial.py report.txt                # one paragraph per blank-line block
+    python score_financial.py report.txt                # one paragraph per blank-line block; "# " / "## " = headings
     python score_financial.py report.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
 
-How the word list is built (this is an example, not a validated model):
+Needs Node.js, not pysentiment2: the scores come from the same JS engine the page uses (sentiment-core.js,
+called once per run through tools/score-cli.js), with the finance profile of data/sentiment-model.json, so a
+file scored here and the same text pasted into the page with the Finance dictionary get identical scores
+(negation, boosters, contrast, caps, exclamation marks, the "financial stability" neutral phrase, exact match).
+
+The vocabulary itself (an example, not a validated model) is built by tools/build_finance_vocab.py, which is
+the only step that needs `pip install vaderSentiment pysentiment2`:
   * Loughran-McDonald decides polarity: a word counts only if LM marks it Negative or Positive.
     This keeps neutral finance words such as "risk", "capital", "credit" from lighting up, which
     general-purpose lexicons get wrong on financial text.
@@ -14,85 +19,49 @@ How the word list is built (this is an example, not a validated model):
   * VADER-only words are kept only when strongly polarised (|score| >= 2.5).
 The same list is written as `reference`, so the spectrum panel compares the document with it.
 Offsets are Unicode code points (Python str indices).
+
+Licence: the Loughran-McDonald word list is free for non-commercial / academic use only; commercial use
+requires a licence from its authors. VADER is MIT-licensed.
 """
-import argparse, csv, json, os, re, sys
+import argparse, json, os, re, sys
 
-try:
-    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-    import pysentiment2, importlib.util
-except ImportError:
-    sys.exit("Missing dependencies: pip install vaderSentiment pysentiment2")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
+import sm_engine  # noqa: E402
 
-VADER = SentimentIntensityAnalyzer().lexicon
-LM_CSV = os.path.join(os.path.dirname(pysentiment2.__file__), "static", "LM.csv")
-WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*")
-SENT = re.compile(r"(?<=[.!?])\s+(?=[\"'“(\[]?[A-Z0-9])")
-ABBR = re.compile(r"\b(?:e\.g|i\.e|etc|vs|Dr|Mr|Ms|No|Inc|Ltd|Pty|cf|approx)\.$")
+PROFILE = "finance"
 
 
 def build_lexicon():
-    lex = {}
-    for r in csv.DictReader(open(LM_CSV, encoding="utf-8")):
-        w = r["Word"].lower()
-        neg, pos = r["Negative"] not in ("0", ""), r["Positive"] not in ("0", "")
-        if neg == pos:
-            continue
-        sign = 1 if pos else -1
-        v = VADER.get(w)
-        lex[w] = v if v is not None and (v > 0) == (sign > 0) and v != 0 else 1.5 * sign
-    for w, v in VADER.items():
-        if w not in lex and abs(v) >= 2.5 and w.isalpha():
-            lex[w] = v
-    return lex
+    """The finance vocabulary rebuilt from upstream (needs pysentiment2 + vaderSentiment); see tools/build_finance_vocab.py."""
+    from build_finance_vocab import build_lexicon as rebuild
+    return rebuild()
 
 
-LEX = build_lexicon()
-# Fixed phrases whose words are a topic name, not sentiment ("financial stability" is polarity-free).
-NEUTRAL_PHRASES = [re.compile(r"\bfinancial\s+(stability)\b", re.I)]
-
-
-def neutral_spans(text):
-    return [m.span(1) for p in NEUTRAL_PHRASES for m in p.finditer(text)]
-
-
-def split_sentences(text):
-    out, start = [], 0
-    for m in SENT.finditer(text):
-        if ABBR.search(text[start:m.start()]):
-            continue
-        out.append(text[start:m.start()]); start = m.end()
-    out.append(text[start:])
-    return [s for s in out if s.strip()]
-
-
-def build(path, title):
-    paragraphs = []
-    for block in re.split(r"\n\s*\n", open(path, encoding="utf-8").read()):
+def read_paragraphs(path):
+    """Blank-line blocks; a block starting with "# " or "## " is one heading (level 1 / 2), kept as one sentence."""
+    out = []
+    with open(path, encoding="utf-8") as f:
+        raw = f.read()
+    for block in re.split(r"\n\s*\n", raw):
         block = block.strip()
         if not block:
             continue
-        kind = "p"
-        level = 1
         if block.startswith("## "):
-            kind, block, level = "h", block[3:].strip(), 2
+            out.append({"type": "h", "level": 2, "sentences": [block[3:].strip()]})
         elif block.startswith("# "):
-            kind, block, level = "h", block[2:].strip(), 1
-        sents = []
-        for s in ([block] if kind == "h" else split_sentences(block)):
-            skip = neutral_spans(s)
-            words = [{"text": m.group(), "score": round(LEX[m.group().lower()], 3), "start": m.start(), "end": m.end()}
-                     for m in WORD.finditer(s) if m.group().lower() in LEX and m.span() not in skip]
-            sents.append({"text": s, "words": words})        # sentence / paragraph scores are derived from the words
-        p = {"type": kind, "sentences": sents}
-        if kind == "h" and level == 2: p["level"] = 2      # level 1 is the default; only depth 2 is written
-        paragraphs.append(p)
+            out.append({"type": "h", "sentences": [block[2:].strip()]})
+        else:
+            out.append({"type": "p", "text": block})      # split into sentences by the engine
+    return out
+
+
+def build(path, title):
+    doc = sm_engine.score_document(read_paragraphs(path), title, PROFILE)
     return {
         "version": 1, "title": title,
-        "scale": {"word": 2.5},
-        "reference": {"name": "LM × VADER finance vocabulary", "scores": sorted(round(v, 3) for v in LEX.values()),
-                      "examples": [{"text": w, "score": round(LEX[w], 3)} for w in
-                                   ("losses", "vulnerabilities", "disruption", "stress", "resilient", "stable", "favourable", "strong") if w in LEX]},
-        "paragraphs": paragraphs,
+        "scale": {"word": 2.5},                           # sentence / paragraph colour scales: the reader's 90th percentile
+        "reference": doc["reference"],                    # every score of the finance vocabulary
+        "paragraphs": doc["paragraphs"],
     }
 
 
@@ -100,10 +69,14 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input"); ap.add_argument("-o", "--out"); ap.add_argument("--title")
     a = ap.parse_args()
-    doc = build(a.input, a.title or os.path.splitext(os.path.basename(a.input))[0])
+    try:
+        doc = build(a.input, a.title or os.path.splitext(os.path.basename(a.input))[0])
+    except sm_engine.EngineError as e:
+        sys.exit("scoring failed: " + str(e))
     out = a.out or os.path.splitext(a.input)[0] + ".scored.json"
     text = json.dumps(doc, ensure_ascii=False, indent=1)
     text = re.sub(r"\[\s*(-?[\d.]+(?:,\s*-?[\d.]+)*)\s*\]", lambda m: "[" + re.sub(r"\s+", "", m.group(1)) + "]", text)
-    open(out, "w", encoding="utf-8").write(text)
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(text)
     n = sum(len(s["words"]) for p in doc["paragraphs"] for s in p["sentences"])
-    print(f"wrote {out}: {len(doc['paragraphs'])} paragraphs, {n} scored words, lexicon {len(LEX)} words")
+    print(f"wrote {out}: {len(doc['paragraphs'])} paragraphs, {n} scored words, lexicon {len(doc['reference']['scores'])} words")
