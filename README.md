@@ -10,14 +10,15 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 - Click a sentence or paragraph to see each word's score and how negation, boosters and contrasts affected it
 - A heat strip on the right shows the sentiment distribution of the whole document; click or drag it to jump
 - An outline panel for long articles: two heading levels, each row carrying a sentiment bar and the running sum of its section, click to jump, the current section stays highlighted
-- Reads PDF, Markdown, TXT and pasted text
+- Reads PDF, Markdown, TXT and pasted text, scored in the page with the built-in General dictionary or the optional Finance dictionary (Loughran-McDonald × VADER), picked in the toolbar
 - **Open externally scored files** (JSON / CSV): the scores come from your own Python module or API, the reader only displays them
 - An emotion spectrum sidebar: where the words of this document sit inside the distribution of a reference lexicon (VADER, for example), listing the most positive and most negative words with percentiles
 - Export the current document's scores (JSON / CSV) and use them as a format template
 
 ## Bring your own scores
 
-The reader makes no sentiment judgements. Score every word / sentence / paragraph with Python or an API, save it as JSON or CSV, and drop it on the page:
+When you import external scores (a JSON / CSV file, or one pasted into the dialog), the reader only displays them: it never rescores them and never loads a dictionary for them. When you paste or open plain text (TXT, Markdown, PDF), it scores that text itself with its built-in dictionary: the General one, or the optional Finance dictionary chosen in the toolbar.
+To use your own model, score every word / sentence / paragraph with Python or an API, save it as JSON or CSV, and drop it on the page:
 
 ```
 pip install vaderSentiment
@@ -25,7 +26,13 @@ python examples/score_with_python.py examples/launch-week.md   # writes launch-w
 ```
 
 See [docs/FORMAT.md](docs/FORMAT.md). You may supply only some of the three levels; giving `reference` (the scores of the reference lexicon) is what draws the emotion spectrum.
-Without external scores the page falls back to its built-in dictionary and labels itself "Built-in dictionary" in the corner - demo only.
+Without external scores the page scores the text with its built-in dictionary and says so in the badge next to the file name ("Built-in" or "Finance") - demo quality.
+
+For finance prose there is an offline path that gives exactly the page's Finance scores (it runs the same JS engine through Node; Node.js is the only requirement):
+
+```
+python examples/score_financial.py examples/fsr-assessment-2026-10.txt -o report.scored.json
+```
 
 ## Usage
 
@@ -35,7 +42,13 @@ The "Sample article" dropdown in the top bar offers three built-in demos: the As
 
 ## Layout
 
-- `docs/FORMAT.md`: the scoring file format
+- `docs/FORMAT.md`: the scoring file format, and the built-in scoring model (profiles, rules, lazy loading)
+- `data/sentiment-model.json`: the canonical scoring model - rules, parameters, negators, boosters, contrast words, neutral phrases, and the named vocabularies `general` and `finance` with their suffix policies and sources. Hand-maintained; everything the browser uses is generated from it
+- `tools/build-lexicon.js`: the deterministic generator. Writes the model back in canonical form, the `//<model>` region of `sentiment-core.js` (rules + the general vocabulary, so they are there synchronously) and `lexicon/finance.js`. `--check` fails on stale files (run by the tests)
+- `tools/build_finance_vocab.py`: rebuilds the finance vocabulary and the upstream hashes from `pysentiment2` / `vaderSentiment` and hands them to the generator (`--check` compares without writing)
+- `lexicon/finance.js`: generated Finance dictionary, a classic script inserted the first time finance scoring is needed
+- `tools/score-cli.js`, `tools/sm_engine.py`: batch scoring through the JS engine (JSON on stdin / stdout, one Node process per run) and its Python wrapper
+- `tools/update-golden.js`: refills `test/golden.json` after a deliberate model change and prints what changed
 - `examples/`: sample text, scored results in both formats, and the Python scoring scripts (swap in your own model)
 - `examples/demos.js`: the picker list (`window.DEMOS`). The Assessment and the synthetic sample are inlined. The full Review is only a `{label, file, src}` stub. Packed by `examples/pack_fsr.js` (needs `pdfjs-dist@3.11.174` via `PDFJS_DIST` or `node_modules`; this repo has no `package.json`). Loaded as a classic `<script>`, not `fetch()`, because `file://` blocks fetch.
 - `examples/fsr-2026-10.demo.js`: the full Review as a second classic script (`window.DEMO_FILES`). The page inserts it the first time that article is chosen, so start-up does not parse it.
@@ -54,13 +67,30 @@ The script is split in two:
 ## Tests
 
 ```
-node test/core.test.js
+node test/core.test.js            # core, app wiring, generator --check, golden vectors on the JS engine
+python3 test/test_golden.py       # the same golden vectors through Python -> Node (also runs under pytest)
+node tools/build-lexicon.js --check
+python3 tools/build_finance_vocab.py --check   # needs pysentiment2 + vaderSentiment
 ```
+
+`test/golden.json` holds the shared golden vectors (negation, boosters, contrast, caps / exclamation, the "financial stability" neutral phrase, exact-match collisions such as goods / bridging, Chinese). Both runners must reproduce them exactly. `test/test_golden.py` skips only the vocabulary rebuild when pysentiment2 is missing.
 
 ## Built-in sentiment engine (demo only)
 
-A dictionary approach inside the browser: about 500 English words plus a small Chinese lexicon, handling negation, degree adverbs, contrasts (but / however) and exclamation marks.
+A dictionary approach inside the browser, handling negation, degree adverbs (boosters and dampeners), contrasts (but / however), ALL CAPS and exclamation marks.
 A sentence score is the weighted sum of its word scores squashed into -1..1; a paragraph score is the mean of its sentences.
+There is one implementation, `sentiment-core.js`; Python reaches it through `tools/score-cli.js`, so offline and in-page scores are identical.
+
+Two vocabulary profiles share those rules:
+
+- **General** (default): 293 English and 55 Chinese entries, with a suffix fallback (`improved` -> `improve`, `happily` -> `happy`). Built into `sentiment-core.js`, available as soon as it loads
+- **Finance**: 3381 words, Loughran-McDonald polarity with VADER strength. Exact match only, because the fallback produced false matches (`goods` -> `good`, `bridging` -> `bridge`); words LM leaves neutral, such as `risk`, `capital`, `credit`, stay neutral. Inside "financial stability" the word stability is not scored. It is a separate dictionary, not merged into General. The page downloads `lexicon/finance.js` (about 37 KB, 13 KB gzipped) only when text is first scored with it; showing an already scored file never downloads it. A failed download is reported and retried the next time Finance is chosen
+
+### Licences of the word lists
+
+- The Loughran-McDonald Master Dictionary, which the Finance dictionary derives from, is free for non-commercial / academic use only. Commercial use requires a licence from its authors, Tim Loughran and Bill McDonald (https://sraf.nd.edu/loughranmcdonald-master-dictionary/)
+- VADER (C.J. Hutto and Eric Gilbert), which supplies the strengths, is MIT-licensed
+- The same note sits in `data/sentiment-model.json` (`sources`) and at the head of `lexicon/finance.js`
 
 ## Known limits
 
