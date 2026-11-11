@@ -29,7 +29,7 @@ Without external scores the page falls back to its built-in dictionary and label
 
 ## Usage
 
-Pure front end, no build step. Open `index.html` in a browser, or host it on any static server.
+Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to three Story presentations: [Story](SentimentStoryDemo.html), [Fable](SentimentStoryFable.html) (ink FX and autoplay), and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment).
 PDF parsing uses pdf.js loaded from cdnjs, so it needs a network connection.
 The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text, externally scored), the full Review, and a synthetic sample scored with the same LM x VADER lexicon. The first one opens at start-up.
 
@@ -47,8 +47,9 @@ The "Sample article" dropdown in the top bar offers three built-in demos: the As
 
 The script is split in two:
 
-- `sentiment-core.js` (between `//<core>` markers): input parsing (PDF line rejoining, Markdown, plain text), the sentiment engine, the scored-file reader and the pure summaries (outline, topics, spectrum) - DOM-free and testable under Node. One copy for both pages: `index.html` and `SentimentStoryDemo.html` load it as a classic `<script src>` (not `fetch()`, because `file://` blocks fetch) and use it through `window.SMCore`, so both read a scored file the same way (centre, word placement, colour scale)
+- `sentiment-core.js` (between `//<core>` markers): input parsing (PDF line rejoining, Markdown, plain text), the sentiment engine, the scored-file reader and the pure summaries (outline, topics, spectrum) - DOM-free and testable under Node. One copy for the analyzer and the Story pages: `index.html`, `SentimentStoryDemo.html`, `SentimentStoryFable.html` and `SentimentStoryAstra.html` load it as a classic `<script src>` (not `fetch()`, because `file://` blocks fetch) and use it through `window.SMCore`, so they read a scored file the same way (centre, word placement, colour scale)
 - `//<app>` inside `index.html`: rendering and interaction. The story view keeps its own layout code; its data step (`//<story-data>`) is built on `SMCore`
+- `SentimentStoryDemo.html`: scroll-driven Story reading. `SentimentStoryFable.html` is that page plus the ink FX layer and Play/Space autoplay. `SentimentStoryAstra.html` is an editorial "Stability under pressure" reading of the same files, still scored through `SMCore`
 
 ## Tests
 

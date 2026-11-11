@@ -435,6 +435,23 @@ const mixStat = C.topicScores(paraOnly, [C.makeTopic('rates', paraOnly)])[0], mi
 ok(mixStat.byPara === 3 && /&lt; <b>0\.02<\/b> for sentence scores, &lt; <b>0\.08<\/b> for paragraph-only scores \(20% of the colour scales <b>±0\.1<\/b> \/ <b>±0\.4<\/b>\)/.test(mixText), 'mixed file: both thresholds stated: ' + mixText);
 ok(/if \(!E\.tpop\.hidden\) closeTpop\(true\)/.test(appSrc) && /e\.key === '1'\) setLevel\('word'\)/.test(appSrc), 'Escape closes the topic popover first; level shortcuts unchanged');
 
+const rootDir = require('path').dirname(path);
+const fableHtml = fs.readFileSync(require('path').join(rootDir, 'SentimentStoryFable.html'), 'utf8');
+const astraHtml = fs.readFileSync(require('path').join(rootDir, 'SentimentStoryAstra.html'), 'utf8');
+ok(loadsCore(fableHtml, "'use strict'") && loadsCore(astraHtml, "'use strict'"), 'Fable and Astra load sentiment-core.js before their own script');
+ok(/<script src="examples\/demos.js"><\/script>/.test(fableHtml) && /<script src="examples\/demos.js"><\/script>/.test(astraHtml), 'Fable and Astra load examples/demos.js');
+ok(fableHtml.split('//<story-data>')[1].split('//</story-data>')[0] === storyRegion, 'Fable keeps the current Story data step on SMCore');
+ok(/id="play"/.test(fableHtml) && /id="aurora"/.test(fableHtml) && /id="ink"/.test(fableHtml) && /const Play =/.test(fableHtml) && /const FX =/.test(fableHtml) && /Play\.stop\(\); FX\.clear\(\)/.test(fableHtml), 'Fable has Play autoplay and the ink FX layer');
+ok(!/function scored\s*\(/.test(astraHtml) && !/function makeData\s*\(/.test(astraHtml), 'Astra dropped the local scoring helpers');
+const astraRegion = astraHtml.split('//<astra-data>')[1].split('//</astra-data>')[0];
+const astraBuild = new Function('SMCore', "'use strict';\n" + astraRegion + '\nreturn build;')(C);
+const aA = astraBuild(dlist[0].scored), dA2 = C.docFromScored(dlist[0].scored);
+const bodyA2 = dA2.sents.filter(s => dA2.blocks[s.block].type === 'p');
+const astraSents = aA.sections.flatMap(g => g.sents);
+ok(astraSents.length === bodyA2.length && astraSents.every((s, i) => s.text === bodyA2[i].text && s.score === bodyA2[i].score), 'Astra body sentences are the analyzer\'s: same text and score');
+ok(aA.topics.length > 0 && aA.topics.every((t, i) => { const r = C.topicScores(dA2, C.extractTopics(dA2, 8), { sents: bodyA2 })[i]; return t.label === r.label && t.count === r.count && near(t.mean, r.mean); }), 'Astra topic means come from topicScores over body sentences');
+ok(/href="SentimentStoryFable.html"/.test(html) && /href="SentimentStoryAstra.html"/.test(html), 'analyzer toolbar links to Fable and Astra');
+
 // 6. syntax check of app part
 try { new Function(appSrc); ok(true, 'app script parses'); } catch (e) { ok(false, 'app script parse error: ' + e.message); }
 console.log(fail ? `\n${fail} FAILED` : '\nALL OK');

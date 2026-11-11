@@ -57,11 +57,14 @@ button{cursor:pointer}
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);display:grid;gap:.6rem;padding-block:.75rem .65rem;max-width:60rem;margin-inline:auto;border-bottom:1px solid transparent}
 .bar.scrolled{border-bottom-color:var(--line)}
 .row{display:flex;align-items:center;gap:.6rem 1rem;flex-wrap:wrap;min-width:0}
-.top{justify-content:space-between;flex-wrap:nowrap}
+.top{justify-content:space-between;flex-wrap:wrap}
 .brand{font:650 1rem/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap}
 .brand em{font-style:normal;padding:.08em .22em;margin-left:.04em;border-radius:.25em;
   background-image:linear-gradient(103deg,color-mix(in srgb,var(--neg) 55%,transparent) 0,color-mix(in srgb,var(--neg) 55%,transparent) 48%,color-mix(in srgb,var(--pos) 55%,transparent) 52%,color-mix(in srgb,var(--pos) 55%,transparent) 100%)}
 .actions{display:flex;gap:.4rem}
+.views{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.views a{font:500 .75rem/1 var(--font-ui);padding:.42rem .65rem;border-radius:.55rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none;white-space:nowrap}
+.views a[aria-current="page"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
 .btn{font:500 .8125rem/1 var(--font-ui);padding:.55rem .85rem;border-radius:.6rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);white-space:nowrap}
 .btn:hover{border-color:color-mix(in srgb,var(--ink) 35%,var(--line))}
 .btn.solid{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
@@ -282,6 +285,12 @@ button{cursor:pointer}
 <header class="bar" id="bar">
   <div class="row top">
     <div class="brand">Sentiment<em>Marker</em></div>
+    <nav class="views" aria-label="Views">
+      <a href="index.html" aria-current="page">Analyzer</a>
+      <a href="SentimentStoryDemo.html">Story</a>
+      <a href="SentimentStoryFable.html">Fable</a>
+      <a href="SentimentStoryAstra.html">Astra</a>
+    </nav>
     <div class="actions">
       <button class="btn solid" id="btnOpen" type="button">Open File</button>
       <button class="btn" id="btnPaste" type="button">Paste Text</button>
@@ -332,7 +341,7 @@ button{cursor:pointer}
 </div>
 <input type="file" id="file" accept=".pdf,.md,.markdown,.txt,.json,.csv,application/json,text/csv,application/pdf,text/plain,text/markdown" hidden>
 <script src="examples/demos.js"></script>
-<!-- input parsing + sentiment engine, shared with SentimentStoryDemo.html (window.SMCore) -->
+<!-- input parsing + sentiment engine, shared with the Story pages (window.SMCore) -->
 <script src="sentiment-core.js"></script>
 
 <script>
