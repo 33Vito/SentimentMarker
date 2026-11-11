@@ -25,10 +25,20 @@ requires a licence from its authors. VADER is MIT-licensed.
 """
 import argparse, json, os, re, sys
 
+sys.dont_write_bytecode = True                         # no __pycache__ inside the repo's tools/
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 import sm_engine  # noqa: E402
 
 PROFILE = "finance"
+MODEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "sentiment-model.json")
+
+
+def profile_scale(profile=PROFILE):
+    """The profile's colour scale from data/sentiment-model.json, as the file's `scale`. A level the model sets to "auto"
+    is left out, so the reader applies the same 90th-percentile rule the page applies to text scored with that profile."""
+    with open(MODEL, encoding="utf-8") as f:
+        scale = json.load(f)["vocabularies"][profile]["scale"]
+    return {k: scale[k] for k in ("word", "sentence", "paragraph") if scale[k] != "auto"}
 
 
 def build_lexicon():
@@ -59,7 +69,8 @@ def build(path, title):
     doc = sm_engine.score_document(read_paragraphs(path), title, PROFILE)
     return {
         "version": 1, "title": title,
-        "scale": {"word": 2.5},                           # sentence / paragraph colour scales: the reader's 90th percentile
+        "model": doc["model"],                            # provenance: {version, profile} of the engine that scored it
+        "scale": profile_scale(),                         # finance: {"word": 2.5}; sentence / paragraph "auto"
         "reference": doc["reference"],                    # every score of the finance vocabulary
         "paragraphs": doc["paragraphs"],
     }

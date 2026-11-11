@@ -6,9 +6,13 @@
 
    Jobs (profile: "general" by default, or "finance" - the lexicon asset is loaded from lexicon/<name>.js):
      {"profile": "finance", "sentences": ["Not strong.", …]}
-        -> {"profile", "sentences": [{"text", "score", "raw", "words": [{"text", "base", "score", "start", "end", "note"?}]}]}
-           each string is scored as ONE sentence (no splitting); score = the sentence score, raw = before squashing,
-           word score = the effective score (after boosters, negation, caps, clipping; contrast weights act on the sum)
+        -> {"profile", "sentences": [{"text", "score", "raw", "words": [...], "cues": [...]}]}
+           each string is scored as ONE sentence (no splitting); score = the sentence score, raw = before squashing.
+           words: every scored word {text, start, end, base, score, notes, note?}: score = the effective score (after
+             boosters, negation, caps, clipping; contrast weights act on the sentence sum), notes = the engine's own
+             records ({t:"boost", w, m} | {t:"neg", w} | {t:"caps"} | {t:"but", w: weight}), note = their text
+           cues: the words that changed others or were neutralised {text, start, end, kind: "negator" | "booster" | "neutral", m?}
+           This is also the shape of test/golden.json's `expected`.
      {"profile": "finance", "title": "…", "paragraphs": [{"type": "p"|"h", "level"?: 2, "text": "…"} | {"type", "sentences": ["…"]}]}
         -> {"profile", "doc": <scored JSON exactly as the page's Export JSON writes it, docs/FORMAT.md>}
            paragraphs with `text` are split with the engine's own sentence splitter.
@@ -32,17 +36,27 @@ function engine(profile) {
 }
 const cpLen = s => [...s].length;
 
+/* everything analyzeSentence exposes, as plain JSON with code-point offsets */
+function detail(C, a) {
+  const at = new Map();
+  let off = 0;
+  for (const t of a.toks) { at.set(t, off); off += cpLen(t.text); }
+  const span = t => ({ text: t.text, start: at.get(t), end: at.get(t) + cpLen(t.text) });
+  return {
+    score: a.score, raw: a.raw,
+    words: a.scored.map(t => {
+      const w = Object.assign(span(t), { base: t.base, score: t.score, notes: t.notes.map(n => Object.assign({}, n)) }), note = C.noteText(t);
+      if (note) w.note = note;
+      return w;
+    }),
+    cues: a.toks.filter(t => t.word && (t.neutral || (t.info && t.info.k !== 'lex')))
+      .map(t => Object.assign(span(t), t.neutral ? { kind: 'neutral' } : t.info.k === 'neg' ? { kind: 'negator' } : { kind: 'booster', m: t.info.m })),
+  };
+}
 function scoreSentences(C, profile, texts) {
   return texts.map(text => {
     if (typeof text !== 'string') throw new Error('sentences[] must be strings');
-    const a = C.analyzeSentence(text, profile), at = new Map();
-    let off = 0;
-    for (const t of a.toks) { at.set(t, off); off += cpLen(t.text); }
-    return { text, score: a.score, raw: a.raw, words: a.scored.map(t => {
-      const w = { text: t.text, base: t.base, score: t.score, start: at.get(t), end: at.get(t) + cpLen(t.text) }, note = C.noteText(t);
-      if (note) w.note = note;
-      return w;
-    }) };
+    return Object.assign({ text }, detail(C, C.analyzeSentence(text, profile)));
   });
 }
 function scoreDoc(C, profile, title, paragraphs) {
@@ -75,4 +89,4 @@ if (require.main === module) {
     process.stdout.write(JSON.stringify(out) + '\n');
   } catch (e) { process.stderr.write('score-cli: ' + (e && e.message || e) + '\n'); process.exit(1); }
 }
-module.exports = { run, engine };
+module.exports = { run, engine, detail };

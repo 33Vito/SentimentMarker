@@ -17,6 +17,7 @@
    node examples/pack_fsr.js --from 4 --to 12 --txt examples/fsr-assessment-2026-10.txt --title "RBA Financial Stability Review (Oct 2026), Assessment"
    node examples/pack_fsr.js --from 1 --to 79 --txt examples/fsr-2026-10.txt --title "RBA Financial Stability Review (Oct 2026)" --side examples/fsr-2026-10.demo.js
    node examples/pack_fsr.js --repack-demos
+   node examples/pack_fsr.js --rescore      re-score all three finance examples from their .txt / .md (after a model change)
 */
 const fs = require('fs');
 const path = require('path');
@@ -152,8 +153,22 @@ function repackDemos() {
   console.log('wrote ' + dest + ' (' + fs.statSync(dest).size + ' bytes)');
 }
 
+/* Re-score the three finance examples from their committed sources (no PDF, no pdfjs-dist): the two RBA texts
+   produced above and the hand-written synthetic review. Then rebuild the lazy full-review script and demos.js. */
+const RESCORE = [
+  ['fsr-assessment-2026-10.txt', 'RBA Financial Stability Review (Oct 2026), Assessment'],
+  ['fsr-2026-10.txt', 'RBA Financial Stability Review (Oct 2026)'],
+  ['financial-stability-review.md', 'Meridian Financial Stability Review (Fictional Demonstration)'],
+];
+function rescore() {
+  for (const [src, title] of RESCORE) score(path.join(__dirname, src), title, path.join(__dirname, src.replace(/\.(txt|md)$/i, '.scored.json')));
+  writeSide(path.join(__dirname, 'fsr-2026-10.scored.json'), path.join(__dirname, 'fsr-2026-10.demo.js'));
+  repackDemos();
+}
+
 async function main() {
   if (arg('--repack-demos')) { repackDemos(); return; }
+  if (arg('--rescore')) { rescore(); return; }
   if (arg('--side-only')) {
     writeSide(path.resolve(root, arg('--json')), path.resolve(root, arg('--side')));
     return;
