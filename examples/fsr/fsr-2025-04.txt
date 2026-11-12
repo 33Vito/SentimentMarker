@@ -1,0 +1,945 @@
+# April 2025
+
+# Financial Stability ReviewReview
+
+The cut-off for data used to prepare the Financial Stability Review was 27 March 2025. © Reserve Bank of Australia 2025 For the full copyright and disclaimer provisions that apply to this publication, see www.rba.gov.au/copyright/. ISSN 1449–5260 Financial Stability Assessment 1 1. The Global Macro-financial Environment 6 1.1 Key developments 8 1.2 Key vulnerabilities that could affect financial stability in Australia 13 2. Resilience of Australian Households and Businesses 18 2.1 Households 20 2.2 Businesses 27 2.3 Commercial real estate 32 3. Resilience of the Australian Financial System 35 3.1 Banks 37 3.2 Non-bank financial institutions (NBFIs) 41 3.3 Financial market infrastructures (FMIs) 45 4. Focus Topics 47 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability 48 4.2 Focus Topic: Looking at Digitalisation through a Financial Stability Lens 53 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability 57 Copyright and Disclaimer Notices 64
+
+# Contents
+
+# Financial Stability Review
+
+## The Australian financial system has continued to display a high level of resilience.
+
+Risks to the Australian financial system from lending to households, businesses and commercial real estate have remained contained. Budget pressures remain pervasive across the Australian community, but they have eased a little for some and the share of borrowers experiencing severe financial stress remains small, reflecting the continued strength in the labour market and the maintenance of prudent lending standards. After earlier increases, the share of households that have fallen behind on their mortgages appears to have stabilised at pre-pandemic levels and almost all borrowers now benefit from home values that exceed their mortgage balances (substantially so in many cases). Company insolvencies have picked up over the past couple of years to be at the top of the range observed in the 2010s – particularly among smaller firms that face a challenging operating environment – although on a cumulative basis they remain slightly below their pre-pandemic trend. Additionally, broader spillovers to the financial system have been limited, largely due to these firms’ small size and limited bank debt. Overall, most household and business borrowers and owners of commercial real estate have been able to manage the pressures on their finances. This has helped maintain credit quality across the financial system.
+
+Australian banks’ resilience has been supported by a long period of prudent lending standards, the high quality and quantity of capital, and large liquid asset buffers. Banks have steadily increased their capital over the past decade – largely through retained earnings – to be well above regulatory requirements. Despite some borrowers experiencing severe financial stress, overall asset quality has remained high and loan losses have been minimal.
+
+The financial stability risk posed by the non-bank financial (NBFI) sector in Australia is contained by its composition. A small share of NBFI assets is held by entities that operate outside the regulatory perimeter and have risky features, such as high leverage or opaque business structures. By contrast, a relatively large share is held by APRA-regulated superannuation funds, which are primarily defined contribution funds that pass through investment risk to their members and hence do not directly bear the consequences of market outcomes. These funds are restricted from taking on leverage directly, and most still benefit from a steady net inflow of liquidity from members, further mitigating the risk they pose to financial stability. However, given the sector is now a large participant in key financial markets, liquidity challenges for the broader financial system could arise in the event of large shocks to the superannuation sector; for example, where an unexpected policy change allowing for early withdrawal of superannuation balances occurred alongside capital calls on private asset commitments and a large, sustained decline in the Australian dollar drained liquidity through payments related to foreign exchange hedges.
+
+# Financial Stability Assessment
+
+## The global financial system has proved resilient to a range of shocks in recent years.
+
+Easing inflation and lower policy rates in advanced economies have reduced the pressure on households and businesses, although stress has picked up in pockets of the corporate sector where profits are under pressure. Robust labour markets have been key in maintaining the resilience of households, while most businesses have been supported by solid earnings and cash buffers.
+
+However, economic growth has remained sluggish, labour markets have eased in many economies, and rapid shifts in trade and fiscal policies could alter the trajectory of global growth and undo some of the progress on inflation. A significant economic downturn, including a sharp deterioration in labour markets, is the principal risk to the resilience of borrowers. Yet the sizeable capital and liquidity buffers maintained by large banks in advanced economies, including Australia, should help them to navigate a scenario where economic conditions deteriorate, while continuing to support the economy.
+
+## Heightened geopolitical tensions and policy uncertainty in major economies has the potential to interact with existing vulnerabilities.
+
+Ongoing uncertainty about the United States’ international trade policies, and the reactions this may trigger, could have a chilling effect on business investment and household spending decisions, and pose substantial headwinds to the outlook for global economic activity and inflation. There is also considerable uncertainty about the effects of possible fiscal, regulatory and other government policy changes on global growth and inflation. All these uncertainties add to existing risks from cyber and operational incidents and climate change shocks.
+
+Three key vulnerabilities stand out as having the potential to significantly affect financial stability in Australia: • Vulnerabilities in key international financial markets, amplified by longstanding vulnerabilities in the global NBFI sector. Compressed risk premia and concentration of exposures in equity markets increase the likelihood that adverse news – triggered by any number of global risks in a highly uncertain environment – sparks a disorderly correction in global asset prices. Rising leverage and the risk of liquidity mismatches among some NBFIs has the potential to amplify such a shock. • Imbalances in China’s financial sector. Chinese policymakers appear to have adopted a more supportive counter-cyclical policy stance of late, but in easing financial conditions, these policies could exacerbate long-term debt vulnerabilities in the Chinese financial system. US tariffs on Chinese imports may necessitate a further policy response from the Chinese authorities to support economic activity. If macro-financial risks were to materialise in China, stress could spill over into the global financial system, including Australia, via trade channels and increased risk aversion in global financial markets. • Operational vulnerabilities resulting from growing complexity and interconnectedness. While digitalisation offers the potential for substantial efficiency gains in the financial system, it can also increase the complexity and interdependence in supporting systems. As a result, operational systems in key financial market infrastructure and key institutions are increasingly vulnerable to technology outages and malicious cyber-attacks. The threat landscape for operational risk could worsen further in the context of escalating geopolitical tensions.
+
+If risks were to materialise, these vulnerabilities could cause spillover effects to the Australian financial system in three main ways: • Via a significant increase in risk aversion in global financial markets. This could sharply increase financing costs, including in Australia, and restrict Australian firms’ and financial institutions’ access to funding and liquidity in global markets. It could also create liquidity strains for Australian banks and NBFIs, such as superannuation funds. Such an event would intensify financial pressures on domestic borrowers and, if severe enough to strain financial institutions’ balance sheets, could limit credit availability in the Australian economy. However, there is considerable scope for most borrowers and lenders to draw down on buffers in the event of a liquidity shock, and any depreciation of the exchange rate would similarly play a shock-absorbing role for the wider economy. • Via the impact on the outlook for the real economy. A global economic downturn, particularly one that leads to a sharp slowdown in China (Australia’s most significant trading partner), could negatively affect Australia through trade channels – including commodity prices and investment – and spill over into weaker spending by Australian consumers and businesses. • Via a severe operational disruption. A direct and rapid impact could arise from disruptions to financial system and national infrastructure, or to a key financial institution, and could also undermine public confidence.
+
+## The Australian financial system is well placed to continue to provide vital services in the event of a severe downturn.
+
+Cash flow pressures on borrowers will remain widespread in the near term but are expected to ease a little further. The forecasts presented in the February Statement on Monetary Policy (based on the market-implied cash rate path at that time) suggested that most households and businesses would see some improvements in their cash flow positions over the months ahead, supported by an improvement in the economic environment and easing financial conditions. However, the most vulnerable borrowers will continue to face significant challenges.
+
+Considerable uncertainty surrounds the outlook. If the economy, and thus the labour market, proves materially weaker than assumed in the central forecast or if financial conditions do not ease as much as markets expect, a larger number of borrowers would experience stress, other things equal. Additionally, if downside risks to the global outlook materialise, they could spill over to some Australian businesses via trade linkages or tighter access to offshore funding markets. Nevertheless, the strong financial positions of most households, businesses and owners of commercial real estate are likely to limit the risk of widespread financial stress.
+
+Even in the event of a significant economic downturn, banks are well positioned to absorb large loan losses while continuing to support the economy through lending to households and businesses. Banks are well provisioned for loan losses and continue to maintain capital and liquidity buffers well above regulatory requirements.
+
+The superannuation sector has in the past generally displayed a high level of resilience and funds’ activities have tended to support financial stability. While the sector supports long-term capital formation in Australia and has previously been a supplier of liquidity to the system in periods of financial stress, the growth and size of the sector now introduces the potential for it to amplify stress if several extreme-but-plausible liquidity risks materialised simultaneously. It is also exposed to the risk of operational disruptions. Continued strengthening of superannuation funds’ governance and liquidity and operational risk management practices is therefore an area of ongoing focus of regulators.
+
+The general insurance sector also displays resilience, but insurance affordability and availability may become increasingly challenging over time. The general insurance sector is well capitalised and profitability has been supported by low claims, higher premiums and a moderation in the growth of reinsurance costs. However, claims are expected to rise due to the impact of Cyclone Alfred in Queensland and New South Wales in March. And insured losses from the Los Angeles wildfires in January could drive up global reinsurance costs. This could put upward pressure on home insurance premiums in Australia, further reducing affordability in areas at risk of natural perils. These trends could continue as climate change intensifies weather-related risks to physical infrastructure over time. If this were to lead to declining insurance coverage for mortgaged properties, banks may be increasingly exposed to financial losses from physical climate risk, potentially leading to financial stability risks in the longer term.
+
+## However, it is important that lending standards remain sound …
+
+Looking further ahead, resilience could be undermined if lending standards deteriorate and households respond to an actual or anticipated easing in financial conditions by accumulating excessive debt. While lending standards have been very sound in recent years, and the ratio of net household debt to income has been little changed, the RBA and other regulators will closely monitor for signs of emerging housing-related vulnerabilities. In the business sector, an actual or anticipated easing in financial conditions does not appear likely to contribute to a material build-up of vulnerabilities given the current outlook; business leverage is at historically low levels and tends to be most influenced by demand, which is expected to grow only moderately in the period ahead based on the forecasts presented in the February Statement on Monetary Policy.
+
+## … and that financial institutions continue to enhance their resilience.
+
+Strengthening crisis readiness and cyber and operational resilience in the Australian financial system is a regulatory priority. Advancing digitalisation of the financial system increases the prospect that cyber-attacks could have systemic implications. The Council of Financial Regulators (CFR) agencies are actively working with government and industry towards strengthening resilience within firms and across their networks, with a particular focus on better understanding service provider concentration risks, testing crisis management and cyber defence plans, and developing back-up payments capabilities.
+
+Strengthening preparedness for the potential impacts of geopolitical risk is increasingly important. Heightened international tensions create the potential for adverse effects on the economy and financial system, including from cyber threats and conflicts. The CFR agreed a work program in December 2024 to reinforce system-wide resilience to geopolitical risk. The CFR noted that geopolitical risk is an increasing concern for regulators and industry internationally, and is likely fundamentally to characterise global affairs for some time.
+
+## Endnote
+
+For background on the conceptual framework the RBA uses to assess financial stability, see 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability.
+
+# Summary
+
+The global financial system has weathered significant shocks over recent years. However, geopolitical tensions, including possible disruptions to the global trading system, are casting a shadow over the international outlook.
+
+Over the past six months, easing inflation and lower policy rates globally have reduced the pressure on households and businesses, although stress has picked up in pockets of the corporate sector. Large banks in advanced economies have maintained sizeable capital and liquidity buffers, which should help them to navigate a scenario where economic conditions deteriorate. Meanwhile, risk premia in global equity and credit markets generally remain low (despite recent market moves), concentration risk in global equity markets has increased over recent years, and the management of liquidity and leverage risk among non-bank financial institutions (NBFIs) continues to attract close attention from international regulators.
+
+Elevated geopolitical and policy uncertainty in major economies has the potential to interact with existing vulnerabilities and cause risks to rapidly materialise. Ongoing uncertainty surrounding the imposition of tariffs and other trade restrictions between the United States and other major economies could have a chilling effect on business investment and household spending decisions, and pose substantial headwinds to the outlook for global economic activity. There is also considerable uncertainty about the effects of possible fiscal, regulatory and other government policy changes on global growth and inflation. In addition, the global financial system remains exposed to potential disruptions from operational incidents and climate change shocks.1
+
+Three key global vulnerabilities stand out as having the potential to affect financial stability in Australia in this environment:
+
+# Chapter 1
+
+# The Global Macro-financial Environment
+
+• Vulnerabilities in key international financial markets, amplified by longstanding vulnerabilities in the global NBFI sector. Compressed risk premia and concentration of exposures in equity markets increase the likelihood that adverse news – triggered by any number of global risks in this highly uncertain environment – sparks a disorderly correction in global asset prices. Rising leverage and the risk of liquidity mismatches among some NBFIs has the potential to amplify such a shock.
+
+• Imbalances in China’s financial sector. Chinese policymakers have adopted a more supportive counter-cyclical policy stance of late, but in easing financial conditions, these policies could exacerbate long-term debt vulnerabilities in the Chinese financial system. US tariffs on Chinese imports may necessitate a further policy response from the Chinese authorities to support economic activity. If macro-financial risks were to materialise in China, stress could spill over into the global financial system, including Australia, via trade channels and increased risk aversion in global financial markets.
+
+• Operational vulnerabilities resulting from growing complexity and interconnectedness. While digitalisation offers the potential for substantial efficiency gains in the financial system, it can also increase the complexity and interconnectedness in supporting systems. As a result, the operational systems in key financial system and national infrastructure and key institutions are increasingly vulnerable to technology outages and malicious cyber-attacks. The threat landscape for operational risk could worsen further in the context of escalating geopolitical tensions.
+
+## households and businesses remain resilient, although there are pockets of financial stress.
+
+The resilience of households in advanced economies has strengthened alongside strong employment and income growth outcomes. Despite recent easing, robust labour market outcomes in recent years have allowed households to strengthen their balance sheets, with debt-to-income ratios declining from recent peaks in most advanced economies. Further declines in policy rates in most advanced economies are also expected to assist households, particularly borrowers with variable-rate loans. The average interest rate paid by outstanding mortgage borrowers has started to stabilise or fall from recent peaks in countries with a high share of variable-rate mortgages, such as Australia, Norway and Sweden, and is expected to fall in New Zealand over 2025 as fixed-rate mortgages with shorter tenors reprice onto lower rates (Graph 1.1). However, outstanding mortgage rates could continue increasing in the United Kingdom over the next few years, as substantial portions of mortgagors are yet to roll off low fixed-rate terms locked in during the pandemic.
+
+Graph 1.1 Outstanding Mortgage Rates*
+
+* Earliest observation dates are January 2016 for Norway, Sweden and the UK; March 2016 for the US; July 2016 for Canada; January 2017 for New Zealand; and July 2019 for Australia. Latest observations are December 2024 for all countries except UK and Norway (January 2025). Sources: national sources; RBA.
+
+Loan arrears remain low in advanced economies, with severe financial stress concentrated in specific household segments. Mortgage loan arrears have increased modestly from extremely low pandemic-era levels, but remain comparable with the low levels seen before the global financial crisis (GFC). However, pockets of stress remain. Elevated interest rates and cost-of-living pressures continue to exert pressure on renters, highly indebted and low-income households. Many of these households have drawn down on savings and have continued to rely on consumer credit to manage budget pressures. While consumer credit makes up a relatively small share of banks’ lending to households in advanced economies (typically less than 20 per cent and much less in Australia), consumer credit arrears have risen above pre-pandemic levels for the United States, Canada and Sweden. In the United States, this has been concentrated in non-prime borrowers. A further easing in labour markets could weaken these households’ ability to service debt, leading to an increase in loan arrears.
+
+# 1.1 Key developments
+
+Increasing housing prices in most advanced economies are supporting household balance sheets, but policymakers in some economies have expressed concern about high valuations. Housing prices have either increased or remained stable in most advanced economies (Graph 1.2). Most homeowners maintain positive equity buffers – even in economies where housing prices are below previous peaks such as Canada and New Zealand. However, some central banks, including the Reserve Bank of New Zealand and the US Federal Reserve, have raised concerns around the level of house prices relative to fundamentals. Housing prices relative to rental costs also remain well above their long-term average in the United States, euro area, Japan and even in markets, such as New Zealand, that have recently experienced price corrections. Easing credit conditions and declining mortgage rates in most major advanced economies – driven by recent and further anticipated policy rate reductions – could exert further upward pressure on housing prices. While higher housing prices have the immediate effect of increasing borrower equity buffers and household wealth, they could also potentially weaken longer term resilience if households respond to easing financial conditions by taking on excessive debt (see Chapter 2: Resilience of Australian Households and Businesses).
+
+Graph 1.2 Housing Price Indices* March 2017 = 100
+
+* Earliest observations are March 2017. Latest observations are October 2024 (Japan), November 2024 (Canada, New Zealand and United States), and December 2024 (Australia, United Kingdom, Norway and South Korea). Data are seasonally adjusted. Sources: LSEG; national sources; RBA.
+
+Most corporations have demonstrated resilience and continue to service their debts. Corporate earnings have remained strong, which is supporting debt serviceability. Although cash buffers have been drawn down from pandemic-era highs, they remain around their historic averages. Financing conditions have remained favourable for most firms. Spreads on most corporate bonds have remained compressed around the lower end of historical ranges (Graph 1.3), leading to an increase in issuance as corporates are incentivised to buyback debt and issue new debt at lower rates. However, spreads on US speculative-grade debt have widened slightly recently as investors reassessed risks.
+
+Graph 1.3
+
+Corporate Bond Spreads* By issuer rating
+
+* Earliest observation 3 January 2017. Latest observation 25 March 2025. Source: ICE data used with permission.
+
+Some higher risk firms may experience refinancing challenges in the coming years, and pockets of corporate stress have emerged, such as in the US leveraged loan market. Despite the easing of policy rates in most countries and generally favourable market conditions, some borrowers are still expected to refinance pandemic-era debt at higher rates over 2025 and 2026; this potentially poses challenges for some higher risk borrowers. The share of publicly listed firms in the United States with a distance-to-insolvency (DI) – a timely measure of corporate health – in the most vulnerable category remains elevated (Graph 1.4). Corporate default rates for speculative-grade debt also remain elevated in the euro area, but market commentary suggests that this will decline over the coming months. Meanwhile, US leveraged loan defaults have increased to their highest level since the GFC. A significant share of this is because some firms have delayed payment of only a portion of their debt obligations; there is a risk that these firms could default on obligations or declare bankruptcy if the underlying issues are not resolved.
+
+Graph 1.4
+
+Share of publicly listed firms with DI<1**
+
+Distance-to-insolvency is a measure of a firm's financial soundness, based on Atkeson, Eisfeldt and Weill (2013). Earliest observation January 1999. Latest observation February 2025. Credit rating data used to determine threshold of one as indicating firms most vulnerable to stress. Uses trailing 12-month averages. Market capitalisation greater than US$100 million. Sources: RBA; S&P Market Intelligence.
+
+## Systemically important banks in advanced economies are expected to remain resilient.
+
+Bank capital and liquidity ratios remain well above regulatory minimums as bank profitability has been supported by higher non-interest income, particularly in the United States. Common Equity Tier 1 capital ratios remain relatively steady across most advanced economies, with supervisory reviews and stress testing indicating that banks would continue to remain well capitalised even if a severe economic downturn were to materialise. Investment banking and trading revenues have supported profitability, particularly for banks in the United States, offsetting a weakening in interest income. Net interest margins declined over the first half of 2024 in most advanced economies and are expected to remain under pressure as key policy rates continue to fall (Graph 1.5). Liquidity coverage ratios remain well above regulatory minimums, though regulators are continuing to discuss the suitability of liquidity risk frameworks to appropriately protect against the stresses experienced in Switzerland and parts of the US banking system in the 2023 liquidity crisis.
+
+Graph 1.5
+
+* Data for each region consist of banks deemed to be systemically important to the domestic economy by the local regulator. Earliest observation June 2006 for all countries apart from Canada where the earliest observation is December 2011. Latest observation June 2024 for all countries. Sources: RBA; S&P Global Market Intelligence.
+
+Bank loan books in advanced economies remain healthy, with non-performing loans (NPLs) still at low levels and losses well provisioned for. The share of NPLs remains around multi-year lows (Graph 1.6) and loan losses have been concentrated in riskier lending segments such as consumer credit, which make up a small component of bank loan books. Banks have continued to increase provisions in anticipation of higher unemployment leading to loan losses.
+
+Graph 1.6
+
+* Data for each region consist of banks deemed to be systemically important to the domestic economy by the local regulator. Earliest observation June 2006 and latest observation June 2024. Sources: RBA; S&P Global Market Intelligence.
+
+Although commercial real estate (CRE) exposures remain limited for most banks and the near-term outlook has improved in some segments, CRE market fundamentals generally remain soft. Structural shifts – such as the shift to remote work and online shopping – continue to suppress demand, keeping CRE prices well below their recent peaks in most advanced economies. However, the US office and retail segments have started to experience positive price growth in recent months as market activity has started to pick up alongside the fall in interest rates and the return-to-office policy in some large financial service and technology companies. Despite this, continued pressures on CRE borrowers have led to a decline in CRE loan quality at US banks in the past six months, though the share of NPLs remain relatively low and well below their GFC peak (Graph 1.7). Looking ahead, a large amount of CRE loans are scheduled for refinancing in the coming years, potentially at higher rates, which could increase borrower serviceability pressures. Some banks, particularly in the United States, have sought to extend
+
+loan terms to avoid large refinancing jumps, though their ongoing capacity to do so may become constrained as upcoming maturities increase. Nevertheless, the risk of spillovers to Australia from overseas CRE markets – via common sources of ownership and funding – has declined (see Chapter 2: Resilience of Australian Households and Businesses).
+
+Graph 1.7
+
+Non-performing loans are those loans and lease which are 90 days and over past-due in addition to those in non-accrual status. Earliest observation January 1991 and latest observation March 2024. Excludes farmland and construction and land development. Source: Federal Deposit Insurance Corporation.
+
+## NBFIs are playing a growing role in the global financial system, while investors are demanding higher returns on long-term government debt.
+
+Recent increases in equity prices and declining yields on short-term bonds are supporting growth in the total value of assets managed by US and euro area funds. In 2023, the size of the NBFI sector globally grew 8.5 per cent, more than double the pace of banking sector, resulting in NBFIs managing US$239 trillion or just under half, of global financial assets by the end of 2023. Segments of NBFIs that have experienced significant growth include hedge funds, open-ended funds and money market funds, which accounted for 4, 19 and 5 per cent, respectively, of NBFI assets under management at the end of 2023. While global figures are not yet available for 2024, growth in the value of NBFIs’ assets has continued to be supported by strong growth in equity prices and declining yields on short-term bonds. In the year to September 2024, the gross notional exposure of hedge fund assets managed in the United States increased by 24 per cent to reach US$33 trillion (Graph 1.8). Similarly, total assets under management in open-ended and money market funds in the United States and euro area grew between 11 and 17 per cent over 2024.
+
+Graph 1.8
+
+Includes SEC-registered investment advisors with at least $500 million in assets under management. Earliest date March 2013 and latest observation September 2024. Gross notional exposure (GNE) is the sum of the absolute value of long and short exposures, including those on and off the balance sheet. Sources: OFR; RBA.
+
+Government bond yields have generally risen in most advanced economies over the past six months, particularly at the long end, reflected in higher term premia (Graph 1.9). The rise in term premia is partly in response to high debt levels and deteriorating fiscal outlooks (including higher defence spending demands in Europe), coupled with greater take-up of government debt by price-sensitive investors (such as non-banks) in response to reductions in central banks’ holdings. In Australia, the level of federal government borrowing is relatively low. However, strong bond issuance by state and territory governments (semis), alongside increasing participation from price sensitive investors, has led to a widening in the spread of semis relative to the (maturity-matched) federal government bonds over recent years. In January, concerns about government indebtedness in Queensland following a mid-year budget update resulted in the spread on some longer term semis increasing notably, though these movements have since largely been retraced.
+
+Graph 1.9
+
+* Earliest observation April 2000 and latest observation January 2025. ** Term premia derived using affine term structure model from Adrian, Crump and Moench (2013). Sources: AOFM; Federal Reserve Bank of New York; Institute for European Policymaking.
+
+Against the background discussed above, and in light of heightened uncertainty, there are three global vulnerabilities – related to market vulnerabilities, the Chinese economy and digitalisation – that could affect financial stability in Australia.
+
+The current environment is punctuated by heightened geopolitical and policy uncertainty. The announcement of tariffs between the United States and other major economies – and the potential for further measures – could pose substantial headwinds to the outlook for global economic activity. Additionally, significant changes to fiscal and defence – and in the case of the United States, immigration, cryptocurrency and other – policies are being considered in a number of jurisdictions. These policy changes, and potential responses from other countries, could alter the trajectory of the global economy. The elevated level of sovereign indebtedness could limit governments’ ability to support their local economies in the event of a significant slowdown. This challenge could be particularly pronounced in Europe, where governments may face difficult economic trade-offs if defence spending increases substantially. Separately, the appetite across advanced economies to reduce the regulatory burden on banks could ease financial conditions and support economic growth in the short term, while undermining banks’ resilience to future shocks. These international developments are evolving rapidly, and the greater uncertainty surrounding trade policies and the economic outlook may, in itself, dampen activity as households and companies delay spending and investment decisions until greater clarity emerges. The global financial system also remains exposed to potential disruptions from climate change shocks, while operational risk, including the rising intensity of cyber-attacks, are an ongoing concern for policymakers internationally.
+
+All these uncertainties could interact with existing vulnerabilities and lead to the sudden materialisation of financial stability risks. Three key vulnerabilities that stand out as having the potential to significantly impact financial stability in Australia are discussed below.
+
+## Key vulnerability #1 – Vulnerabilities in key international financial markets could be crystalised and lead to
+
+## amplified by global NBFIs’ procyclical behaviour.
+
+Equity risk premia remain low, raising the risk of volatility and sharp adjustments in global markets. Despite recent market moves, risk premia in global credit and equity markets are generally low by historical standards, leaving global asset prices susceptible to large adjustments in the event of unexpected news or developments (Graph 1.3; Graph 1.10). For example, a sharp repricing of risk, from current low levels, could abruptly increase borrowing costs for corporations and exacerbate refinancing challenges. This could be triggered by geopolitical tensions, such as the imposition or threat of tariffs by the United States and its trading partners, which could impact earnings not only for firms directly affected but also for corporations more broadly from a weakening in economic conditions. While sentiment in international financial markets has shifted markedly in recent weeks, as at finalisation of this Review, there was still a large degree of uncertainty about the effects of higher tariffs on US and global growth and inflation.
+
+# 1.2 Key vulnerabilities that could affect financial stability in Australia
+
+Graph 1.10
+
+* Earliest observation 4 August 2000 and latest observation 14 March 2025. 12-month forward earnings yield less yield on 10-year sovereign inflation linked bonds. Sources: Bloomberg; LSEG; RBA.
+
+The nature of the rally in equity markets over recent years has contributed to increased concentration risk. The technology sector has become a large and growing share of equity indices in advanced economies, with some indices having exceeded regulatory concentration thresholds prompting index providers to cap weights allocated to the largest companies (Graph 1.11). Valuation in stocks related to artificial intelligence (AI) continue to appear stretched and investor positioning remains crowded. On a cyclically adjusted basis, the price-to-earnings ratio in the S&P 500 is around its highest level since the ‘dot-com bubble’. Greater market concentration, alongside low risk premia, increases the potential for unexpected technology-related news to set off a disorderly repricing across equity markets.
+
+Graph 1.11 Technology Sector Concentration Share of total market capitalisation*
+
+Information technology sector subindexes** 3 January 2000 = 100
+
+S&P 500 EURO STOXX 50 MSCI World * Ealiest observation May 2000 and latest observation March 2025. ** Earliest observation 3 January 2000 and latest observation 13 March 2025. Source: Bloomberg.
+
+Some types of global NBFIs – such as hedge funds, private markets, open-ended and money market funds – have the potential to amplify shocks through procyclical behaviour. Hedge funds, in particular, have more pronounced vulnerabilities due to their reliance on highly leveraged investment strategies. In the year to September 2024, hedge funds increased their borrowing from both repo and prime brokerage, while the high level of leverage funds’ short positions in US Treasury futures suggests a build-up in the US Treasury cash-futures basis trade (Graph 1.12). In part due to these trades, hedge funds’ share of US Treasury debt outstanding has increased from just over 2 per cent to just over 10 per cent over the last few years, and it is now higher than it was pre-pandemic. A sudden spike in yields could force the rapid unwinding of these leveraged trades and trigger a margin spiral – where traders are forced to sell in an illiquid market to meet margin calls, leading to a cycle of further price decreases and margin calls – like the one that occurred in March 2020.
+
+Graph 1.12
+
+Change between 31 December 2023 and 31 September 2024. Earliest date 03 January 2017 and latest observation 25 March 2025. Includes other leveraged funds monitored by the US CFTC. Sources: CFTC; LSEG; OFR; RBA.
+
+Private markets also use a high degree of (potentially hidden) leverage. While risks in private credit markets appear contained, private equity funds are finding it difficult to sell assets in order to realise a return on their investment. A higher-than-normal share (approximately half ) of committed capital in US private equity funds are in funds that are six or more years old, at which point they would typically be looking to realise returns within the next few years, yet sales of private equity assets are relatively low. Furthermore, the default rate on leveraged loans (used to fund private equity deals) reached 7.2 per cent in November, its highest level since the GFC. For open-ended and money market funds, the key vulnerability is the potential for fire sales in response to large liquidity mismatches if investors redemptions surge unexpectedly. The Financial Stability Board (FSB) continues to develop and encourage the implementation of policies to mitigate vulnerabilities in NBFIs, although progress on implementation has been slow.
+
+## Key vulnerability #2 – Longstanding vulnerabilities throughout the Chinese financial system could result in stress spilling over internationally through trade channels and heightened global risk aversion.
+
+Vulnerabilities of Chinese banks and local governments have been exacerbated by the ongoing weakness in the Chinese real estate sector. While property prices and housing sales in China appear to have stabilised, China’s property market remains weak. The Chinese banking sector’s exposure to the Chinese property market remains substantial, including to property developers who remain under severe financial stress. The profitability of China’s large banks continues to decline, with most reporting net interest margins below the 1.8 per cent threshold recommended by the Chinese authorities (Graph 1.13). While reported NPL ratios remain low and stable, some commentators have suggested these ratios are under-reported. Additionally, the most recent stress testing by the Chinese authorities shows that some domestically systemically important banks would be vulnerable to a sudden credit deterioration.
+
+Graph 1.13
+
+%1.0 1.4 1.61.2 Reported non-performing loans ratio
+
+Financial Soundness Indicators of Chinese Banks*
+
+* All Global Systemically Important Banks (GSIBs) are also Domestic Systemically Important Banks (DSIBs). Dots represent individual banks. Data are consolidated at the bank group level. Sources: RBA; S&P Global.
+
+Chinese policymakers have adopted a more supportive policy stance, but it is unclear whether these actions will help to address or potentially worsen persistent financial vulnerabilities. Since September 2024, the Chinese authorities have announced a range of policies designed to support economic activity and address financial stability concerns. However, some of these initiatives may fall short of tackling, or potentially magnify, the underlying issues. For instance, the local government debt-swap program is expected to strengthen local government balance sheets and help to address local government payment arrears. Nevertheless, without a recovery in the property market or broader fiscal reform, local governments could continue to struggle in generating sufficient revenue to service debt and provide public services. Similarly, while the recapitalisation of state-owned banks may boost lending in the medium term, it does not address the underlying profitability and asset quality concerns, while potentially encouraging riskier lending practices. In addition, US tariffs on Chinese imports may necessitate a further policy response from the Chinese authorities to support economic activity, potentially including easing in financial conditions. This could increase the debt overhang in some sectors of the economy.
+
+Instability in the Chinese financial system could affect Australia, and the rest of the world, via increased risk aversion in global financial markets and slower global economic growth. A shock to the Chinese financial system is unlikely to have a direct impact on financial stability in Australia as the financial links between China and Australia are limited. The key channels of transmission of financial stress in China to Australia would likely be via increased risk aversion in global financial markets, a sharp slowing in global economic activity, lower global commodity prices and reduced Chinese demand for Australian goods and services. In turn, this could spillover into weaker spending by Australian consumers and businesses. In this circumstance, the Australian dollar exchange rate would be expected to continue to act as an automatic stabiliser and help to offset some of the negative impact on the Australian economy.
+
+## Key vulnerability #3 – As digitalisation reshapes the financial sector, the complexity and interconnectedness of the financial system is creating operational vulnerabilities.
+
+Digitalisation is redefining how financial services are delivered, while also increasing vulnerability of the financial system to operational disruptions, which could undermine public confidence. Technological innovation, such as the use of AI, is broadening the range of financial services and products, facilitating the entrance of new providers, and altering how risks emerge and are managed (see 4.2 Focus Topic: Looking at Digitalisation through a Financial Stability Lens). Digitalisation offers the potential for substantial efficiency gains in the financial system, yet it also increases exposure to technology outages and cyber-attacks. Geopolitical tensions could lead to an increase in the frequency and sophistication of disruptive cyber-attacks. In addition, recent operational incidents have highlighted the growing concentration of dependencies on key service providers, and the importance of financial institutions intensifying their efforts to strengthen operational resilience.
+
+## Endnotes
+
+Jones B (2023), ‘Emerging Threats to Financial Stability – New Challenges for the Next Decade’, Speech at the Australian Finance Industry Association Conference, 31 October.
+
+Reserve Bank of New Zealand (2024), Financial Stability Report, November.2 Federal Reserve Board (2024), Financial Stability Report, November.3 Basel Committee on Banking Supervision (2024), ‘The 2023 Banking Turmoil and Liquidity Risk: A Progress Report’, October.4 FSB (2024), ‘Global Monitoring Report on Non-Bank Financial Intermediation 2024’, December.5 For background on the semi-government bond market, see Batchelor S and M Roberts (2024), ‘Recent Developments in the Semi-government Bond Market’, RBA Bulletin, January.
+
+In November 2024, FTSE Russell capped the standard Russell US Style Indexes in response to recent increases in market concentration within the large and mega cap growth indexes.
+
+The US Treasury cash-futures basis trade involves exploiting the price differential between Treasury securities and the related Treasury futures contract by purchasing the asset that is undervalued and selling the other on the assumption that prices between the two assets will converge on maturity. This arbitrage activity improves market efficiency and liquidity.
+
+International Monetary Fund (2024), ‘Global Financial Stability Report’, October.9 Glicoes J, B Iorio, P Monin and L Petrasek (2024), ‘The Fed – Quantifying Treasury Cash-Futures Basis Trades’, FEDS Notes, 8 March.10 Chinnery A, W Maher, D May and J Spiller (2024), ‘Growth in Global Private Credit’, RBA Bulletin, October.11 Pitchbook (2024), ‘US 2025 Private Equity Outlook’, December.12 See, for example, FSB (2024), ‘Leverage in Non-Bank Financial Intermediation: Consultation Report’, December; FSB (2024), ‘Liquidity Preparedness for Margin and Collateral Calls: Final Report’, December.
+
+See, for example, FSB (2024), ‘Thematic Review on Money Market Fund Reforms: Peer Review Report’, February.14 See, for example, Charoenwong B, M Miao and T Ruan (2025), ‘Non-Performing Loan Disposals Without Resolution’, Management Science, 71(1), pp 898–916.
+
+People’s Bank of China (2023), China Financial Stability Report, September.16 For further information on local government financing vehicles, see Hendy P, E Ryan and G Taylor (2024), ‘The ABCs of LGFVs: China’s Local Government Financing Vehicles’, RBA Bulletin, October.
+
+For further details on the financial stability implications of AI, see RBA (2024), ‘4.1 Focus Topic: Financial Stability Implications of Artificial Intelligence’, Financial Stability Review, September.
+
+RBA (2024), ‘Chapter 1: The Global Macro-financial Environment’, Financial Stability Review, September.19
+
+# Summary
+
+Risks to the Australian financial system from lending to households, businesses and commercial real estate (CRE) remain contained.
+
+# Chapter 2
+
+# Resilience of Australian Households and Businesses
+
+• Budget pressures remain pervasive across the Australian community, but they have eased a little for some and the share of borrowers experiencing severe financial stress remains small. The share of households who have fallen behind on their mortgages has broadly stabilised at pre-pandemic levels. Moreover, almost all mortgagors benefit from home values that exceed their mortgage balances (substantially so in many cases). Company insolvencies have continued to rise to be at the top of the range observed in the 2010s – primarily among smaller firms that face a particularly challenging operating environment – although on a cumulative basis remain slightly below their pre-pandemic trend. Additionally, broader spillovers to the financial system have been limited due to these firms’ limited bank debt and small size. Overall, most household and business borrowers, and owners of CRE, have been able to manage the pressures on their finances to date.
+
+• Cash flow pressures on borrowers will remain widespread in the near term but are expected to ease a little further. The forecasts presented in the February Statement on Monetary Policy (based on the market-implied cash rate path at that time) suggested that most households and businesses would see some improvements in their cash flow positions over the months ahead, supported by an improvement in the economic environment and easing financial conditions. But, the most vulnerable borrowers will continue to face significant challenges.
+
+• However, considerable uncertainty surrounds the outlook. If the economy (and, for financial stability purposes, particularly the labour market) proves materially weaker than assumed in the central forecast or if financial conditions do not ease as much as markets expect, a larger number of borrowers would experience stress, all things equal. Additionally, if downside risks to the global outlook materialise, they could spill over to some Australian businesses via trade linkages and/or tighter access to offshore funding markets. Nevertheless, the strong financial positions of most households, businesses and owners of CRE are likely to limit the risk of widespread financial stress.
+
+• Looking further ahead, vulnerabilities in the financial system could build if households respond to an actual or anticipated easing in financial conditions by taking on excessive debt. While lending standards are currently very sound, the RBA and other regulators will closely monitor for signs of any build-up in housing-related vulnerabilities over time. In the business sector, an actual or anticipated easing in financial conditions does not appear likely to contribute to a material buildup of vulnerabilities given the current outlook.
+
+## Pressures on Australian households’ budgets remain widespread …
+
+Many households continue to experience pressure on their cashflows. Real disposable income per capita – that is, income after tax and interest payments and adjusted for inflation – declined notably over 2022 and 2023 as inflation picked up and interest rates and tax payable increased (Graph 2.1). More recently, real disposable incomes have stabilised at around pre-pandemic levels, supported by Stage 3 tax cuts and easing inflation. Meanwhile, restrictive monetary policy continues to put pressure on mortgagors’ budgets, with debt-servicing payments expected to remain high as a share of household income even following the 25 basis point reduction in the cash rate at the February Board meeting. Information from the RBA’s liaison program suggests that community service organisations continue to report strong demand for assistance, as they did throughout 2024. Inquiries to services such as the National Debt Helpline have also increased significantly since 2022, though this trend appears to have stabilised towards late 2024.
+
+Graph 2.1 Household Income and Financial Stress Seasonally adjusted Real household disposable income per capita*
+
+* Quarterly, 2019 average = 100. Earliest observation March 2019.
+
+Latest observation December 2024. ** Monthly, three-month rolling averages. Earliest observation March 2019. Latest observation February 2025. Sources: ABS; Financial Counselling Australia; RBA.
+
+## … though the share of borrowers in severe financial stress has remained contained.
+
+Despite widespread pressures on households’ budgets, most borrowers have enough income to cover their essential expenses and scheduled mortgage repayments. Around 3 per cent of borrowers are currently estimated to be experiencing a ‘cash flow shortfall’, putting them at risk of falling behind on their loan repayments (Graph 2.2). Although this percentage is higher than before the pandemic, it is notably lower than the peak observed prior to the Stage 3 tax cuts and a further moderation in inflation over the second half of 2024. The share of borrowers at greater risk of falling behind on their loan – those estimated to have both a cash flow shortfall and low buffers – has decreased to around 1 per cent of all variable-rate owner-occupier borrowers. Additionally, the share of loans in formal hardship arrangements has stabilised, although it remains a little higher than pre-pandemic levels.
+
+Graph 2.2
+
+<6 months of buffers** ≥6 months of buffers**
+
+Estimated share of variable-rate owner-occupier borrowers
+
+Estimates of borrowers with minimum scheduled mortgage payments and essential expenses (HEM) exceeding their income. Excluding borrowers in arrears, which accounted for around 0.6 per cent of loans in December 2024. Earliest observation June 2018. Latest observation December 2024. Buffers expressed relative to borrower's cash flow shortfall. Sources: ABS; Melbourne Institute; RBA; Securitisation System.
+
+# 2.1 Households
+
+The share of mortgagors that has fallen behind on their loan repayments due to the challenging environment remains limited, and the vast majority of borrowers continue to service their loans on schedule. Overall, the share of households experiencing severe financial stress remains very low across all regions (see Box: Household financial stress across the regions). In fact, the share of loans more than three months in arrears has stabilised at around pre-pandemic levels, and the incidence of household insolvency remains below those levels. Banks expect the share of loans in arrears to peak this year based on the current economic outlook (see Chapter 3: Resilience of the Australian Financial System).
+
+Favourable conditions in the labour market have helped to contain loan arrears at low levels. Low unemployment – and, in turn, the ability of workers to retain or find more work (including extra hours) and obtain wage increases – has supported households’ incomes and their ability to service their debts. While the labour market has softened slightly since late 2022, the employment rate in Australia remains near record highs.
+
+Loan arrears rates remain highest among highly leveraged and lower income households, though these rates have edged lower in recent months. Highly leveraged borrowers – with high loan-to-valuation (LVR) or high loan-to-income (LTI) ratios – are significantly more likely to fall into arrears, and a higher share of these borrowers are currently in arrears compared with the pre-pandemic period. However, arrears rates for these groups appear to have stabilised in the second half of 2024 (Graph 2.3). Lower income borrowers, who typically have smaller prepayment buffers, have also been more likely than the average borrower to fall behind on their mortgage payments. However, these borrowers’ arrears rates have declined over the second half of 2024 (Graph 2.4).
+
+Graph 2.3
+
+Variable-rate owner-occupier loans. Arrears rates in 2020 are affected by large changes in the composition of loans in the dataset due to the introduction of the Term Funding Facility. Earliest observation January 2016. Latest observation January 2025. LVR > 80 per cent based on current loan balance and estimated property value. LTI > 4 based on current loan balance and estimated income. Borrowers in the bottom quartile for gross household income (<$110,000 for January 2025). Sources: ABS; CoreLogic; RBA; Securitisation System.
+
+Graph 2.4
+
+Variable-rate owner-occupier loans. Arrears rates in 2020 are affected by large changes in the composition of loans in the dataset due to the introduction of the Term Funding Facility. Earliest observation January 2018. Latest observation January 2025. Bottom quartile based on the distribution of variable-rate owner-occupier household incomes (<$110,000 for January 2025). Sources: ABS; RBA; Securitisation System.
+
+## Despite a challenging period, most households have remained resilient and financial stability risks originating from households remain contained.
+
+Most mortgagors have maintained large liquidity and equity buffers. Not only do these buffers help individual households withstand pressures on their cash flows, they also prevent stress from transmitting to the banking system via loan losses in most plausible adverse circumstances. Although the share of households consistently drawing on their cash buffers has declined relative to 2023, it remains a bit above pre-pandemic levels. That said, all but the highest income quartile have larger prepayment buffers than before 2020 (Graph 2.5). Additionally, mortgagors’ equity positions are generally strong, with less than 1 per cent of households currently in negative equity – a meaningful improvement from pre-pandemic levels (Graph 2.6).
+
+As a result, the vast majority of borrowers would remain able to service their debt under a range of plausible economic scenarios. Large liquidity and equity buffers would enable most households to navigate a period of higher-than-expected inflation and interest rates or a significant deterioration in the labour market. Even when faced with a severe 30 per cent decline in housing prices, around 9 in 10 mortgagors would still have positive equity. These borrowers could sell their home – albeit a disruptive and last resort solution – for at least the outstanding balance of their loan if faced with severe stress.
+
+Graph 2.5
+
+Variable-rate owner-occupier loans, by income quartile
+
+* Number of months that prepayments (offset and redraw balances)
+
+can cover minimum scheduled mortgage payments. Income quartiles based on the distribution of variable-rate owner-occupier borrower incomes. Income quartile upper bounds for January 2025 are $110,000 for the bottom quartile, $167,000 for the second quartile and $238,000 for the third quartile. Earliest observation January 2018. Latest observation January 2025. Sources: ABS; RBA; Securitisation System.
+
+Graph 2.6
+
+* Loan balances adjusted for redraw and offset account balances; property prices grown forwards using SA3 price indices. Sources: ABS; CoreLogic; RBA; Securitisation System.
+
+Across all regions of Australia, households are experiencing financial pressure. Real disposable income in per capita terms has declined from elevated levels during the pandemic in every state. The challenging economic environment over the past couple of years has also contributed to an increase in the share of borrowers experiencing severe financial stress across Australia, although it remains confined to a fairly small share of households. The share of mortgagors falling behind on their loan repayments has risen in every state and territory over recent years, from their low levels in 2022 (Graph 2.7).
+
+Graph 2.7
+
+* Variable-rate owner-occupier loans. Arrears rates in 2020 are affected by large changes in the composition of loans in the dataset due to the introduction of the Term Funding Facility. Earliest observation January 2016. Latest observation January 2025. Sources: RBA; Securitisation System.
+
+Graph 2.8
+
+High Debt and Low Buffer Households* Share of variable-rate owner-occupier borrowers by state
+
+* High debt and low buffer households defined as those with an LTI greater than four and less than one month of scheduled mortgage prepayment buffers (offset and redraw balances). Sources: ABS; RBA; Securitisation System.
+
+# Box: Household financial stress across the regions
+
+The increase in loan arrears has been most significant in Melbourne and across regional Victoria. In part, this reflects that a higher share of borrowers in Victoria have both larger loan sizes and smaller cash buffers than other states, which have made them slightly less resilient to the increase in inflation and interest rates over recent years (Graph 2.8). Demographic differences contribute to this – Victoria has a higher proportion of younger households compared with other states; these borrowers are more likely to have younger loans that have had less time to amortise. Compared with the other states, economic conditions in Victoria have also been weaker, including a higher unemployment rate and a modest decline in housing prices; information from liaison with lenders suggest these factors have also contributed to the higher level of arrears.
+
+Loan arrears have stabilised across all states, and, except for Victoria, are either around or lower than pre-pandemic levels. This is consistent with RBA estimates indicating that a larger-than-average share of borrowers in Victoria are currently experiencing cash flow shortfalls – a situation that can lead to arrears if further adjustments to expenditure and income are not possible – particularly in some parts of regional Victoria. However, no region has more than 7 per cent of all borrowers estimated to be in a cash flow shortfall, only some proportion of which could be expected to end up in arrears. This suggests that the overall level of arrears is likely to remain contained, both in aggregate and across the states.
+
+Graph 2.9
+
+Share of balances by state, January 2025
+
+* Loan balances adjusted for redraw and offset account balances; property prices grown forwards using SA3 price indices. Sources: ABS; CoreLogic; RBA; Securitisation System.
+
+Across all states, most borrowers would remain able to service their debt under a variety of adverse scenarios. Even in Victoria, where there is a relatively larger share of borrowers with both higher debt and lower cash buffers, it is estimated that the vast majority would be able to continue servicing their loans if, for example, interest rates were to remain high for longer or if the labour market were to deteriorate significantly.
+
+Households in Victoria and Tasmania also tend to have lower equity buffers due to more subdued housing price growth of late. This means if a sizeable decline in housing prices were to materialise, a larger share of households in these states would be in negative equity (Graph 2.9). That said, the share of households owning a home who are currently in negative equity are at very low levels across all states.
+
+Overall, the differences in conditions across the states do not have material implications for financial stability. Even in the states where financial pressures are highest, the vast majority of households are estimated to be resilient to a deterioration in conditions from here. Furthermore, most lenders in Australia are geographically well diversified. Some smaller lenders with mortgage balances that are more geographically concentrated represent a very small portion of the overall credit supplied. Banks also have a high level of resilience due to their prudent lending standards and high quality and quantity of capital.
+
+## Pressure on existing mortgage holders is expected to ease further over the coming year according to the projections in the February Statement on Monetary Policy.
+
+Higher incomes and lower interest rates are expected to support borrowers’ cash flows. According to the RBA’s central forecasts reported in the February Statement (which were based on a declining cash rate path in line with market expectations at that time), real wages are projected to increase over coming years, while the unemployment rate is anticipated to increase only marginally before stabilising. While the future path for interest rates and the projections more generally are highly uncertain, this outlook would imply a further easing in households’ budget pressures and a further decline in the share of mortgagors with negative cashflows (Graph 2.10).
+
+Graph 2.10
+
+Borrowers with Cash Flow Shortfall* Estimated share of variable-rate owner-occupier borrowers, February 2025 Statement assumptions Statement assumptions**
+
+Real wages growth (after tax)*** Cash rate**** Unemployment * Estimates of borrowers with mortgage payments and essential expenses (HEM) exceeding their income. Earliest observation June 2018. Projection to June 2027, based on current borrowers not in arrears as at December 2024. ** The sum of the bars does not exactly equal the estimate (line) due to small interaction effects between the individual factors. Bars representing interaction effects are omitted from the graph. *** Factor represents growth of trimmed mean inflation and WPI. **** Cash rate implied by market pricing as at the February 2025 Statement. Sources: ABS; Melbourne Institute; RBA; Securitisation System.
+
+## Regulators, including the RBA, will closely monitor potential housing-related vulnerabilities that could emerge over time from any actual or anticipated easing of financial conditions.
+
+In the longer term, vulnerabilities could build if an easing in financial conditions encourages households to take on excessive debt. While current lending standards are robust, historical experience both in Australia and abroad suggests that periods of low and/or falling interest rates can coincide with riskier borrowing activity and, at times, a relaxation of lending standards and rapid increases in housing prices. The pandemic easing cycle witnessed a sharp increase in the share of borrowers taking on large debts relative to their income, and the easing cycle that began in 2011 saw an increase in interest-only lending before APRA’s loan limit was introduced (Graph 2.11).
+
+Graph 2.11
+
+Shaded areas indicate easing cycles. Earliest observation March 2010. Latest observation December 2024. Prior to March 2018, series shows share of lending with LVR > 90. Sources: APRA; RBA.
+
+The share of new lending to investors has increased over the past two years. Historically, investor credit growth tends to rise during monetary policy easing cycles, suggesting investor activity could intensify further over the period ahead if interest rates evolve as currently expected by the market (Graph 2.12). Conversely, investor activity could moderate if the future path for interest rates evolves differently to financial market expectations. While investor lending has historically been lower risk than other types of mortgage lending in terms of default risk, a high concentration of investors may contribute to a housing price upswing that can raise the risk of, or exacerbate, a subsequent market correction down the track. Such a correction could deplete households’ equity buffers – particularly for new borrowers – and result in broader economic disruption.
+
+Graph 2.12
+
+* Shaded areas indicate easing cycles. Dashed lines mark the introduction and conclusion of APRA’s limits on investor lending growth. Structural break in March 2018 due to definitional change. Earliest observation March 2010. Latest observation December 2024. Sources: APRA; RBA.
+
+APRA’s prudential framework, and macroprudential settings, play an important role in reinforcing resilience. For instance, APRA’s capital standards incorporate higher risk-weights for investor and interest-only lending, which contribute to containing the associated risks. Additionally, APRA’s serviceability buffer ensures that banks make prudent lending decisions and extend credit to borrowers that are more likely to be able to repay their loans even if they experience an unforeseen fall in income or a rise in expenses. The Council of Financial Regulators, the main coordinating body for Australia’s financial regulators, will be closely monitoring how household vulnerabilities evolve in response to any actual or anticipated easing of financial conditions.
+
+## Conditions remain challenging for a
+
+range of Australian businesses, particularly smaller enterprises,
+
+## which has contributed to an increase in business insolvencies.
+
+Subdued growth in economic activity and elevated input cost pressures have made conditions challenging for many businesses. Reflecting the challenging trading environment, the number of companies entering insolvency has risen sharply but remains small as a share of businesses. Around 0.5 per cent of businesses entered insolvency during 2024 – a rate that is at the top of the range observed in the 2010s (Graph 2.13). On a cumulative basis, company insolvencies remain slightly below their pre-pandemic trend, following a period of exceptionally low levels during the pandemic. The increase reflects challenging trading conditions and the removal of significant support measures introduced during the pandemic, including the Australian Taxation Office (ATO) resuming enforcement actions on unpaid taxes.
+
+Graph 2.13 Company Insolvencies Quarterly; seasonally adjusted* Number
+
+* Earliest observation June 2004. Latest observation December 2024. Sources: ABS; ASIC; RBA.
+
+The increase in the number of insolvencies has been driven by small construction and hospitality businesses. This reflects ongoing challenges in these sectors. Insolvencies are also elevated in manufacturing as a share of businesses operating in that industry; however, given the industry’s small size this has not contributed materially to the overall rise (Graph 2.14). Meanwhile, insolvencies in other industries have also increased, although this has generally only taken them back to more typical historical levels as a share of operating businesses.
+
+Graph 2.14 Company Insolvencies by Industry Quarterly, share of operating businesses in industry*
+
+* Seasonally adjusted. Earliest observation September 2013. Latest observation December 2024. Sources: ABS; ASIC; RBA.
+
+Financial stability risks stemming from the recent increase in insolvencies remain contained. This outcome reflects that businesses entering insolvency are typically small and carry little debt, resulting in banks having little exposure to them. The indirect effects of insolvencies on financial stability, for example through job losses at insolvent companies, have been limited by the small size of these companies and the strength of the labour market helping most affected employees to quickly secure new employment. The drivers of recent insolvencies and impact on the financial system are discussed in more detail in 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability.
+
+# 2.2 Businesses
+
+## Nevertheless, most businesses continue to be profitable and resilient to shocks.
+
+Most businesses remain profitable, despite the ongoing pressures (Graph 2.15). Most large and small businesses’ profit margins are around the level recorded over the 2010s, although our measure for small businesses is only available to the September quarter 2024 and surveys suggest that these businesses have faced increased pressure on their profitability since then. Additional measures – such as the share of businesses experiencing growth in profits or conversely making losses over the past year – are also around the average of the 2010s. Liaison indicates that many businesses have faced challenges in passing on higher input costs and they have implemented cost cutting measures to remain profitable. Many have achieved sufficient revenue growth to offset increased labour and non-labour costs over the past year or so – excluding interest payments, which are discussed below. Experiences do vary across businesses, with a sizeable number of particularly smaller businesses making losses, although this is not unusual.
+
+Graph 2.15
+
+Profit Margins Year-ended operating profit margin, by company size
+
+ATO tax data of ~250,000 GST-remitting companies. Operating profits as year-ended operating revenue less operating costs and wages; not including government payments (e.g. JobKeeper); seasonally adjusted. Earliest observation December 2014. Lastest observation September 2024. Largest 300 ASX-listed companies by debt, excluding mining. Operating profit margin is EBITDA/revenue. Earliest observation December 2014. Lastest observation is based on available data for December 2024. Sources: ABS (BLADE); Morningstar; RBA.
+
+Borrowing costs have declined a little, alongside the reduction in the cash rate announced at the February Board meeting, although remain high relative to the post global financial crisis average. Outstanding interest rates on loans to businesses and effective interest rates for listed companies – covering all their sources of debt – were little changed over the second half of last year. More recently, interest rates on loans have declined a little. While interest expenses remain at a relatively high level, liaison suggests this is less of a concern for businesses’ cash flows than other cost pressures.
+
+Lenders’ ongoing appetite to lend to businesses has also reduced refinancing risk. Heightened competition for business loans over the past year has further supported some businesses’ access to finance; and conditions in corporate bond markets, including offshore, also remain favourable.
+
+Most businesses have maintained robust balance sheets, providing an important source of resilience. Businesses’ ongoing profitability has allowed them to avoid depleting their cash holdings or taking on additional debt to manage cash flow pressures. Latest available data suggest that most businesses hold cash buffers – which measure holdings of cash relative to expenses – above the average of the 2010s, although our measure for small businesses is only to mid-2022 and buffers have likely declined since then (Graph 2.16). Although these buffers have declined from their pandemic peaks, the decline has been driven more by the increase in expenses than draw down of cash balances. Similarly, overall leverage remains near historical lows in aggregate, and most indebted larger, listed companies’ leverage is comparable with their 2010s average (Graph 2.17). This is despite growth in business debt being well above its historical average. However, these metrics might overstate the degree of resilience, particularly among smaller businesses, since outstanding debts to the ATO remain elevated relative to pre-pandemic levels (see 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability). Conditions also vary by industry, with small businesses in hospitality and retail typically holding smaller cash buffers.
+
+Graph 2.16 Cash Buffers Ratio of cash holdings to monthly operating expenses Small*
+
+* ATO tax data of small companies (5–19 FTEs). Cash estimated as current accounts less inventories and accounts receivable. Earliest observation June 2006. Latest observation June 2022. ** Listed companies. Earliest observation June 2006. Latest observation based on available data for December 2024. Sources: ABS; Morningstar; RBA.
+
+Graph 2.17
+
+Aggregate data based on non-financial businesses. Earliest observation June 1988. Latest observation December 2024. Listed companies’ data based on a sample of non-financial ASX-listed firms with debt over assets ratio of at least 10 per cent. Earliest observation June 2000. Latest observation is based on available data for December 2024. Sources: ABS; Morningstar; RBA.
+
+## Early indicators of financial stress have stabilised or improved and pressures on businesses’ cash flows are expected to ease under the RBA’s central forecasts from February …
+
+Early indicators of financial stress have stabilised or improved, according to the latest available data. More specifically:
+
+• The share of businesses with severely overdue trade credit declined over the second half of last year, to be around its historical average level (Graph 2.18, top left panel). This trend is especially significant for small businesses, for whom trade credit is a crucial source of funding, and a mechanism via which financial stress can spread between businesses. There was a particularly sharp fall among hospitality businesses; however, this follows a large increase over the 12 months prior and the share of firms with severely overdue trade credit remains above its pre-pandemic average. • The share of firms making operating losses declined, after increasing during the pandemic, and is around average levels (Graph 2.18, bottom left panel). While an operating loss does not necessarily signal financial stress, it means the firms must draw down on cash holdings or take other actions – such as increasing debt, liquidating assets, or securing an equity injection – to cover shortfalls. The incidence of losses is higher in some industries, such as retail. It is also higher among small businesses, with nearly 20 per cent reported operating losses in the June quarter, which aligns with the pre-pandemic five-year average. Furthermore, around half of those businesses with low operating profit margins have experienced this for the past year, although again this is around its pre-pandemic average. • Larger companies’ debt servicing capacity has increased a little. Among larger listed companies, interest coverage ratios (ICRs) – which measure earnings relative to interest expenses – have generally improved slightly. The share with an ICR less than two – the threshold indicative of weaker debt servicing capacity and historically associated with an increased risk of insolvency – is little changed (Graph 2.18, top right panel).
+
+Graph 2.18
+
+Indicators of Business Financial Stress Share of total
+
+Share with 91+ day overdue trade credit, six-month moving average. Earliest observation December 2015. Latest observation December 2024. Listed companies with debt to assets ratio greater than 10 per cent. Earliest observation September 2006. Latest observation based on available data for December 2024. Year-ended operating revenue less than operating costs. Earliest observation December 2015. Latest observation September 2024. Excludes commercial real estate. Earliest observation September 2006. Latest observation December 2024. Sources: ABS (BLADE); APRA; Equifax; Morningstar; RBA.
+
+Cash flow pressures are expected to ease for many businesses. Borrowing costs are expected to decline, as noted above, and the RBA’s central forecasts from February, based on the market-implied cash rate path at the time, suggest a recovery in demand growth and further easing in labour cost growth. However, RBA liaison suggests that firms expect non-labour cost growth to remain elevated over the coming year and many companies – especially those exposed to consumer discretionary spending – remain cautious due to uncertainty surrounding the outlook. Although it will take time for this easing in cash flow pressures to translate into a lower level of insolvencies (see 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability), banks do not expect their business non-performing loans (NPLs) to increase materially.
+
+## … although the outlook is highly uncertain, including owing to international policy uncertainty and geopolitical tensions.
+
+If downside risks to the global economic outlook materialise, they could spill over to some Australian businesses via trade linkages or tighter access to offshore funding markets (see Chapter 1: The Global Macro-financial Environment for more detail, including broader effects of this scenario). Some export-intensive businesses would be especially exposed to an intensification of global trade tensions, particularly to the extent that it leads to weaker growth in Australia’s trading partners. Most export-intensive firms (excluding mining) are small wholesale or manufacturing firms and account for a very small share of total liabilities and direct employment. Wholesalers are generally more leveraged than other firms, but they typically have greater agility to scale their operations in response to falling sales compared with manufacturers. Additionally, the impact on broader risks to the financial system is limited by banks’ relatively small exposures to these firms.
+
+Generally strong business balance sheets would limit the risk of widespread financial stress in most plausible adverse scenarios. Most larger listed companies are likely to be able to service their debts even if their earnings were to decline for a period or if interest rates rise or remain at their current level for longer. Consistent with this, market pricing of default risk among larger companies remains relatively low, although has increased. Smaller businesses are typically more vulnerable to adverse economic outcomes, as they tend to have higher year-to-year earnings volatility.
+
+## An actual or anticipated easing in financial conditions does not appear likely to contribute to a material build-up of vulnerabilities in the business sector given the current outlook.
+
+Business leverage is at historically low levels and on balance, is not expected to pick-up notably in response to any actual or anticipated easing in financial conditions. This assessment is based on several key factors: • Outlook for demand: Changes in business leverage tend to be more influenced by demand for businesses’ output than the cost and availability of debt funding. While aggregate private demand growth is forecast to recover over the coming year, it does so from subdued levels and only recovers to around its historical trend rate over the forecast period. • Historical trends: Consistent with demand typically driving leverage, business leverage has tended to decline during previous monetary policy easing cycles in Australia as these periods are more likely to be associated with a weaker economic environment. • High cash buffers: Businesses continue to hold large cash buffers, providing a cheaper alternative to fund expansion than taking on external finance such as debt. • Low interest coverage ratios: ICRs remain low, which is associated with lower use of debt.
+
+However, the RBA and other regulators will continue to closely monitor for any build-up of vulnerabilities, at both the aggregate level and at a more granular level. Monitoring will extend beyond regulated entities like banks to include business credit supplied by non-bank financial institutions (NBFIs), where transparency is more limited (see Chapter 3: Resilience of the Australian Financial System for more detail on risks stemming from NBFIs).
+
+## CRE market fundamentals are generally improving, and there is little evidence of financial stress among owners of Australian CRE.
+
+Fundamentals have improved and valuations stabilised in most CRE markets, although conditions remain uneven across sectors and locations. One exception is among lower grade office properties, where leasing demand remains weak and valuations have likely not reached their bottom. Additionally, there are some locations in Australia where office vacancy rates are particularly high, such as parts of Melbourne.
+
+There continues to be little evidence of financial stress among owners of Australian CRE. Specifically:
+
+• A-REITs maintain strong financial positions (Graph 2.19). Earnings remain robust, and leverage has stabilised at modest levels reflecting that for many A-REITs the pace of asset write-downs has slowed. • The share of non-performing CRE loans at banks has increased slightly but remains low by historical standards (Graph 2.20). While there is an elevated number of borrowers on watchlists, liaison with banks suggests that borrowers are moving both on and off these watchlists, with banks remaining willing to work with those who can demonstrate a path back to meeting minimum requirements. • Latest available data suggests that leverage remains low, and liquidity pressures have likely eased for many unlisted trusts. While a small tail of highly leveraged funds is more vulnerable to a decline in valuations, these funds are generally small and hold very little debt relative to the overall market, limiting the potential spillovers to the broader CRE market. • Liaison suggests that loan quality remains sound among non-bank lenders. However, visibility is limited, particularly among lenders with significant exposures to lower quality assets or borrowers.
+
+Graph 2.19 Leveraged A-REITs’ Financial Position* Interest coverage
+
+* Interest coverage measured by annual EBITDA over annual interest expenses. Leverage measured by debt over assets. There is a gradual structural break in ratios from late 2019 to early 2020 due to an accounting change. Earliest observation June 2005. Latest observation December 2024. Sources: Morningstar; RBA.
+
+Graph 2.20
+
+Commercial Property Non-performing Rate* Share of banks’ commercial property exposures
+
+* Excludes overseas exposures. Prior to 2022, data reported as impairment rates. Earliest observation September 2002. Latest observation December 2024. Sources: APRA; RBA.
+
+# 2.3 Commercial real estate
+
+## Strong appetite for lending to Australian CRE is supporting
+
+## if this trend leads to a deterioration in lending standards, it could ultimately undermine the resilience of the market.
+
+Many banks now have an increased appetite for CRE lending, intensifying competition with non-bank lenders, which could lead to a deterioration in lending standards. Liaison suggests that banks, particularly larger banks, are eager to expand their CRE portfolio – especially in residential development – which has led some to adjust loan terms, such as lowering presale requirements, albeit while simultaneously reducing LVRs. Although this heightened competition supports borrower cash flows and credit availability, it also increases the risk that credit may be extended to riskier borrowers, potentially building vulnerabilities over time.
+
+However, banks continue to have small exposures to CRE and conservative lending practices, while systemic risks from non-bank lenders are also limited (see Chapter 3: Resilience of the Australian Financial System). CRE loans represent around 6 per cent of total assets for the major banks, and the quality of these loans remain sound despite some adjustment in terms. By contrast, there is less transparency regarding non-bank lending, where lending standards are typically weaker as these institutions tend to have a higher risk tolerance and service a different segment of the CRE market. While currently non-bank lenders play a small role in the CRE market, they are an important source of credit for some borrowers and their role is widely expected to grow. In the event of losses, these would be passed onto investors, potentially causing funding challenges if investors reallocate their capital, although systemic risks from NBFIs remain contained (see Chapter 3: Resilience of the Australian Financial System).
+
+Conditions in global CRE markets have stabilised and offshore interest in Australian CRE remains strong (see Chapter 1: The Global Macro-financial Environment). Foreign ownership of established CRE has increased on net over the past year (Graph 2.21, right panel) and liaison suggests that foreign interest via trusts has also picked up. Foreign banks continue to lend to owners of Australian CRE; although their exposures have grown more slowly recently, they still account for over 20 per cent of CRE-related bank lending (Graph 2.21, left panel). Listed Australian real estate investment trusts’ (A-REITs) access to offshore funding has not unduly tightened. Overall, these factors suggest that the risk of recent overseas CRE markets stress affecting Australia through interconnected funding and ownership sources has eased.
+
+Graph 2.21 Foreign Activity in Australian Commercial Real Estate Markets Banks’ commercial property exposure limits* By bank origin Australia Asia Europe Other
+
+* Total limits on facilities committed by banks. Earliest observation March 2008. Latest observation December 2024. ** Includes office, retail and industrial properties. Transactions greater than $5 million. Earliest observation December 1988. Latest observation 13 March 2025. Sources: APRA; JLL Research; RBA.
+
+## Endnotes
+
+For a discussion on the drivers of real disposable income growth over the past five years, see RBA (2025), ‘Box B: Consumption and Income Since the Pandemic’, Statement on Monetary Policy, February.
+
+For more detail, see RBA (2025), ‘Box D: Insights from Liaison’, Statement on Monetary Policy, February.2 Experiences vary significantly across different household types. Renters are generally more likely to experience financial stress than homeowners as their essential expenses are a larger share of their disposable income and they tend to have lower savings buffers; while this pattern was evident pre-pandemic, renters’ increase in stress has also been most pronounced relative to before the pandemic.
+
+In the Securitisation System, incomes are only observed when the loan is originated. To estimate current income, origination income is grown forward using the Wage Price Index. Since the September 2024 Financial Stability Review, the methodology for calculating household spare cash flows has been improved. We now use the Melbourne Institute’s Household Expenditure Measure according to Greater Capital City Statistical Areas (GCCSAs), which allows essential expenses to vary across different geographic areas.
+
+This estimate is based on the share of mortgagors or loans in negative equity, net of offset and redraw account balances. Banks typically report the share of loan balances in negative equity; estimates of negative equity on this basis are larger than the share of loans by number.
+
+See RBA (2024), Financial Stability Review, March.6 See RBA (2024), Financial Stability Review, September.7 Based on the share of loans in negative equity, net of redraw and offset balances estimates using the Securitisation System. This is likely to be an underestimate given high-LVR loans are under-represented in the dataset. See Hughes A (2024), ‘How the RBA Uses the Securitisation Dataset to Assess Financial Stability Risks from Mortgage Lending’, RBA Bulletin, July.
+
+Based on Statistical Area Level 4 (SA4). In regional areas, SA4s tend to have smaller populations of 100,000 to 300,000 people. In cities, SA4s tend to have larger populations of 300,000 to 500,000 people. For more detail, see Australian Bureau of Statistics (2021), ‘Australian Statistical Geography Standard’, Edition 3, 20 July.
+
+Having low or negative equity can affect a household’s ability or willingness to make the difficult decision to sell their property to fully pay off their loan when facing financial stress. Low or negative equity increases a mortgagor’s likelihood of both falling into arrears and transitioning from arrears into default, see Bergmann M (2020), ‘The Determinants of Mortgage Defaults in Australia – Evidence for the Double-trigger Hypothesis’, RBA Research Discussion Paper No 2020-03.
+
+As is the case with the RBA’s Statement on Monetary Policy, these forecasts are conditioned on a cash rate path derived from financial market pricing at the time of publication; they assume that the cash rate will begin declining in early 2025 and reach around 3.5 per cent by mid-2027. Projections are based on legislated personal income tax brackets at the time of the Statement on Monetary Policy publication.
+
+While investors in Australia have lower historical arrears and default rates, this may not generalise to the experience of investors in a severe downturn.
+
+Kearns, Major and Norman show that large declines in asset prices can lead to substantial declines in consumption and that the increase in indebtedness over the past decade have somewhat increased the potential loss of consumption during periods of financial stress. See Kearns J, M Major and D Norman (2020), ‘How Risky is Australian Household Debt?’, RBA Research Discussion Paper No 2020-05.
+
+In addition to the serviceability buffer, the countercyclical capital buffer (CCyB) is also part of APRA’s macroprudential policy toolkit. The CCyB is an additional capital requirement to reinforce system-wide bank resilience that can be relaxed during stress and is currently set at 1 per cent of risk-weighted assets.
+
+For more detail, see RBA (2025), Statement on Monetary Policy, February.15 For more detail, see Bullo G, A Chinnery, S Roche, E Smith and P Wallis (2024), ‘Small Business Economic and Financial Conditions’, RBA Bulletin, October.
+
+For more detail, see RBA, n 15.17 For more detail, see Bullo et al, n 16.18 For more detail, see Bullo et al, n 16.19 For more detail, see RBA (2023), Financial Stability Review, April.20 For more detail, see RBA (2024), ‘4.1 Focus Topic: Scenario Analysis of the Resilience of Mortgagors and Businesses to Higher Inflation and Interest Rates’, Financial Stability Review, March.
+
+For more detail, see Bullo et al, n 16.22 For more detail, see Lim J, M McCormick, S Roche and E Smith (2023), ‘Financial Stability Risks from Commercial Real Estate’, RBA Bulletin, September.
+
+# Summary
+
+The Australian financial system continues to display a high level of resilience and is well placed to continue to provide vital services even in the event of a severe downturn. However, the high degree of geopolitical and international policy uncertainty means financial institutions need to display ongoing vigilance, including with regard to operational risk.
+
+# Chapter 3
+
+# Resilience of the Australian Financial System
+
+• The resilience of Australian banks over recent years has been evident in prudent lending standards, the high quality and quantity of capital, and large liquid asset buffers. Banks’ asset quality has remained high. Despite a small share of borrowers facing severe financial stress due to persistent budget pressures and increase in interest rates in recent years, loan losses for banks have been low. Banks have the financial resources to absorb materially higher loan losses (in the event of a downturn) while continuing to lend to households and businesses.
+
+• The financial stability risk posed by the non-bank financial institutions (NBFI) sector in Australia is contained by the composition of the sector. Unlike some other advanced economies, only a small share of NBFI assets are held by NBFIs that operate with risky features like high leverage, opaque business structures, large-scale liquidity mismatches and light-touch regulatory oversight. Around half of NBFI assets are held by APRA-regulated superannuation funds. Most of these are defined contribution funds that are restricted from directly taking on leverage. This makes them unlikely to pose a direct threat to financial stability, but they could potentially pose an indirect threat by amplifying shocks in the financial system.
+
+• The superannuation sector has tended to support financial stability in the past, but it also has the potential to amplify stresses in the financial system in rare circumstances. The sector has generally displayed a high level of resilience in the past, in part due to restrictions on the use of leverage and the closed nature of the system to rapid liquidity withdrawals. It has also contributed to financial stability by supplying markets with liquidity in periods of financial stress, as in the global financial crisis (GFC). However, there are plausible but extreme conditions where the sector could potentially amplify liquidity stresses in markets. One scenario could be where the sector was unexpectedly and abruptly exposed to severe drains on liquidity – for example, an unexpected policy change allowing additional member withdrawals in a crisis and payments related to foreign exchange hedges during a significant decline in Australian dollar – at a time where selling securities to raise liquidity disrupted the functioning of markets. Insuring against risks of this nature, alongside cyber and other operational disruptions, remains an ongoing area of regulatory focus.
+
+• The insurance sector displays resilience, but insurance affordability and availability may become increasingly challenging over time. The general insurance sector is well capitalised and recent profitability has been supported by low claims, higher premiums and a moderation in the growth of reinsurance costs. However, over the longer term, home insurance affordability in areas exposed to physical climate risk could continue to worsen. If this led to declining insurance coverage among mortgagors, banks may be increasingly exposed to financial losses, potentially leading to financial stability risks in the longer term.
+
+• In December 2024, an operational incident caused serious disruption to the clearing and settlement of the cash equities market, but did not threaten financial stability. This highlighted serious operational risks related to CHESS that have been of concern to regulators for some time. Regulators have recently taken a series of regulatory actions to address these concerns and will consider further regulatory measures should these actions prove insufficient.
+
+## Asset quality has remained sound with loan losses very low.
+
+The banking sector’s asset quality, as measured by loan arrears, declined in 2024 but remains sound. Banks expect loan arrears to peak this year, based on current forecasts for inflation to moderate, interest rates to decline and employment to remain robust. Over 2024, the share of non-performing loans – a broader measure of asset quality than loan arrears – rose to around 1.1 per cent in December 2024, near the (modest) pandemic-related peak (Graph 3.1). This increase was primarily driven by housing loans, reflecting the pressure of inflation and interest rates on household budgets. The share of non-performing business loans rose by less despite business insolvencies increasing sharply over the past two years. This reflects that most businesses entering insolvency are small and have little debt, while the businesses to which banks typically lend have been more resilient (see Chapter 2: Resilience of Australian Households and Businesses). Additionally, although the share of non-performing personal loans has increased since 2022, personal loans account for less than 5 per cent of total credit.
+
+Graph 3.1 Banks’ Loan Performance* Non-performing loans Share of credit type
+
+* Earliest observation 31 March 2004. Latest observation 31 December 2024. ** Banks’ bad debts under ARF 220_5. Three-month rolling average. Sources: APRA; RBA.
+
+Bank loan losses remained very low over 2024. Housing price growth in recent years has helped some severely stressed mortgage borrowers repay their debts by selling their property. While this is a last resort (and a very disruptive) solution for owner-occupier borrowers, it has insulated banks from losses. Moreover, some factors are believed to have contributed to an upward trend in the share of housing loan arrears over the past two decades, without a corresponding increase in overall loan losses (see Box: Understanding the long-run increase in banks’ housing loan arrears). A severe unemployment shock, however, could increase loan losses by pushing more households and businesses into stress and by reducing the value of the collateral – such as property – that secures their borrowing.
+
+# 3.1 Banks
+
+## The banking sector is well placed to manage losses and keep lending if there was a severe economic downturn.
+
+The robust capital base of the banking system – reflected in quantity and quality terms – helps the system to absorb losses without disrupting its ability to service the economy. The banking sector’s ratio of Common Equity Tier 1 (CET1) capital – the highest quality regulatory capital – to risk-weighted assets was 12.1 per cent in December 2024 (Graph 3.2). This ratio was 9 per cent in December 2014. The Australian Prudential Regulation Authority (APRA) recently announced changes to bank capital regulations to simplify and improve the effectiveness of bank capital in a crisis. From 2027, the role of Additional Tier 1 (AT1) capital instruments will gradually be replaced with other forms of capital that are considered more reliable in a stress situation. The banking system’s resilience is also supported by its profitability and solid provisioning. APRA’s recent stress testing suggests that large banks could continue to provide credit to the economy even in a severe but plausible economic downturn.
+
+Graph 3.2
+
+Common Equity Tier 1 Additional Tier 1 Tier 2
+
+Banks’ Capital Ratios* Share of risk-weighted assets, December 2024
+
+Excludes foreign bank branches and banks with capital ratios exceeding 30 per cent. APRA may set higher requirements for institutions on a case-by-case basis. Sources: APRA; RBA.
+
+## While banks’ liquid asset holdings are large, it is also important that they can be quickly converted to cash in times of liquidity stress with limited erosion of value.
+
+Banks hold liquid assets to ensure they can make payments to other financial institutions. Banks can borrow Exchange Settlement (ES) balances – money held at the RBA used to settle interbank payments – against high-quality collateral from the RBA for short terms at an interest rate that is close to the cash rate target. The RBA can vary this interest rate to implement monetary policy. Under the RBA’s ‘ample reserves with full allotment’ system, eligible counterparties, including banks, can borrow as many ES balances as they demand at weekly open market operations (OMO). If eligible counterparties cannot find liquidity on suitable terms in private markets or via OMO, they are expected and encouraged to use the RBA’s overnight standing facility. The RBA and APRA consider the use of the overnight standing facility by banks to be consistent with routine liquidity management activities.
+
+The banking sector also holds significant reserves of liquid assets to manage large, unexpected cash outflows. Liquid asset holdings help banks manage large, unexpected cash outflows, which can be very rapid in the digital era, as demonstrated by the 2023 banking turmoil in the United States and Switzerland. The sector’s liquidity ratios are lower than their pandemic highs – when system liquidity increased to unusually high levels due to policy actions by the RBA, such as the introduction of the Term Funding Facility – but remain above pre-pandemic levels and well above regulatory requirements (Graph 3.3).
+
+Graph 3.3
+
+Minimum liquidity holdings ratio (MLH)***
+
+Bank Liquidity Measures* Aggregate across banks
+
+Earliest observation March 2015. Latest observation December 2024. The LCR applies to the 13 largest and most complex banks in Australia. All other banks are subject to the MLH regime. LCR = High quality liquid assets / net cash outflows. MLH = Liquid assets / liabilities. Source: APRA; RBA.
+
+Banks hold a variety of liquid assets, some of which are more liquid than others. A large share of liquid assets is held in ES balances – the most liquid asset available – as well as in Australian Government securities and semi-government securities. Under APRA’s liquidity regulations, smaller and less complex banks (i.e. minimum liquidity holdings (MLH) banks) can also hold bank debt securities as liquid assets. In times of liquidity stress, banks may attempt to raise ES balances by selling other liquid assets or by borrowing against other liquid assets in wholesale markets. However, MLH banks with large liquidity portfolios concentrated in bank debt securities could struggle to raise sufficient ES balances without reducing the value and liquidity of those securities in the course of their sale. This could weaken the liquidity positions of other MLH banks holding bank debt securities as liquid assets. Reflecting this, APRA announced last year that it will heighten its supervisory engagement with MLH banks that have material holdings of debt securities of other banks in their liquid asset portfolios.
+
+## The Council of Financial Regulators (CFR) has continued work to support crisis readiness, and the soundness and effectiveness of the banking sector.
+
+The financial crisis management preparedness of the Australian and New Zealand agencies was tested in a crisis simulation exercise in September 2024. The exercise simulated the failure of a hypothetical large trans-Tasman bank and provided several lessons. It demonstrated the importance of continuing to maintain and strengthen crisis preparedness arrangements in an evolving environment. Strong and effective coordination arrangements across the CFR agencies in Australia and their equivalents in New Zealand are an essential element of crisis preparedness.
+
+The CFR will provide the government with a report on its review into small and medium-sized banks by July 2025. The review was requested by the Treasurer and conducted by the CFR agencies in consultation with the Australian Competition and Consumer Commission. It examines the role of small and medium-sized banks in providing competition, the regulatory and market trends affecting their competitiveness, and sources of, and barriers to, competition. As part of the review, the CFR agencies are consulting with the banking sector and public, including through an issues paper published in December 2024.
+
+CFR agencies continue work on enhancing cyber and operational resilience in the Australian financial system. Cyber and operational risks are increasing in scale and complexity over time as operating models in the financial system develop, including greater reliance on technology and third-party service providers. This is occurring at a time of heightened geopolitical tensions, which increases the prospect of cyber-attacks that could have systemic implications. The CFR’s Cyber and Operational Resilience Working Group continues to pursue a program of work, alongside CFR agencies, to strengthen cyber and operational resilience in the financial system, with a particular focus on better understanding concentration risks, testing crisis management and cyber defence plans, and building back-up payments capabilities.
+
+The share of housing loans with payments more than 90 days overdue (‘in arrears’) is low but has trended upward since 2004 (Graph 3.4). The share has risen from very low levels in 2004 to around 0.8 per cent in 2024, which is still low by historic and international standards; for example, it peaked at close to 9 per cent in the United States during the GFC. This increase has occurred despite a broad improvement in bank lending standards over the period. Understanding the drivers of the trend in housing loan arrears can help our understanding of financial stability risks, as mortgages are banks’ largest asset and households’ largest debt liability.
+
+Graph 3.4
+
+Housing Loans in 90+ Day Arrears* Share of housing credit
+
+* Earliest observation September 2003. Latest observation December 2024. Sources: APRA; RBA.
+
+# Box: Understanding the long-run increase in banks’ housing loan arrears
+
+Three main factors help explain the trend:
+
+Given that these factors are likely to be persistent, it is unlikely that the share of housing loan arrears will return to the very low levels seen in the early 2000s. However, the current share of housing loan arrears remains low and, to date, the increase in arrears has not caused a material increase in loan losses, in part due to banks maintaining prudent lending standards, such as limiting loan-to-value ratios. In addition, the gradual nature of the above structural changes has provided banks with time to adjust their risk management strategies – such as raising provisions and capital levels – to mitigate the impact of this upward trend.
+
+1. More highly leveraged borrowers: Higher leverage reduces borrowers’ resilience to shocks that decrease income or increase expenses (such as loss of work or higher interest rates). Between 2002 and 2022, the share of owner-occupier borrowers with high debt-to-income ratios (DTIs at or above six) is estimated to have risen from 4.7 per cent to 7.5 per cent, although the flow of new housing loans at high DTIs has been low over the past year. Having a high DTI – and so higher repayments relative to income – makes it more likely that borrowers who experience financial shocks will fall into arrears. 2. Longer loan repayment periods: Households are now taking longer to repay their loans, in part related to an increase in household DTIs over the past two decades, which raises the likelihood of encountering financial shocks over the life of a loan. The average actual loan term has risen from around 12 years in 2002 to around 19 years today, and housing turnover has declined. Older housing loans typically have higher arrears rate, as borrowers’ financial pressures tend to build over time. 3. Extended duration of arrears: Housing loans that fall into arrears are staying overdue for longer. Banks have become more willing to work with households in financial stress by implementing measures to support borrowers who fall behind on their repayments. The recent increases in the share of housing loans in arrears is mainly driven by loans remaining delinquent for an extended period rather than an increase in new defaults.
+
+## The risk to financial stability posed by the Australian NBFI sector is contained.
+
+The NBFI sector poses a limited risk to financial stability in Australia, primarily due to the sector’s composition. NBFIs are a diverse range of financial institutions that operate without banking licences, such as superannuation funds, insurers, non-bank lenders and investment funds. Although NBFIs collectively account for roughly half of financial system assets in Australia, approximately half of these assets are in the superannuation sector. Structural features of the Australian superannuation sector help mitigate its direct threat to financial stability; however, in extreme but plausible conditions it could potentially pose an indirect threat by amplifying shocks in the financial system, as discussed below. A relatively small share of NBFI assets in Australia are held by other NBFIs that operate with more risky features, such as higher leverage or opaque business structures with little regulatory oversight.
+
+Graph 3.5 NBFIs’ Share of Financial System Assets* Australia
+
+Other NBFIs** Pension funds Insurers * Earliest observation December 2002. Latest observation December 2023. ** Other NBFIs are a subset of NBFIs which excludes pension funds and insurers. Examples include investment funds, broker-dealers and non-bank lenders. Sources: ABS; APRA; FSB; RBA.
+
+## The superannuation sector benefits the Australian economy and financial stability.
+
+Growth of the superannuation sector has increased its importance to the Australian financial system and economy. The value of assets managed by the superannuation sector has doubled in the past decade to $4.2 trillion in December 2024 – around 150 per cent of GDP. Around two-thirds of those assets are managed by APRA-regulated funds, the largest and most systemically important type of funds. The other one-third of assets are managed by a diverse set of (typically small) self-managed superannuation funds (SMSFs), some public sector funds and life office funds. The sector’s growth has supported the economy by helping Australians save for retirement and channelling those savings into return-generating investments, including providing long-term capital to Australian businesses. APRA-regulated funds hold a significant share of domestic financial assets (Graph 3.6).
+
+Graph 3.6 Super Fund Domestic Asset Holdings* Share of domestic issuance outstanding Bonds**
+
+* Earliest observation September 2013. Latest observation December 2024. SMSFs assets are not included. ** Excludes bond holdings through managed funds, which as of December 2024 accounts for roughly half of APRA-regulated funds investments. *** Listed equities only. Series break in June 2022. **** Non-financial corporations that are not owned by the government. Sources: ABS; APRA; ASX; RBA.
+
+# 3.2 Non-bank financial institutions (NBFIs)
+
+The superannuation sector has typically supported financial stability in the past. APRA-regulated funds are mostly defined contribution funds, where investment gains and losses are passed directly through to end investors, and are restricted from directly taking on leverage. As long-term investors, superannuation funds are less likely than others to exacerbate market moves by selling investments in a sharp downturn. By investing countercyclically – buying assets as their prices fall – funds can support financial stability during periods of market stress. Steady inflows of liquidity into superannuation funds (from member salaries) can lend support to this approach.
+
+However, financial system stress could be amplified if the superannuation sector faced severe liquidity stress. APRA-regulated funds rely on member inflows and large buffers of liquid assets to manage potential cash outflows. If several risks materialised simultaneously, these funds might be forced to secure liquidity in ways that could amplify financial market stress. Currently, around 48 per cent of APRA-regulated funds’ assets are invested in foreign assets, much of which are protected against losses related to currency movements with foreign exchange hedges. A large, sustained decline in the Australian dollar could drain liquidity through margin calls and renewal of foreign exchange hedges. Similarly, increased member transfers between funds could cause the sector to sell assets to increase cash holdings as a buffer against future transfers. Funds manage these liquidity risks in various ways. For example, some funds slow the pace of the liquidity impact associated with FX hedges by not paying margin on their hedging contracts and spreading their maturities over time. If system-wide early withdrawals and additional withdrawals from members in retirement were to occur abruptly and unexpectedly, for instance in a crisis, this could also create liquidity pressures for some funds.
+
+## Continued strengthening of liquidity and operational risk management is important for the superannuation sector to support financial stability.
+
+In the years ahead, managing liquidity risk could become more challenging as the sector matures and is expected to grow faster than the domestic economy. The net inflow of funds from members is expected to decline as the profile of members shifts towards retirement. And, as the sector expands relative to domestic markets, funds may further increase their investments in foreign assets – thus relying more heavily on foreign exchange hedges – and in unlisted assets, which are difficult to liquidate quickly. The largest superannuation funds report that the majority of their inflows are now being invested in foreign assets. In December 2024, APRA published the findings from a thematic review of valuation and liquidity risk governance. Several of the trustees participating in the review were found to require material improvement in either or both of their valuation governance and liquidity risk frameworks.
+
+Understanding how the superannuation sector responds to liquidity stress will help the sector and authorities to support financial stability. Given its size, the APRA-regulated superannuation sector has large exposures to the rest of the Australian financial system, including broad and significant claims on banks (Graph 3.7). During a period of stress, superannuation funds could support or weaken the banking sector by increasing or reducing their funding of banks (e.g. by selling bank debt securities). Insights into this and other stress dynamics will be provided by APRA’s first financial system risk stress test, which will be conducted this year to examine how risks can transmit between different sectors of the financial system. Lessons from the stress test will help authorities sharpen their response to systemic risks and inform APRA’s future stress testing program.
+
+Graph 3.7 Superannuation Funds Claims on ADIs* Share of total domestic funding source Deposits
+
+* Earliest observation March 2015. Latest observation December 2024.
+
+Excludes assets held by SMSFs. Excludes super funds investments through managed funds, which as of December 2024 accounts for roughly half of APRA regulated funds investments. ** Includes bank bills and acceptances. Sources: ABS; RBA.
+
+Ensuring operational resilience in APRA-regulated funds, including their outsourced operations, is critical. Disruptions at key third-party service providers can affect many funds and have a systemic impact. To address these challenges, APRA has strengthened its operational risk expectations on its regulated funds. The new prudential standard on operational risk management, CPS 230, is due to come into effect in July 2025.
+
+## The systemic importance of the non-bank lender sector in Australia is limited by its small size.
+
+Non-bank lenders are an important source of finance for Australian households and businesses, but the sector’s systemic importance is limited by its small size. Non-bank lenders – that is, lenders that are restricted from offering deposits – account for 6 per cent of financial system assets. Registered financial corporations (RFCs) – which make up around half of non-bank lenders by size – grew their market share of housing and business lending over 2024 (Graph 3.8). The growth in non-banks’ housing lending was supported by strong investor demand for securitisations, making it cheaper for RFCs to fund housing lending. Annual growth in non-banks’ business lending, which was very strong in 2023, declined to a still strong 13 per cent in the year to January 2025. This reflected a broad-based decline in non-bank business lending growth over the last few months of 2024. Nevertheless,
+
+over 2024, non-bank lenders continued to increase their market shares in lending to business sectors less serviced by banks, such as SMSFs, vehicle financing and inventory lending. Notwithstanding their relatively small size, non-bank lenders could contribute indirectly to systemic risk if banks responded to a loss of market share to non-banks by reducing their lending standards.
+
+Graph 3.8 Housing and Business Credit* Housing growth Six-month annualised
+
+* Earliest observation January 2008. Latest observation January 2025.
+
+The RFC series includes non-bank lenders with more than $50 million in assets (including lenders consolidated within banking groups), and does not include superannuation funds or insurers. Sources: APRA; RBA.
+
+Non-bank lenders’ asset quality appears sound, but it will be important to monitor developments that could weaken future lending standards. The share of RFCs’ housing lending 90+ days in arrears is low, at nearly 1 per cent in December 2024 – slightly above the share at banks. Liaison suggests some RFCs have reduced their equity stakes in the securitisations they issue and have sold their housing loan books to private equity firms. While these developments are not immediately concerning, over time they could weaken RFCs’ incentive to maintain lending standards by reducing their ‘skin in the game’. While visibility of asset quality in non-bank lenders’ business lending is limited, RBA liaison suggests it has declined slightly but remains broadly sound. Competition between banks and non-bank lenders for development lending appears to have increased, which would be concerning if it led to lower lending standards (see Chapter 2: Resilience of Australian Households and Businesses).
+
+## The general insurance sector is not a material source of financial stability concern, but rising premiums have reduced insurance affordability.
+
+The general insurance sector is well capitalised and profitable overall. The sector’s capital ratios are well above APRA’s prescribed capital amount. Recent profitability in the sector has been supported by low claims, higher premiums and a moderation in the growth of reinsurance costs, after increasing significantly over recent years. However, claims could continue to rise, including due to the impact of Cyclone Alfred in Queensland and New South Wales in March. And insured losses from the Los Angeles wildfires in January could put upward pressure on future reinsurance costs. Recognising the importance of reinsurance to general insurers in Australia, APRA sought feedback in November on ways to promote access to reinsurance, including alternative reinsurance arrangements.
+
+Rising premiums in recent years have decreased insurance affordability, including for property insurance. Recent surveys indicates that 4 per cent of households have identified living in uninsured properties and 7 per cent in underinsured properties. Slightly over half of these households self-report residing in a moderate-to-high risk area for natural disasters (Graph 3.9). Property insurance is essential for managing households’ risk and is a precondition for obtaining a mortgage from a bank. However, banks have limited visibility on homeowners’ retention of property insurance after they originate a housing loan. Consequently, the trend of declining affordability – especially as climate change intensifies climate and weather-related risks – poses serious challenges, particularly in areas at higher risk of natural perils. If this were to lead to declining insurance coverage among mortgagors, banks may be increasingly exposed to financial losses from physical climate risk, potentially leading to financial stability risks in the longer term.
+
+Graph 3.9
+
+Low Moderate High Perceived natural disaster risk
+
+Share of Uninsured and Underinsured Households by Perceived Risk Level*
+
+* Self-reported data. Sources: HILDA Survey Release 23.0; RBA.
+
+## New powers have been provided to FMI regulators.
+
+New legislation came into force on 24 September 2024 that better aligns the powers of FMI regulators (the RBA and the Australian Securities and Investments Commission) with their responsibilities and streamlines existing powers. The new legislation also expands the scope of the regulatory framework for clearing and settlement facilities (CS facilities), reflecting their central role in the financial system. The updated framework provides the RBA enhanced powers for supervision and expanded responsibility for crisis management including crisis prevention and resolution.
+
+The enhanced supervisory powers will allow the RBA to more effectively monitor and enforce compliance with its Financial Stability Standards. The clearing and settlement crisis management powers, which align with international standards, include the designation of the RBA as resolution authority. The new legislation equips the RBA with strong powers to respond to severe distress at domestic CS facilities. The RBA’s objective in using these powers is to protect continuity of services that are critical to the functioning of the Australian financial system and to safeguard financial stability.
+
+The RBA is progressing the operationalisation of the clearing and settlement resolution framework, working in close collaboration with the other CFR agencies. The RBA has initiated resolution planning for the ASX CS facilities and expects to consult on additional guidance on the use of its new resolution powers later this year.
+
+## FMI regulators have taken actions against ASX to address operational risks related to CHESS.
+
+There was a major operational incident that caused serious disruption to the clearing and settlement of the cash equities market in December 2024. ASX Settlement experienced a failure in its batch settlement process in CHESS, the clearing and settlement infrastructure for the Australian cash equities market. This resulted in all trades in the market being unable to settle on the day.
+
+The incident was disruptive but had a limited impact on financial stability. This was due to a number of factors. The incident occurred on a Friday, which allowed two days before the market was due to open again. Trading volumes were also lower due to the time of year. Were an incident of this nature to occur in different circumstances, the impact on the financial system could be significant. Furthermore, any additional incidents may have a cumulative effect on market confidence.
+
+The incident highlighted serious operational risks related to CHESS that have been of concern for some time. In light of these concerns, the FMI regulators, have recently taken a series of regulatory actions against ASX. The FMI regulators also intend to consider further regulatory measures should these actions prove insufficient in causing the necessary cultural change and reduction of risks at ASX.
+
+# 3.3 Financial market infrastructures (FMIs)
+
+## Endnotes
+
+A loan is considered non-performing if it has been in arrears for at least 90 days or the lender considers that the borrower is unlikely to pay in full.
+
+APRA (2024), ‘APRA to Phase Out AT1 as Eligible Bank Capital’, Media Release, 9 December.2 Lonsdale J (2024), ‘Opening Statement to Senate Economics Legislation Committee’, Statement, November.3 Kent C (2025), ‘The RBA’s Monetary Policy Implementation System – Some Important Updates’, Speech at the KangaNews Debt Capital Markets Summit, Sydney, 2 April; RBA and APRA (2025), ‘Joint APRA-RBA Statement on Use of the RBA’s Overnight Standing Facility’, Media Release No 2025-11, 2 April.
+
+CFR (2024), ‘Review into Small and Medium-sized Banks: An Issues Paper by the Council of Financial Regulators, in consultation with the Australian Competition and Consumer Commission’, December.
+
+For more detail, see RBA (2024), ‘Box: Initiatives to Enhance Operational Resilience in Australia’, Financial Stability Review, September.6 In Australia, these NBFIs include non-bank lenders (primarily securitisers, finance companies and managed funds investing in debt) as well as a smaller share of entities consolidated into banking groups and other investment funds that do not intermediate credit (such as equity funds).
+
+Super funds can apply to APRA for temporary relief from portability requirements to avoid significant adverse effects on the trustee or members.
+
+Treasury Research Institute (2019), ‘The Superannuation System in Aggregate’, November.9 APRA (2024), ‘APRA Review Highlights the Need for Improved Valuation and Liquidity Risk Governance in Superannuation’, Media Release, 17 December.
+
+Lonsdale J (2024), ‘Forewarned and Forearmed’, Speech to the European Australian Business Council, 25 November.11 APRA (2023), ‘APRA Finalises New Prudential Standard on Operational Risk’, Media Release, 17 July.12 APRA (2024), ‘Consultation on Targeted Adjustments to General Insurance Reinsurance Settings’, Media Release, 7 November.13 For example, the Actuaries Institute estimates that, as at March 2024, 15 per cent of households experienced home insurance affordability stress – defined as households facing annual home insurance premiums that exceed four weeks of income – up from 12 per cent in March 2023. See Actuaries Institute (2024), ‘Home Insurance Affordability and Home Loans at Risk’, Report, August.
+
+The information comes from the annual Household, Income and Labour Dynamics in Australia Survey, which included questions on home and contents insurance affordability in the survey released this year.
+
+Treasury Laws Amendment (Financial Market Infrastructure and Other Measures) Act 2024.16 RBA (2025), ‘RBA and ASIC Act on Deep Concerns with ASX’, Media Release No 2025-09, 31 March.17 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability 48 4.2 Focus Topic: Looking at Digitalisation through a Financial Stability Lens 53 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability 57
+
+# Chapter 4
+
+# Focus Topics
+
+# Contents
+
+Assessing financial stability requires systematic evaluation of the financial system’s resilience to economic and financial shocks. This Focus Topic sets out the RBA’s conceptual framework for assessing the complex interactions within the financial system. This systematic approach – which is informed by approaches used internationally – facilitates the identification of vulnerabilities in the financial system, along with how they might transmit through the system and any offsetting features that improve system resilience (Figure 4.1.1). Capturing complex financial stability issues in a simple conceptual framework is challenging and no single approach is perfect. The RBA will continue to challenge, assess and adapt its framework to incorporate learnings, and to account for the evolving nature of financial stability issues.
+
+## A systematic approach to assessing vulnerabilities and determining appropriate actions can enhance the financial system’s resilience.
+
+Mapping the build-up of vulnerabilities in the financial system is a key focus of the framework. Vulnerabilities in the financial system can cause the system to amplify shocks instead of absorbing them, which can lead to significant financial and non-financial costs to the economy. A financial system that has few vulnerabilities and is highly resilient could withstand even a substantial shock without disrupting provision of funding and other key financial services. Conversely, a financial system with greater vulnerabilities or lower resilience will be more sensitive to shocks, heightening the likelihood of major disruptions to the financial system and economy when risks materialise.
+
+The focus on vulnerabilities helps policymakers promote financial stability regardless of the form or origin of risks. This is important as shocks are unpredictable and authorities may have limited ability to address specific risks. For example, as a small open economy, Australian policymakers do not have the tools to reduce the risk of an adverse shock originating overseas. Nevertheless, by closely monitoring vulnerabilities, they can better determine appropriate actions to enhance the financial system’s resilience to those risks.
+
+The framework helps to more consistently map vulnerabilities and to explore emerging ones where policy responses are still under development (Figure 4.1.1). This is vital given that evolving economic and financial environments – from geopolitical shifts to the digitalisation of financial services – continue to reshape vulnerabilities, how shocks are transmitted through the financial system and the resilience of the financial system in such circumstances.
+
+# 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability
+
+Figure 4.1.1: Framework for Evaluating Financial Stability
+
+Definitions for key terms in Figure 4.1.1: • Vulnerabilities are characteristics of the financial system that amplify shocks. • Transmission mechanisms are actions or behaviours of financial system participants that propagate shocks. • Resilience refers to actions or characteristics of the financial system that dampen shocks. • Risks are potential adverse outcomes that result in losses to financial system participants. • Environment refers to the context in which the financial system operates.
+
+## The framework is used to examine the net vulnerabilities in the financial system.
+
+The framework aims to simplify the analysis of developments in the financial system into seven vulnerability categories: • credit exposure • asset price exposure • operational exposure • complexity • leverage • liquidity and funding • other vulnerabilities.
+
+The RBA takes a holistic approach to examine the net vulnerabilities in the system. For each identified vulnerability, the RBA considers how it could amplify the impact of a shock and how the shock could be transmitted across participants and sectors (e.g. via markets and exposures). The RBA then evaluates whether the system has built-in resilience to absorb or mitigate the threat. This allows for the identification of net vulnerabilities – that is, after taking into account the system’s resilience.
+
+The framework also takes into account external factors that can influence net vulnerabilities and policy actions across sectors and time. External factors originate from the risk landscape and the environment in which the financial system operates. For example, this could include changing weather patterns, an aging population, digitalisation, or geopolitical factors. External factors provide the context in which this assessment takes place. Whether a characteristic of the financial system presents a net vulnerability depends on the context (e.g. the structure of the financial system and economy). External factors can also be used to develop scenarios that explore potential vulnerabilities. Once net vulnerabilities have been assessed, reference to external factors can help to shape and prioritise remedial actions. These actions, and the actions of financial system participants, influence the vulnerabilities themselves and can have feedback effects on the environment and risk landscape. This creates a cycle that informs and refines future policy recommendations.
+
+Distinguishing between sector-specific or system-wide vulnerabilities is key in determining the right policy responses. This includes formulating appropriate actions, identifying which regulatory bodies should be involved, and spotting any regulatory gaps. These actions can range from targeted policy actions and improved monitoring to better communication from regulators and raising public awareness. Each member of the Council of Financial Regulators (CFR) – the Australian Prudential Regulation Authority, the Australian Securities and Investments Commission, the Australian Treasury and the RBA – has its own set of responsibilities and powers for financial stability. This means each institution plays a different role in shaping and implementing policy. The CFR agencies work closely together to share insights and analysis, and coordinate policy responses as appropriate.
+
+## Identified vulnerabilities are subject to ongoing monitoring.
+
+Vulnerabilities are monitored across sectors of the financial system using a variety of indicators. Together, these indicators inform our overall assessment of the extent of vulnerabilities in the financial system. We choose not to aggregate the measures into a single simplified index: this is because we need to maintain a granular view of each sector in the financial system and no single indicator provides a complete view of financial system stability. Single indicators are useful for summarising information, but at the cost of potentially masking threats to financial stability in specific parts of the financial system. The combination of single indicators and more detailed monitoring provides a holistic toolkit.
+
+## The framework supports a rigorous assessment of financial stability.
+
+Whether the assessment starts with an identified vulnerability, an external factor or a new policy, the framework is designed to help trace its impact through the financial system. For example, if high debt levels are identified in a sector of the financial system, stepping through the components of the framework allows a systematic assessment of how it affects financial stability, including the risks that would expose borrowers (e.g. a sharp downturn in economic growth), the transmission to lenders or through markets (e.g. through higher default rates or larger credit spreads), the resilience of borrowers (e.g. cash buffers) and potential policy actions. Alternatively, an assessment could start with identifying a risk that is elevated and asking what vulnerabilities would amplify the effect if that risk were to materialise. The framework provides a conceptual map that facilitates systematic assessments, but it can be applied flexibly to approach assessments from different perspectives.
+
+The conceptual framework seeks to distil a significant amount of information in a way that allows policymakers to focus on what really matters for financial stability. With the aid of four elements, the framework helps to simplify the complex workings of the financial system, guide both assessments and policymaking, and inform the RBA’s related communication: • Systematic evaluation: It covers the main categories of potential risks and vulnerabilities so that the financial system is thoroughly and consistently reviewed. • Balanced perspective: It ensures that all relevant risks and vulnerabilities are considered, not just the ones currently in the spotlight. • Resilience strategies: It helps authorities identify strategies to address vulnerabilities and improve risk management by tracing vulnerabilities and their effects through the financial system. • New risks: It helps organise and assess emerging risks and vulnerabilities, as well as external factors, making it easier to distinguish new issues from existing ones.
+
+The benefits of having a clear framework to analyse new issues are highlighted in 4.2 Focus Topic: Looking at Digitalisation through a Financial Stability Lens. The framework helps rationalise complex interactions and distinguish between existing vulnerabilities – those that might be further exacerbated – and emerging ones.
+
+The framework is subject to ongoing challenge and revision. In developing the framework, choices had to be made about how to distil the very complex process of performing a financial stability assessment into a simpler conceptual model, among many valid alternatives. In addition, characteristics of the financial system and its interactions change over time. Both of these points call for ongoing challenge and revisions to ensure that the framework continues to serve its purpose of facilitating high-quality assessments.
+
+## Endnotes
+
+Relevant international frameworks include the Financial Stability Board’s Financial Stability Surveillance Framework, the Bank of England’s Framework for Assessing Risks in Market-based Finance and the framework set out in Adrian T, D Covitz and N Liang (2014), ‘Financial Stability Monitoring’, FEDS Notes, 4 August.
+
+Details about the Council of Financial Regulators activities are available on its website.2 Digital transformations affect all facets of the financial system and the provision of financial services, including customer interactions, operational processes, information security, and workforce planning. In this context, ‘digitalisation of finance’ refers to the adoption of technology in the financial sector to transform systems, processes, business models and resource allocation. While digitalisation has led to efficiency gains and improvements in service delivery to customers, and can enhance risk management, it has also introduced vulnerabilities that have the potential to threaten financial system stability. Addressing digitalisation vulnerabilities is a priority area for the Council of Financial Regulators (CFR) and for international policymakers, including the Basel Committee on Banking Supervision, the Financial Stability Board, and central banks globally.
+
+This Focus Topic discusses the implications of digitalisation for financial stability in Australia, using the framework described in 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability. Within this framework, digitalisation is viewed as an external factor that influences the context in which the financial system operates. External factors can improve system resilience, exacerbate existing vulnerabilities, or expose new ones − or some combination of these. Using three mature technologies as examples, this Focus Topic identifies commonalities in how key vulnerabilities are impacted by digitalisation as part of the RBA’s ongoing analysis of emergent threats to Australian financial system stability.
+
+## Digitalisation is changing the Australian financial system.
+
+Digitalisation in the financial sector has accelerated in recent years. This can be seen in the rise of fintechs, innovations from the COVID-19 pandemic, and advancements in artificial intelligence (AI). As a result, the Australian financial services landscape is changing quickly, and financial institutions are making significant investments to upgrade their technology platforms and technical capabilities. At the same time,
+
+new financial sector entrants, taking advantage of the digitally induced reduction in barriers to entry, are intensifying competition in some market segments.
+
+The impact of digitalisation spans a wide range of financial services and gives rise to potential benefits alongside trade-offs. Using three of the more mature digital technologies as examples, the following sections explore some of the direct and indirect implications of these technologies on the financial system. While not new technologies, they have seen significant advancements that have led to increased adoption and enhanced capabilities, as well as the introduction of new vulnerabilities within the financial system. The impact of these mature technologies illustrates the types of vulnerabilities that might arise from the use of new and innovative technologies, such as AI and distributed ledger technology.
+
+## Technology #1 – Mobile banking apps
+
+Online and mobile banking applications have enabled a transition away from in-person banking for customers. While mobile banking apps have been available in Australia for over a decade, recent developments in machine learning, generative AI (GenAI) and cloud services, coupled with the roll out of fast payments platforms, have expanded the functionality and availability (24/7) of services and accelerated the speed of transactions. Financial institutions continue to improve their apps in response to consumer preferences, as most Australians now rely on online and mobile banking to interact with their banks.
+
+This digital transformation offers numerous benefits, but it also introduces a range of vulnerabilities into the financial system. Mobile banking can enhance financial inclusion by expanding access to, or even the availability of, certain services for digitally connected individuals. However, the shift towards digital banking services has contributed to a decline in physical bank branches in Australia, reducing service availability for individuals who are not active participants in the digital economy. Residents in regional
+
+# 4.2 Focus Topic: Looking at Digitalisation through a Financial Stability Lens
+
+areas have been particularly affected by branch closures. Mobile banking provides almost instant access to banking services, removing some of the frictions that once slowed deposit withdrawals. While this efficiency gain benefits bank customers in most cases, it may increase the speed of bank runs in some circumstances. During the 2023 banking failures in the United States and Switzerland, the rapid spread of news through social media channels may have also contributed to the unprecedented speed of deposit withdrawals from impacted banks. Bank liquidity regulations that took effect after the global financial crisis were not calibrated for runs of this speed.
+
+## Technology #2 – Application Programming Interfaces
+
+Application Programming Interfaces (APIs) are a set of rules that enable secure data sharing between software applications, either within a financial institution’s own systems, or with external parties. For example, mobile banking relies on internal APIs to connect a bank’s app with its core banking systems. Similarly, open banking initiatives use APIs to securely share data between financial institutions and third parties. In Australia, as part of the Consumer Data Right initiative, open banking is intended to help customers to access and compare new financial products and services, and to promote competition within the financial system.
+
+APIs also facilitate partnerships between financial institutions and third parties, which can bring benefits for customers but also create vulnerabilities in the financial system. Business models such as Banking as a Service (BaaS, the provision of banking services from licensed banks through non-bank intermediaries) and embedded finance (integrating banking services into non-financial platforms, such as ‘buy now pay later’ options within a retail shopping app) can improve customer experiences. Banks may face competitive pressures in responding to new market entrants, or reputational and operational risks if they engage in a partnership that fails or experiences a data breach. Moreover, as banks increasingly collaborate with non-financial firms, these relationships add interdependencies, complexity and opacity to the financial ecosystem, which can increase operational risks and make it harder to monitor and assess
+
+vulnerabilities. These considerations can also apply more broadly to financial institutions wherever digitalisation facilitates a change in market structure.
+
+## Technology #3 – Cloud services
+
+Cloud computing allows for the more efficient use of computer processing resources and lowers the cost of IT infrastructure. There are three main deployment models: public cloud, where cloud resources are delivered by a third-party provider to a large number of customers over the public internet; private cloud, where the cloud resources are supplied to and used by a single organisation; and hybrid cloud, a combination of the two. Public cloud services are typically provided by a small number of large technology companies globally, who host their clouds in interconnected data centres around the world.
+
+Australian financial institutions, including banks, insurers, and clearing and settlement facilities, are migrating their services onto public cloud platforms, which brings both benefits and risks. As a result, these institutions may see improved system resilience, lower IT infrastructure costs, and an increased ability to scale up or implement new services. Customers can access services hosted on the cloud more quickly and benefit from new service offerings. However, cloud migrations need to be carefully managed to ensure they do not result in increased operational risk for individual institutions during the transition to the cloud – for example, business processes may change and cloud-based services may be incompatible with on-premises systems. Financial institutions also need to ensure cloud providers are appropriately managing operational risks – including service reliability and information security – when these services are in place. This requires careful planning – for example, using geographically diverse cloud locations may provide additional resilience for business continuity and prevent correlated failures, but institutions may then be exposed to legal or regulatory restrictions if the data are hosted in external jurisdictions. Increasing dependence on a small number of cloud providers could also see multiple financial institutions disrupted simultaneously in the event of a single cloud outage.
+
+## Digitalisation matters for financial stability.
+
+The mature technology examples illustrate some of the ways in which different technologies can transform the financial system, offering benefits to financial institutions and their customers, while also introducing some vulnerabilities. Identifying and addressing how digitalisation impacts financial stability has been the focus of global central banks and regulators in recent years. Digitalisation has a clear and direct impact on the operational risk of individual financial institutions, but the examples also show that there may be broader impacts for financial system stability: • Relationships between entities are becoming more complex and opaque, and dependencies on critical third-party providers are increasingly concentrated. This can include dependencies on offshore service providers, national infrastructure and other providers outside the scope of financial regulation. As linkages and interdependencies expand internationally and outside of the financial system, domestic financial authorities may have less visibility and influence over how risks are managed. The concentration of dependencies can also increase the probability of an incident having a system-wide impact, such as the 2024 Crowdstrike incident. • Digitalisation increases the speed at which financial services can be provided, as well as the speed at which shocks are transmitted through the financial system. With information flows travelling faster and external linkages increasing, risks may materialise more quickly and spread more rapidly through the global financial system than they have historically. • Behavioural responses to shocks may change as digitalisation allows retail consumers to participate more directly in the financial system. • Digitalisation increases technological complexity. This requires specific expertise and upskilling to ensure staff can manage the increase in operational risk, including through the technological change process. • Operational risks can amplify financial risks. For example, if the automation of transaction processing were disrupted during a crisis, it could not
+
+only hinder market functioning but also disrupt liquidity flows across the system, amplifying financial instability. • Digitalisation increases the potential for operational incidents, with institutions being more vulnerable to cyber-attacks, technological outages and reputational risk if data integrity is compromised. Frequent cyber incidents and attacks, correlated outages, disruptions at systemically important institutions, along with potential exposure of private data, could erode the reputation of financial institutions and weaken trust in the system.
+
+## CFR agencies are focused on building resilience in Australia.
+
+CFR agencies are working together to improve the resilience of the Australian financial system as it becomes increasingly digitalised. Work is ongoing across the CFR agencies to understand and address the implications of the continuing digitalisation of the financial system. As part of this work, the RBA continues to assess vulnerabilities arising from digitalisation at a macro level, using the framework set out in 4.1 Focus Topic: A Conceptual Framework for Assessing Financial Stability, to identify the vulnerabilities that may have a systemic impact and the factors that support the resilience of the financial system by dampening the negative impact of any shocks. This assessment includes taking into account actions taken to date by the CFR agencies to address the impact of digitalisation on operational risk, such as closing regulatory gaps and increasing oversight, and testing system resilience. One of these actions involves the introduction of a new prudential standard, CPS 230, which is aimed at ensuring that entities regulated by the Australian Prudential Regulation Authority are resilient to operational risks and disruptions. The RBA’s regular assessments of net vulnerabilities in this area help to inform the CFR work program in a rapidly evolving digital landscape.
+
+## Endnotes
+
+Basel Committee on Banking Supervision (2024), ‘Digitalisation of Finance’, May.1 CFR (2024), ‘Quarterly Statement by the Council of Financial Regulators – December 2024’, Media Release No 2024-05, 3 December.2 Hernández de Cos P (2019), ‘Financial Technology: The 150-year Revolution’, Keynote speech at the 22nd Euro Finance Week, 19 November; Financial Stability Board (2022), ‘FinTech and Market Structure in the COVID-19 Pandemic’, 21 March; RBA (2024), ‘4.3 Focus Topic: Financial Stability Implications of Artificial Intelligence’, Financial Stability Review, September.
+
+For example, the Australian major banks are currently undertaking significant investments in technology platforms.4 ANZ introduced their goMoney iPhone banking app in 2010.5 Australian Banking Association (2024), ‘Bank on It: Customer Trends 2024’, Report, 26 June.6 World Bank Group (2015), ‘Digital Financial Inclusion’, Report, March.7 Australian Prudential Regulation Authority (2023), ‘ADI Point of Presence Review’, Discussion Paper, April; Australian Treasury (2022), ‘Regional Banking Taskforce’, Final Report, September.
+
+Basel Committee on Banking Supervision (2023), ‘Report on the 2023 Banking Turmoil’, October.9 Financial Stability Board (2024), ‘Depositor Behaviour and Interest Rate and Liquidity Risks in the Financial System’, 23 October.10 IBM (2024), ‘What is an API (Application Programming Interface)?’, 9 April.11 Basel Committee on Banking Supervision, n 1.12 Cass-Gottlieb G (2024), ‘Framing the Future of Financial Services: Strengthening Competition and Consumer Engagement’, Keynote address to the Gilbert + Tobin Financial Services Forum, 31 October.
+
+Basel Committee on Banking Supervision, n 1.14 Stripe (2023), ‘Embedded Finance vs Banking-as-a-service (BaaS): How These Disruptive Models Compare’, 29 November.15 Basel Committee on Banking Supervision, n 1.16 Financial Stability Institute (2022), ‘Big Tech Interdependencies – A Key Policy Blind Spot’, FSI Insights on Policy Implementation No 44, July.
+
+Basel Committee on Banking Supervision, n 1.18 Douglas O, E Kandelas and E Orum (2024), ‘Migration to Public Cloud: Risks and Regulatory Requirements for Clearing and Settlement Facilities’, RBA Bulletin, April.
+
+RBA (2023), ‘5.5 Focus Topic: Operational Risk in a Digital World’, Financial Stability Review, October.20 IBM (undated), ‘What is Cloud Migration?’.21 Douglas, Kandelas and Orum, n 19.22 Douglas, Kandelas and Orum, n 19.23 RBA (2024), ‘Box: Recent Operational Incidents at Third Parties’, Financial Stability Review, September.24 Cera K, A Pietsch and A Sowiński (2023), ‘Financial Stability Considerations Arising from the Digitalisation of Financial Services’, ECB Financial Stability Review, November.
+
+Adeney R, A Hitchins, C Lane, H Mehta and A Quashie (2024), ‘Operational Resilience in a Macroprudential Framework’, BoE Financial Stability Paper No 50.
+
+RBA, n 20.27 RBA, n 20.28 The share of companies entering insolvency has risen sharply over the past couple of years to be at the top of the range observed in the 2010s, but on a cumulative basis remain slightly below their pre-pandemic trend. The rise has been due to challenging economic conditions and a catch-up effect from exceptionally low insolvencies during the pandemic. Financial stability risks, though, remain contained because most insolvent firms are small with little debt, many have a chance of recovery, and indirect effects on financial stability via job losses have been limited.
+
+This Focus Topic examines the characteristics of firms that have recently entered insolvency, the factors that have caused them to become insolvent, and the implications for financial stability.
+
+## Insolvency is the most severe form of financial stress for a business and can occur for a variety of reasons.
+
+Insolvency affects only a very small share of businesses in a typical year. A business is considered insolvent when it is no longer able to pay its debts when they fall due. In such a case, a third party is appointed to assess the financial position of the firm, and often takes control to manage the firm’s assets in the best interest of creditors. Insolvency can take various forms, including liquidation, voluntary administration, receivership and small business restructuring. Over the 15 years prior to the pandemic, only an average of 0.1 per cent of firms entered insolvency each quarter (Graph 4.3.1). By contrast, roughly 10 times as many firms exited by ceasing trade without actually entering insolvency.
+
+Graph 4.3.1
+
+Quarterly, share of businesses, seasonally adjusted*
+
+* Shaded areas indicate two consecutive quarters of negative growth in GDP, and the two subsequent quarters after. Earliest observation June 1967. Latest observation December 2024. Series break in June 2004. Shares prior to this are calculated relative to registered companies; shares after June 2004 are calculated based on the total number of businesses operating at the end of each financial year. Data from 1967 to 1991 are annual estimates based on data for some states. Sources: ABS; ASIC; RBA.
+
+# 4.3 Focus Topic: The Recent Increase in Company Insolvencies and its Implications for Financial Stability
+
+Insolvency can arise from economic conditions and/ or business-specific reasons. Economic downturns, such as the 1990s recession and the global financial crisis, often drive the insolvency rate higher (Graph 4.3.1). Business-specific factors, such as poor strategic management or financial control, also play an important role (Graph 4.3.2). Firms citing economic conditions as a cause of insolvency also tend to cite other business-specific issues; this suggests that weak economic conditions exacerbate underlying issues with a firm’s business model or management.
+
+Graph 4.3.2 Reported Causes of Business Failure Share of company insolvencies, financial year*
+
+* Data based on external administrator reports, which represent a subset of total company insolvencies. Selected reasons; will not sum to 100 per cent as businesses can nominate multiple reasons. Earliest observation June 2005. Latest observation June 2024. Sources: ASIC; RBA.
+
+Changes in policy and insolvency arrangements can also affect trends in insolvencies. For example, in the early 2000s the lowering of corporate insolvency costs led to an increase in the insolvency rate at the same time. More recently, a number of support measures introduced during the pandemic also had an effect on insolvencies (discussed below). The introduction of small business restructuring – a new process of restructuring debts – may also have slightly affected aggregate insolvencies since 2021.
+
+While the pathway into insolvency varies, it typically follows an extended period of cashflow difficulty, leading to an inability to repay debts. Cash flow difficulties can stem from a fall in revenue, an increase in costs (including interest expenses), and/or pressure on margins. These shifts can originate from industry or business-specific developments (such as losing a key customer), or from the broader economic environment (such as weak aggregate demand or cost pressures). Firms may try to weather this period by drawing on their existing cash or equity buffers, and/or by accruing more debt with banks, non-bank lenders, other businesses via trade credit, or the Australian Taxation Office (ATO).
+
+## Pandemic support measures reduced the risk of widespread financial stress and economic damage, reducing insolvencies during this period.
+
+Income support policies supported business cash flows and employment. By increasing businesses’ cash flows, the support measures reduced the share of businesses facing cash shortfalls and prevented many firms from failing during the pandemic.
+
+Changes to the insolvency framework allowed more businesses to continue trading than would otherwise have been the case. For example, the thresholds for owed amounts before creditors were able to issue a statutory demand for payment were temporarily increased. One ongoing reform involved the introduction of small business restructuring plans. This reform aimed to improve the survival rate of small firms in financial stress, and to simplify and reduce the costs associated with insolvency procedures.
+
+Flexibility in tax payments and lodgements also played a key role in keeping insolvencies low during the pandemic. The ATO is a creditor for many insolvent firms and introduced various relief measures during the pandemic (Graph 4.3.3, top panel). These included payment and lodgement deferrals and interest-free payment plans that helped some businesses in financial stress to continue trading. These arrangements resulted in some firms accruing larger debts with the ATO (Graph 4.3.3, bottom panel). Since 2022, the share of insolvent firms entering external administration with tax liabilities exceeding $250,000 has risen by more than 10 percentage points. Compared with pre-pandemic levels, total collectable debt from insolvent small businesses has more than doubled. This reflects not only the elevated level of insolvencies and the larger debt owed to the ATO, but also the resumption of ATO enforcement activities.
+
+Graph 4.3.3 Outstanding Tax Debts at Insolvency Share of company insolvencies, financial year* Has known tax liabilities at insolvency**
+
+Has outstanding tax liabilities at insolvency
+
+* Data based on external administrator reports, which represent a subset of total company insolvencies. Earliest observation June 2007. Latest observation June 2024. ** From 2020, excludes reports where tax liabilities were unknown. Source: ASIC.
+
+## Insolvencies have increased as pandemic support was removed and economic conditions became challenging.
+
+Pandemic policies delayed the failure of some firms. On a cumulative basis, insolvencies fell below their pre-pandemic trend for an extended period and, despite increasing recently, have remained slightly below that trend (Graph 4.3.4). Direct cash transfers and precautionary saving helped most businesses accumulate substantial cash buffers through the pandemic period. While the pandemic support measures helped firms stay afloat longer, those with underlying issues – such as poor management or weak financial control – may still ultimately fail. Further, while many firms, particularly those with the lowest levels of profitability, saw temporary boosts to their profitability during the pandemic, some have struggled again in recent years, leading to insolvency regardless (Graph 4.3.5). This is evident in the age distribution of firms entering insolvency, with more older businesses failing in 2023 and 2024 than usual (Graph 4.3.6).
+
+Graph 4.3.4
+
+Company Insolvencies Cumulative, since 2014
+
+* Trend for cumulative insolvencies calculated using observations from 1999–2019. Latest observation December 2024. Sources: ASIC; RBA.
+
+Graph 4.3.5 Business Profitability Financial year* Businesses entering insolvency in 2024**
+
+2018 2019 2020 2021 2022 -1.0
+
+2018 2019 2020 2021 2022 -1.0
+
+* Earliest observation June 2018. Latest observation June 2022. ** Year to end September. Sources: ABS (BLADE); ASIC; RBA.
+
+Graph 4.3.6
+
+Age at Insolvency Share of company insolvencies*
+
+* Excludes companies with unknown age. ** 2024 to end September. Sources: ABS (BLADE); ASIC; RBA.
+
+In addition to the removal of pandemic support, rising costs, weak growth in demand and higher interest rates have also contributed to the increase in insolvencies. Insolvencies remained at record lows during 2022, as many businesses also benefited from a strong recovery in demand following the pandemic. However, a range of firms have since faced significant cash flow pressures given the economic environment and have had to cut costs. These pressures are likely to have been particularly acute for those also experiencing firm-specific issues.
+
+Insolvencies have been highest in construction and hospitality, reflecting the interaction of industry-specific factors and economic conditions. Construction insolvencies increased sharply in 2023 due to supply-side challenges, including high input costs, delays arising from labour and materials shortages, and the prevalence of fixed-price contracts. Insolvencies have also risen sharply in industries exposed to discretionary spending, notably hospitality. Poor economic conditions were the most cited reason for failure among hospitality operators who entered insolvency in 2024. These firms are especially vulnerable to changes in demand, as they typically operate with slimmer profit margins and limited cash buffers.
+
+## Risks to the financial system remain contained as most insolvent firms are small and carry little debt.
+
+Higher insolvencies could pose risks to the financial system through several channels. The most direct risk is loan losses for lenders such as banks and non-banks. Insolvencies can also impact other types of creditors, such as suppliers reliant on trade credit. Indirect risks arise when firm failures are widespread and affected workers cannot secure employment elsewhere, which may result in some defaulting on their mortgages or other debt, and lead to a further worsening of economic conditions. Additionally, widespread business closures can trigger asset fire sales, potentially depressing asset prices.
+
+However, these risks currently remain contained. More than three-quarters of recent insolvencies have been small businesses, defined as less than 20 employees (Graph 4.3.7). Additionally, an increasing share of insolvencies are now small business restructures – currently around 20 per cent. These businesses have
+
+small outstanding liabilities and a high recovery rate, with more than 90 per cent re-registering and resuming trade within three months of the insolvency appointment.
+
+Graph 4.3.7
+
+Size of Insolvent Firms* Share of company insolvencies, quarterly
+
+* Number of jobs 52 weeks prior to insolvency. Earliest observation March 2021. Latest observation June 2024. Sources: ABS (BLADE); ASIC; RBA.
+
+Banks have limited exposure to businesses that have entered insolvency in the recent period. Banks’ non-performing loan rates remain low and external administrator reports show that most companies entering insolvency have no outstanding secured debt (the type most likely to be owed to banks) (Graph 4.3.8, left panel). Moreover, liaison indicates that banks’ risk management practices further limit their exposure to these companies.
+
+Most companies that enter insolvency have unsecured debt, typically owed to suppliers, contractors, non-bank lenders and related parties of the business (Graph 4.3.8, right panel). Many of these unsecured creditors have incurred losses, with suppliers and contractors rarely recovering funds from external administrations, which accounts for a large share of total company insolvencies. Liaison indicates that non-banks have also incurred some losses from insolvencies, though these are small. Additionally, while the share of trade credit that is overdue has increased over the past couple of years, it remains around its historical average, even in industries experiencing elevated insolvency rates.
+
+Graph 4.3.8 Debt Owed to Creditors Share of company insolvencies, financial year* Secured debt
+
+* Data based on external administrator reports, which represent a subset of total company insolvencies. Series break in 2020 due to changes in ASIC’s reporting methodology. Earliest observation June 2007. Latest observation June 2024. Source: ASIC.
+
+Job losses at insolvent companies have been limited, and most affected employees have quickly secured new employment. Most businesses entering insolvency have less than 20 employees (Graph 4.3.7). And more than 90 per cent of individuals who were working for an insolvent firm in the year leading up to the insolvency have been re-employed by another business within a few months or been retained. These individuals have been able to recover their pre-insolvency earnings within a year (Graph 4.3.9). This includes workers in those industries with higher rates of insolvency. However, there is a small share who do not find a new job within a year. Businesses that enter small business restructuring retain most of their workers, consistent with the vast majority continuing to trade.
+
+Graph 4.3.9
+
+Labour Market Outcomes of Workers Whose Employer Entered Insolvency* Three months prior to insolvency = 100
+
+* Company insolvencies from January 2021 to June 2024. Outcomes for workers employed at any point in year prior to insolvency. Sources: ABS (BLADE); RBA.
+
+The risk of widespread asset fire sales has been limited as most businesses entering insolvency do not hold secured debt. Spillovers are also likely limited to businesses that held business-related assets. While conditions in commercial property markets – particularly offices – have been challenging in recent years, there is little evidence of financial stress among owners of commercial real estate. The risk of fire sales impairing market functioning is lower for other assets that are used as collateral for business loans – for example, cars and trucks – as these markets are typically deeper and more homogenous.
+
+## Risks to the financial system are expected to remain contained even if insolvencies remain elevated.
+
+The future path for insolvencies is highly dependent on how economic conditions evolve, though some factors will put upward pressure on the insolvency rate in the months ahead. Insolvencies are yet to return to the pre-pandemic trend in several industries, suggesting there may be more catch-up to come given the exceptionally low insolvencies during the pandemic. While cash flow pressures are expected to ease (see Chapter 2: Resilience of Australian Households and Businesses), this will not necessarily translate into a lower level of insolvencies in the near term due to the lag between entering financial stress and insolvency.
+
+Nevertheless, risks to the financial system are expected to remain contained. Smaller firms continue to be more at risk of insolvency as they are more vulnerable to the current challenging conditions than larger firms. Should more medium- or large-sized businesses enter insolvency, lenders’ exposures would likely increase.
+
+## Endnotes
+
+This analysis is limited to company insolvencies and excludes business-related personal insolvencies. Business-related personal insolvencies include insolvent individuals who have operated as sole traders, in partnerships or were directors in companies. These insolvencies have increased a little over the past couple of years, but this is from record lows during the pandemic, and they remain significantly below historical averages (see Chapter 2: Resilience of Australian Households and Businesses).
+
+The Australian Securities and Investments Commission (ASIC) includes information on its website about the corporate insolvency framework and the processes involved with each type of insolvency. See, for example, ASIC (undated), ‘Insolvency’, available at <https://asic.gov.au/regulatory-resources/insolvency>.
+
+Different measures of companies can be used to calculate insolvencies as a share of businesses, which is important to adjust for changes in the number of businesses over time and to understand the economic significance of the number of insolvencies. These measures include scaling company insolvencies by the number of registered companies or operating businesses. There is a difference in levels between the two measures reflecting how business entities are treated in each measure. A business may have multiple entities, each of which might have its own company registration and would be captured in the company registrations data. But only active and operating entities will be captured in the operating businesses measure.
+
+It is important to note that a company insolvency is not the same as a company exit. Businesses may exit voluntarily if, for example, they are facing limited growth prospects, have a lack of access to credit, or for reasons unrelated to its financial position, such as the retirement of the owner. Typically, business exits are around 10 times higher than insolvencies in a given year. However, the implications of an exit for the financial system are more limited – a business choosing to exit will have repaid its creditors in full. Furthermore, entering insolvency does not always result in a company ceasing their activities – some companies in external administration will be sold as a going concern or will satisfy their creditors and regain control from external administrators.
+
+Kenney, La Cava and Rodgers group causes of insolvency into three broad categories: 1. company-specific factors that vary with time, which are labelled ‘cyclical’ factors, such as profitability and leverage; 2. ‘structural’ company-specific factors that do not necessarily vary with time, such as whether the company is listed on the stock exchange or is a subsidiary of a parent company; and 3. external macroeconomic conditions, such as the state of the real economy. See Kenney R, G La Cava and D Rodgers (2016), ‘Why Do Companies Fail?’, RBA Research Discussion Paper No 2016-09.
+
+Businesses were eligible for direct cash transfers from the federal and state governments, and the ATO changes that temporarily introduced flexibility for tax lodgements and payments. Banks also introduced a period of temporary loan payment deferrals. For selected policy responses, see the appendices in Black S, K Lane and L Nunn (2021), ‘Small Business Finance and COVID-19 Outbreaks’, RBA Bulletin, September; Lewis M and Q Liu (2020), ‘The COVID-19 Outbreak and Access to Small Business Finance’, RBA Bulletin, September.
+
+See RBA (2020), ‘Box B: Business Failure Risk in the COVID-19 Pandemic’, Financial Stability Review, October; Black, Lane and Nunn, n 6.7 These included safe harbour provisions for directors from potential personal liability for insolvent trading, higher thresholds for owed amounts before creditors could issue statutory demands for payments, and extending the time allowed for companies seeking to appoint a restructuring practitioner.
+
+Australian Government (2020), ‘Insolvency Reforms to Support Small Business’, Fact Sheet. This type of insolvency differs from other appointment types: the business must have less than $1 million of outstanding liabilities, must have no outstanding employee entitlements, and must have lodged all its tax returns.
+
+The ATO also has visibility over unpaid superannuation entitlements owed to employees, which can inform tax enforcement decisions.10 Relatedly, notifications to the ATO of late or incorrectly paid superannuation payments unpaid has increased substantially over the past few years.
+
+Based on ATO annual reports. The value of collectable insolvency debt holdings of small businesses was $3.9 billion as at the end of 2018/19, and $8.7 billion at the end of 2023/24.
+
+For more detail, see Bullo G, A Chinnery, S Roche, E Smith and P Wallis (2024), ‘Small Business Economic and Financial Conditions’, RBA Bulletin, October.
+
+The range of profitability outcomes is much wider for small businesses than large businesses, see Bullo et al, n 13. A sizeable share of small businesses is not very profitable or makes a loss. The bottom 25 per cent of small businesses tend to make no (or negative) profits. Profitability, measured as profits (derived from total income and total expenses) divided by total assets, is as reported on business income tax returns. Total income includes some pandemic support measures, such as JobKeeper, where businesses have reported such measures for assessable income.
+
+See Andrews D, E Bahar and J Hambur (2023), ‘The Effects of COVID-19 and JobKeeper on Productivity-Enhancing Reallocation in Australia’, CAMA Working Paper No 29/2023.
+
+See RBA (2023), ‘Chapter 2: Resilience of Australian Households and Businesses’, Financial Stability Review, October.16 For more detail, see Bullo et al, n 13.17 This Focus Topic measures the employment of insolvent firms exactly one year prior to the insolvency event, rather than at the time of insolvency. This approach gives a more accurate picture of the size of insolvent firms, by taking into account the job shedding that typically occurs in the lead up to a firm entering insolvency.
+
+18 We are unable to disaggregate the debts of insolvent companies by bank and other creditors. However, most bank lending to businesses is secured.
+
+Secured creditors – most likely banks – have additional rights in small business restructuring (although these businesses are unlikely to hold much secured debt due to their size) and voluntary administrations.
+
+Detailed data based on external administrator reports lodged with ASIC show that more than 80 per cent of these insolvencies have an estimated dividend payout of 0 cents in the dollar to unsecured creditors. See Series 3 data in ASIC (undated), ‘Insolvency Statistics’, available at <https://asic.gov.au/regulatory-resources/find-a-document/statistics/insolvency-statistics>. However, these data are only available for around 60 per cent of total insolvencies in 2023/24, and as such, may not fully represent the outcome for unsecured creditors for all insolvencies. Unsecured creditors of businesses that pursue a small business restructure likely benefit from re-negotiated terms as the business continues to trade. Research using the first cohort of small businesses to enter this process indicates that unsecured creditors – likely to be other businesses or non-banks – receive some payment through the insolvency process. For more detail, see ASIC (2023), ‘Review of Small Business Restructuring Process’, Report No 756, January.
+
+However, there is clear growth in nominal earnings prior to the insolvency event. In the year following insolvency, average earnings for affected workers who gain employment are lower relative to their earnings trend at the insolvent firm.
+
+Businesses that enter a small business restructuring agreement are slightly smaller on average than all other insolvency types, and on average retain most of their employees a year after entering insolvency.
+
+There are also business loans from lenders that may be secured against home equity. Where these apply to small business owners who are operating their business as a partnership or as a sole trader, any failure to repay debts will show up as a business-related personal insolvency.
+
+Small business performance varies more widely than larger businesses, with a sizeable cohort experiencing negative annual revenue growth each year. Furthermore, revenue growth is more variable year to year. This also limits small businesses’ access to credit, which can be used to smooth through temporary cash flow difficulties. For more detail, see Bullo et al, n 13.
+
+## HILDA Disclaimer
+
+This document uses unit record data from the Household, Income and Labour Dynamics in Australia (HILDA) Survey. The unit record data from the HILDA Survey was obtained from the Australian Data Archive, which is hosted by The Australian National University. The HILDA Survey was initiated and is funded by the Australian Government Department of Social Services (DSS) and is managed by the Melbourne Institute of Applied Economic and Social Research (Melbourne Institute). The findings and views based on the data, however, are those of the authors and should not be attributed to the Australian Government, DSS, the Melbourne Institute, the Australian Data Archive or The Australian National University and none of those entities bear any responsibility for the analysis or interpretation of the unit record data from the HILDA Survey provided by the authors.
+
+## BLADE Disclaimer
+
+The results of these studies are based, in part, on data supplied to the ABS under the Taxation Administration Act 1953, A New Tax System (Australian Business Number) Act 1999, Australian Border Force Act 2015, Social Security (Administration) Act 1999, A New Tax System (Family Assistance) (Administration) Act 1999, Paid Parental Leave Act 2010 and/or the Student Assistance Act 1973. Such data may only be used for the purpose of administering the Census and Statistics Act 1905 or performance of functions of the ABS as set out in section 6 of the Australian Bureau of Statistics Act 1975. No individual information collected under the Census and Statistics Act 1905 is provided back to custodians for administrative or regulatory purposes. Any discussion of data limitations or weaknesses is in the context of using the data for statistical purposes and is not related to the ability of the data to support the Australian Taxation Office, Australian Business Register, Department of Social Services and/or Department of Home Affairs’ core operational requirements.
+
+Legislative requirements to ensure privacy and secrecy of these data have been followed. For access to MADIP and/or BLADE data under Section 16A of the ABS Act 1975 or enabled by section 15 of the Census and Statistics (Information Release and Access) Determination 2018, source data are de-identified and so data about specific individuals has not been viewed in conducting this analysis. In accordance with the Census and Statistics Act 1905, results have been treated where necessary to ensure that they are not likely to enable identification of a particular person or organisation.
+
+# Copyright and Disclaimer Notices

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sentiment Diff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..700&family=Literata:opsz,wght@7..72,400..700&display=swap">
+<style>
+/* Same desk as index.html: grey background, white sheets, orange = negative, teal = positive. */
+:root{
+  --bg:#e8eaee; --paper:#fbfbfc; --ink:#1c2128; --muted:#5d6672; --line:#d5d9e0;
+  --chip:#eceef2; --chip-on:#1c2128; --chip-on-ink:#fbfbfc;
+  --pos:#14a596; --neg:#f2802b; --a-min:.12; --a-max:.74; --focus:#3d6ee0; --edit:#6b5bd2;
+  --shadow:0 1px 2px rgba(20,24,30,.06),0 10px 32px rgba(20,24,30,.08);
+  --font-read:'Literata','Noto Serif SC','Songti SC',Georgia,serif;
+  --font-ui:'DM Sans','PingFang SC','Noto Sans SC','Microsoft YaHei',system-ui,sans-serif;
+  --font-num:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101318; --paper:#181c22; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a;
+    --chip:#222831; --chip-on:#e9ecf0; --chip-on-ink:#14181d;
+    --pos:#1fb5a5; --neg:#f08c3f; --a-min:.12; --a-max:.55; --focus:#8fb0ff; --edit:#a497ff;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px rgba(0,0,0,.35); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101318; --paper:#181c22; --ink:#e9ecf0; --muted:#98a2af; --line:#2a313a;
+  --chip:#222831; --chip-on:#e9ecf0; --chip-on-ink:#14181d;
+  --pos:#1fb5a5; --neg:#f08c3f; --a-min:.12; --a-max:.55; --focus:#8fb0ff; --edit:#a497ff;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);padding:0 max(16px,env(safe-area-inset-right,0px)) 4rem max(16px,env(safe-area-inset-left,0px));-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:84rem;margin:0 auto}
+/* toolbar */
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem 1rem;padding:.8rem 0 .7rem}
+.brand{font:650 1rem/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap}
+.brand em{font-style:normal;padding:.08em .22em;border-radius:.25em;background-image:linear-gradient(103deg,color-mix(in srgb,var(--neg) 55%,transparent) 0,color-mix(in srgb,var(--neg) 55%,transparent) 48%,color-mix(in srgb,var(--pos) 55%,transparent) 52%,color-mix(in srgb,var(--pos) 55%,transparent) 100%)}
+.views{display:flex;flex-wrap:wrap;gap:.3rem}
+.views a,.btn{font:500 .75rem/1 var(--font-ui);padding:.45rem .7rem;border-radius:.55rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none;white-space:nowrap}
+.views a[aria-current="page"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.seg{display:inline-flex;padding:3px;background:var(--chip);border-radius:.7rem;gap:2px}
+.seg button{border:0;background:transparent;padding:.4rem .8rem;border-radius:.5rem;font:500 .8rem/1 var(--font-ui);color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--chip-on);color:var(--chip-on-ink)}
+.controls{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;margin:.2rem 0 .9rem}
+.controls .lbl{font:500 .75rem var(--font-ui);color:var(--muted)}
+.legend{display:inline-flex;align-items:center;gap:.45rem;font:500 .75rem var(--font-ui);color:var(--muted)}
+.ramp{width:5.5rem;height:.55rem;border-radius:99px;border:1px solid var(--line);background:linear-gradient(90deg,color-mix(in srgb,var(--neg) 80%,transparent),transparent 50%,color-mix(in srgb,var(--pos) 80%,transparent))}
+.sheet{background:var(--paper);border-radius:1rem;box-shadow:var(--shadow);padding:clamp(1rem,2.5vw,1.6rem)}
+.head h1{margin:0;font:650 clamp(1.35rem,3.6vw,1.85rem)/1.15 var(--font-ui);letter-spacing:-.02em;text-wrap:balance}
+.head p{margin:.45rem 0 0;font:400 .8125rem/1.5 var(--font-ui);color:var(--muted);max-width:62rem}
+.badge{font:500 .68rem var(--font-ui);letter-spacing:.04em;padding:.18rem .45rem;border-radius:.3rem;background:var(--chip);color:var(--ink);white-space:nowrap}
+.grid{display:grid;gap:1rem;grid-template-columns:minmax(0,1fr);margin-top:1rem}
+@media (min-width:1180px){.grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}.detail{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
+h2{font:650 .95rem/1.3 var(--font-ui);margin:0 0 .2rem;letter-spacing:-.005em}
+.sub{font:400 .75rem/1.45 var(--font-ui);color:var(--muted);margin:0 0 .8rem}
+
+/* timeline table */
+.tscroll{overflow-x:auto;margin:0 -.4rem;padding:0 .4rem}
+table.tl{border-collapse:separate;border-spacing:3px;width:100%;min-width:34rem}
+.tl th{font:500 .7rem var(--font-ui);color:var(--muted);text-align:center;padding:.2rem .1rem;white-space:nowrap}
+.tl th.gl{text-align:left}
+.tl td.gl{position:sticky;left:0;background:var(--paper);z-index:1;font:500 .8rem/1.25 var(--font-ui);padding:.25rem .5rem .25rem 0;max-width:15rem;min-width:9rem}
+.tl td.gl small{display:block;font:400 .66rem var(--font-num);color:var(--muted)}
+.cell{position:relative;width:100%;min-width:3.9rem;height:2.6rem;border:1px solid transparent;border-radius:.45rem;font:500 .74rem/1 var(--font-num);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.18rem;
+  background:color-mix(in srgb,var(--hue,transparent) calc((var(--a-min) + var(--k,0) * (var(--a-max) - var(--a-min))) * 100%),transparent)}
+.cell.zero{background:var(--chip)}
+.cell .d{font:400 .62rem var(--font-num);color:var(--muted)}
+.cell .d.up{color:color-mix(in srgb,var(--pos) 75%,var(--ink))}
+.cell .d.dn{color:color-mix(in srgb,var(--neg) 80%,var(--ink))}
+.cell.thin{opacity:.55}
+.cell:not(:disabled):hover{border-color:color-mix(in srgb,var(--ink) 40%,transparent)}
+.cell[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.cell:disabled{cursor:default}
+.pos{--hue:var(--pos)} .neg{--hue:var(--neg)}
+td.spark{width:7.5rem}
+td.spark svg{display:block}
+.empty{font:400 .85rem var(--font-ui);color:var(--muted);padding:2rem 0;text-align:center}
+
+/* detail */
+.dhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.4rem 1rem}
+.dhead h2{font-size:1.1rem}
+.big{font:500 1.5rem/1 var(--font-num);letter-spacing:-.02em}
+.big.up{color:color-mix(in srgb,var(--pos) 80%,var(--ink))} .big.dn{color:color-mix(in srgb,var(--neg) 85%,var(--ink))}
+.counts{display:flex;flex-wrap:wrap;gap:.35rem;margin:.7rem 0 .2rem}
+.counts span{font:400 .72rem var(--font-num);color:var(--muted);background:var(--chip);border-radius:.35rem;padding:.25rem .45rem}
+.counts b{font-weight:500;color:var(--ink)}
+.charts{display:grid;gap:.8rem;grid-template-columns:minmax(0,1fr);margin:.8rem 0}
+@media (min-width:640px){.charts{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.chart{border:1px solid var(--line);border-radius:.7rem;padding:.6rem .7rem .5rem}
+.chart h3{margin:0 0 .3rem;font:500 .72rem var(--font-ui);color:var(--muted)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 10px var(--font-num);fill:var(--muted)}
+.chart .lab{font:500 10px var(--font-ui);fill:var(--ink)}
+.note{font:400 .72rem/1.45 var(--font-ui);color:var(--muted);margin:.2rem 0 0}
+
+.filters{display:flex;flex-wrap:wrap;gap:.35rem;margin:1rem 0 .6rem;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .7rem;border-radius:999px;border:1px solid var(--line);background:var(--paper);font:500 .75rem/1 var(--font-ui);white-space:nowrap}
+.chip small{font:400 .68rem var(--font-num);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.chip[aria-pressed="true"] small{color:inherit;opacity:.7}
+.ev{border-top:1px solid var(--line);padding:.8rem 0}
+.ev .meta{display:flex;flex-wrap:wrap;gap:.35rem .6rem;align-items:center;font:400 .7rem var(--font-num);color:var(--muted);margin-bottom:.35rem}
+.kind{font:600 .62rem var(--font-ui);letter-spacing:.06em;text-transform:uppercase;padding:.16rem .4rem;border-radius:.3rem}
+.kind.e{background:color-mix(in srgb,var(--edit) 16%,transparent);color:var(--edit)}
+.kind.a{background:color-mix(in srgb,var(--pos) 16%,transparent);color:color-mix(in srgb,var(--pos) 75%,var(--ink))}
+.kind.r{background:var(--chip);color:var(--muted)}
+.contrib{font:500 .72rem var(--font-num);color:var(--ink)}
+.ev .sec{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22rem}
+.ln{display:grid;grid-template-columns:3.6rem minmax(0,1fr);gap:.5rem;align-items:baseline;margin:.2rem 0}
+.ln .tag{font:400 .66rem var(--font-num);color:var(--muted);text-align:right}
+.ln .tag b{display:block;font-weight:500;color:var(--ink);font-size:.72rem}
+.txt{font:400 .94rem/1.7 var(--font-read);overflow-wrap:break-word}
+.txt.old{color:color-mix(in srgb,var(--ink) 78%,var(--muted))}
+.w{--hl:color-mix(in srgb,var(--hue) calc((var(--a-min) + var(--k) * (var(--a-max) - var(--a-min))) * 100%),transparent);
+  background-image:linear-gradient(103deg,transparent 0,var(--hl) 2%,var(--hl) 96%,transparent 100%);background-repeat:no-repeat;background-size:100% 88%;background-position:0 60%;border-radius:.25em;padding:0 .12em;margin:0 -.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+del{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--edit) 80%,transparent);text-decoration-thickness:1.5px;color:inherit}
+ins{text-decoration:underline;text-decoration-color:var(--edit);text-decoration-thickness:2px;text-underline-offset:3px}
+.more{margin-top:.6rem}
+.hint{font:400 .8rem/1.5 var(--font-ui);color:var(--muted);padding:1rem 0}
+footer{margin-top:1.2rem;font:400 .7rem/1.5 var(--font-ui);color:var(--muted)}
+footer code{font-family:var(--font-num)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="brand">Sentiment<em>Diff</em></div>
+    <nav class="views" aria-label="Views">
+      <a href="index.html">Analyzer</a>
+      <a href="SentimentDiff.html" aria-current="page">Diff · Timeline</a>
+      <label class="btn" for="file">Open diff JSON</label>
+      <input id="file" type="file" accept=".json,application/json" hidden>
+    </nav>
+  </div>
+
+  <section class="sheet head">
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:.5rem" id="badges"></div>
+    <h1 id="title">Sentiment Diff</h1>
+    <p id="lede">Loading…</p>
+  </section>
+
+  <div class="controls">
+    <span class="lbl">Rows</span>
+    <div class="seg" role="radiogroup" aria-label="Rows" id="kindSeg">
+      <button role="radio" data-v="topic" aria-checked="true">Topics</button>
+      <button role="radio" data-v="section" aria-checked="false">Sections</button>
+    </div>
+    <span class="lbl">Values</span>
+    <div class="seg" role="radiogroup" aria-label="Values" id="modeSeg">
+      <button role="radio" data-v="abs" aria-checked="true">Mean score</button>
+      <button role="radio" data-v="rel" aria-checked="false">vs. edition mean</button>
+    </div>
+    <span class="lbl">Sort</span>
+    <div class="seg" role="radiogroup" aria-label="Sort" id="sortSeg">
+      <button role="radio" data-v="doc" aria-checked="true">Default</button>
+      <button role="radio" data-v="chg" aria-checked="false">Latest change</button>
+    </div>
+    <span class="legend">negative <span class="ramp"></span> positive</span>
+  </div>
+
+  <div class="grid">
+    <section class="sheet">
+      <h2>Timeline</h2>
+      <p class="sub" id="tlsub">Each cell is the mean sentence score of that topic in that edition; the small figure is the change from the previous edition. Click a cell to see why it changed.</p>
+      <div class="tscroll"><table class="tl" id="tl"></table></div>
+      <p class="note" id="oneoff" hidden></p>
+    </section>
+    <section class="sheet detail" id="detail" aria-live="polite">
+      <div class="hint">Pick a cell in the timeline (any edition after the first) to open its diff against the previous edition.</div>
+    </section>
+  </div>
+  <footer id="foot"></footer>
+</div>
+
+<!-- The data is a classic script, not fetch(), so the page also works from file://. Missing file = empty state. -->
+<script src="examples/fsr-timeline.diff.js"></script>
+<script>
+(function () {
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (v, d = 3) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const fmtMean = v => v == null ? '–' : (v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const hueCls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const cpMap = text => { const m = [0]; let u = 0; for (const ch of text) { u += ch.length; m.push(u); } return m; };
+const KIND = { e: 'Edited', a: 'Added', r: 'Removed' };
+
+let D = null;
+const st = { oneoffs: false, kind: 'topic', mode: 'abs', sort: 'doc', sel: null, filter: 'all', shown: 12 };
+
+/* ---------- loading ---------- */
+function setData(obj, name) {
+  if (!obj || obj.format !== 'sentiment-diff') throw new Error('Not a sentiment-diff file');
+  D = obj; st.sel = null;
+  // open on the topic that moved most in the latest edition (among topics with a reasonable sample)
+  const last = D.editions.length - 1, ld = D.diffs[last - 1];
+  const cand = D.groups.filter(g => g.kind === 'topic' && ld && ld.groups[g.id] && D.editions[last].stats[g.id].n >= 15 && D.editions[last - 1].stats[g.id].n >= 15);
+  const first = cand.sort((a, b) => Math.abs(ld.groups[b.id].delta) - Math.abs(ld.groups[a.id].delta))[0] || D.groups[0];
+  if (first && last > 0) st.sel = { g: first.id, k: last };
+  renderHead(name); renderTable(); renderDetail();
+}
+$('#file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => setData(JSON.parse(t), f.name)).catch(err => alert('Could not open: ' + err.message));
+});
+function boot() {
+  const files = window.DIFF_FILES || {};
+  const name = Object.keys(files)[0];
+  if (name) setData(files[name], name);
+  else { $('#lede').textContent = 'No diff loaded. Build one with tools/sm_diff.py and open the JSON here.'; $('#tl').innerHTML = '<tr><td class="empty">Nothing to show yet.</td></tr>'; }
+}
+
+/* ---------- header ---------- */
+function renderHead(name) {
+  const eds = D.editions;
+  $('#title').textContent = D.title || 'Sentiment Diff';
+  const m = D.model ? `${D.model.profile} dictionary · engine ${D.model.version}` : 'external scores';
+  $('#badges').innerHTML = [`<span class="badge">${eds.length} editions</span>`, `<span class="badge">${esc(m)}</span>`,
+    `<span class="badge">${esc(eds[0].label)} → ${esc(eds[eds.length - 1].label)}</span>`].join('');
+  const tot = D.diffs.reduce((a, d) => { d.pairs.forEach(p => a[p[2]]++); a.a += d.added.length; a.r += d.removed.length; return a; }, { u: 0, e: 0, a: 0, r: 0 });
+  $('#lede').innerHTML = `Mean sentence sentiment by topic and section across ${eds.length} editions, every edition scored with the same model. ` +
+    `Between consecutive editions ${tot.u.toLocaleString()} sentences were carried over unchanged, ${tot.e} edited, ${tot.a} added and ${tot.r} removed. ` +
+    `Each change splits exactly into <b>wording edits</b>, <b>added</b> and <b>removed</b> sentences, so a topic that “got more negative” can be traced to the sentences that moved it.`;
+  $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${D.params.minSim} = edited. Colour scale: mean ±${D.scale.mean}, sentence ±${D.scale.sentence}. Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
+}
+
+/* ---------- timeline ---------- */
+function seen(g) { return D.editions.filter(e => (e.stats[g.id] || {}).n > 0).length; }
+function rows() {
+  let gs = D.groups.filter(g => g.kind === st.kind);
+  if (st.kind === 'section' && !st.oneoffs) gs = gs.filter(g => seen(g) >= 2);
+  if (st.kind === 'topic') gs = [D.groups.find(g => g.kind === 'all')].concat(gs);
+  if (st.sort === 'chg') {
+    const last = D.diffs[D.diffs.length - 1];
+    gs = gs.slice().sort((a, b) => Math.abs((last.groups[b.id] || {}).delta || 0) - Math.abs((last.groups[a.id] || {}).delta || 0));
+  }
+  return gs;
+}
+function value(g, k) {
+  const s = D.editions[k].stats[g.id];
+  if (!s || s.mean == null) return null;
+  return st.mode === 'rel' ? s.mean - D.editions[k].stats.all.mean : s.mean;
+}
+function renderTable() {
+  const eds = D.editions;
+  const scale = st.mode === 'rel' ? D.scale.mean / 2 : D.scale.mean;
+  let h = '<thead><tr><th class="gl">' + (st.kind === 'topic' ? 'Topic' : 'Section') + '</th>' +
+    eds.map(e => `<th>${esc(e.label)}</th>`).join('') + '<th>Trend</th></tr></thead><tbody>';
+  for (const g of rows()) {
+    const vals = eds.map((_, k) => value(g, k));
+    const n = eds.map((e, k) => (e.stats[g.id] || {}).n || 0);
+    h += `<tr><td class="gl" title="${esc(g.label)}">${esc(g.label)}<small>n ${n.join(' · ')}</small></td>`;
+    eds.forEach((e, k) => {
+      const v = vals[k];
+      if (v == null) { h += '<td><button class="cell zero" disabled aria-label="not in this edition">–</button></td>'; return; }
+      const prev = k ? vals[k - 1] : null, dl = prev == null ? null : v - prev;
+      const sel = st.sel && st.sel.g === g.id && st.sel.k === k;
+      const can = k > 0 && D.diffs[k - 1].groups[g.id];
+      h += `<td><button class="cell ${hueCls(v)}${Math.abs(v) < 1e-9 ? ' zero' : ''}${n[k] < 8 ? ' thin' : ''}" style="--k:${clamp01(Math.abs(v) / scale).toFixed(3)}"` +
+        ` data-g="${esc(g.id)}" data-k="${k}" aria-pressed="${sel}" ${can ? '' : 'disabled'}` +
+        ` title="${esc(g.label)} · ${esc(e.label)}: ${fmt(v, 3)} (n ${n[k]})${dl != null ? ', change ' + fmt(dl, 3) : ''}">` +
+        `${fmtMean(v)}${dl != null ? `<span class="d ${dl > 0.0005 ? 'up' : dl < -0.0005 ? 'dn' : ''}">${dl > 0.0005 ? '▲' : dl < -0.0005 ? '▼' : '·'}${Math.abs(dl).toFixed(3)}</span>` : ''}</button></td>`;
+    });
+    h += `<td class="spark">${spark(g)}</td></tr>`;
+  }
+  $('#tl').innerHTML = h + '</tbody>';
+  const hiddenN = D.groups.filter(g => g.kind === 'section' && seen(g) < 2).length;
+  const oo = $('#oneoff');
+  oo.hidden = st.kind !== 'section' || !hiddenN;
+  oo.innerHTML = st.oneoffs ? `Showing ${hiddenN} sections that appear in one edition only (boxes, focus topics). <button class="btn" id="oo">Hide them</button>`
+    : `${hiddenN} sections appear in one edition only (boxes, focus topics) and are hidden. <button class="btn" id="oo">Show them</button>`;
+  const ob = $('#oo'); if (ob) ob.onclick = () => { st.oneoffs = !st.oneoffs; renderTable(); };
+  $('#tlsub').textContent = (st.mode === 'rel'
+    ? 'Each cell is the topic mean minus that edition’s overall mean, which removes a shift in the whole document’s tone. '
+    : 'Each cell is the mean sentence score in that edition. ') +
+    'The small figure is the change from the previous edition; faded cells rest on fewer than 8 sentences. Click a cell to see why it changed.';
+}
+function spark(g) {
+  const W = 110, H = 30, eds = D.editions, xs = k => 4 + k * (W - 8) / Math.max(1, eds.length - 1);
+  const pts = eds.map((e, k) => { const s = e.stats[g.id], v = value(g, k); return v != null ? { k, m: v, se: s.se || 0 } : null; }).filter(Boolean);
+  if (pts.length < 2) return '';
+  const lo = Math.min(...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(...pts.map(p => p.m + 1.96 * p.se));
+  const pad = (hi - lo) * 0.1 || 0.05, y = v => H - 3 - (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * (H - 6);
+  const band = pts.map(p => `${xs(p.k)},${y(p.m + 1.96 * p.se)}`).concat(pts.slice().reverse().map(p => `${xs(p.k)},${y(p.m - 1.96 * p.se)}`)).join(' ');
+  const line = pts.map(p => `${xs(p.k)},${y(p.m)}`).join(' ');
+  const end = pts[pts.length - 1];
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="trend"><polygon points="${band}" fill="var(--chip)"/>` +
+    (lo < 0 && hi > 0 ? `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-dasharray="2 2"/>` : '') +
+    `<polyline points="${line}" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="${xs(end.k)}" cy="${y(end.m)}" r="2.4" fill="var(--${end.m < 0 ? 'neg' : 'pos'})"/></svg>`;
+}
+$('#tl').addEventListener('click', e => {
+  const b = e.target.closest('.cell'); if (!b || b.disabled) return;
+  st.sel = { g: b.dataset.g, k: +b.dataset.k }; st.filter = 'all'; st.shown = 12;
+  renderTable(); renderDetail();
+  if (window.innerWidth < 1180) $('#detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+for (const [id, key] of [['#kindSeg', 'kind'], ['#modeSeg', 'mode'], ['#sortSeg', 'sort']]) {
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st[key] = b.dataset.v;
+    if (key === 'kind') { st.filter = 'all'; st.shown = 12; }
+    $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', x === b));
+    if (key === 'kind') {
+      const g = rows().find(r => r.kind === st.kind);
+      if (g && st.sel) st.sel = { g: g.id, k: st.sel.k };
+    }
+    renderTable(); renderDetail();
+  });
+}
+
+/* ---------- detail ---------- */
+function renderDetail() {
+  const el = $('#detail');
+  if (!D || !st.sel) { el.innerHTML = '<div class="hint">Pick a cell in the timeline (any edition after the first) to open its diff against the previous edition.</div>'; return; }
+  const g = D.groups.find(x => x.id === st.sel.g), k = st.sel.k, diff = D.diffs[k - 1], dg = diff && diff.groups[g.id];
+  const A = D.editions[k - 1], B = D.editions[k];
+  if (!dg) { el.innerHTML = `<div class="hint">${esc(g.label)} does not appear in both ${esc(A.label)} and ${esc(B.label)}.</div>`; return; }
+  const sa = A.stats[g.id], sb = B.stats[g.id], c = dg.counts;
+  const items = dg.items.filter(it => st.filter === 'all' || it[0] === st.filter);
+  const cnt = t => dg.items.filter(it => it[0] === t).length;
+  const dir = dg.delta > 0.0005 ? 'up' : dg.delta < -0.0005 ? 'dn' : '';
+  el.innerHTML = `
+    <div class="dhead"><h2>${esc(g.label)} · ${esc(A.label)} → ${esc(B.label)}</h2><span class="big ${dir}">${fmt(dg.delta, 3)}</span></div>
+    <p class="note">Mean ${fmtMean(sa.mean)} (n ${sa.n}) → ${fmtMean(sb.mean)} (n ${sb.n}).
+      ${dir === 'dn' ? 'More negative.' : dir === 'up' ? 'Less negative / more positive.' : 'Essentially unchanged.'}
+      ${sa.se != null && sb.se != null && Math.abs(dg.delta) < 1.96 * Math.hypot(sa.se, sb.se) ? ' Within sampling noise (change smaller than 1.96 × combined standard error).' : ''}</p>
+    <div class="counts"><span>unchanged <b>${c.u}</b></span><span>edited <b>${c.e}</b></span><span>added <b>${c.a}</b></span><span>removed <b>${c.r}</b></span></div>
+    <div class="charts">
+      <div class="chart"><h3>Where the change comes from</h3>${waterfall(sa.mean, dg, sb.mean)}
+        <p class="note">Unchanged sentences contribute exactly 0. Added and removed sentences count by how far they sit from the old mean.</p></div>
+      <div class="chart"><h3>${esc(g.label)} across editions (mean ± 95% CI)</h3>${trend(g, k)}</div>
+    </div>
+    ${g.patterns ? `<p class="note">Topic words: ${g.patterns.map(p => '<code>' + esc(p) + '</code>').join(', ')}</p>` : ''}
+    <div class="filters" role="group" aria-label="Evidence filter">
+      ${[['all', 'All', dg.items.length], ['e', 'Edited', cnt('e')], ['a', 'Added', cnt('a')], ['r', 'Removed', cnt('r')]].map(([v, l, n]) =>
+        `<button class="chip" data-f="${v}" aria-pressed="${st.filter === v}">${l} <small>${n}</small></button>`).join('')}
+      <span class="note" style="margin:0 0 0 .3rem">sorted by contribution to the change</span>
+    </div>
+    <div id="evs">${items.slice(0, st.shown).map(it => evidence(it, A, B, diff, g)).join('') || '<div class="hint">No sentences of this kind.</div>'}</div>
+    ${items.length > st.shown ? `<button class="btn more" id="more">Show ${Math.min(12, items.length - st.shown)} more of ${items.length - st.shown}</button>` : ''}`;
+  el.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { st.filter = b.dataset.f; st.shown = 12; renderDetail(); }));
+  const m = el.querySelector('#more'); if (m) m.addEventListener('click', () => { st.shown += 12; renderDetail(); });
+}
+function waterfall(ma, dg, mb) {
+  const steps = [['Old mean', ma, 'base'], ['Edits', dg.edit, 'e'], ['Added', dg.added, 'a'], ['Removed', dg.removed, 'r'], ['New mean', mb, 'base']];
+  let run = ma; const bars = steps.map(([l, v, t], i) => {
+    if (t === 'base') return { l, from: 0, to: v, v, t };
+    const b = { l, from: run, to: run + v, v, t }; run += v; return b;
+  });
+  const vals = bars.flatMap(b => [b.from, b.to]).concat([0]);
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+  const W = 300, rowH = 22, H = bars.length * rowH + 6, L = 64, R = 50, x = v => L + (v - lo) / span * (W - L - R);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="decomposition">`;
+  s += `<line x1="${x(0)}" x2="${x(0)}" y1="0" y2="${H - 4}" stroke="var(--line)"/>`;
+  bars.forEach((b, i) => {
+    const y = 3 + i * rowH, x0 = Math.min(x(b.from), x(b.to)), w = Math.max(1.5, Math.abs(x(b.to) - x(b.from)));
+    const fill = b.t === 'base' ? (b.v < 0 ? 'var(--neg)' : 'var(--pos)') : (b.v < 0 ? 'var(--neg)' : 'var(--pos)');
+    const op = b.t === 'base' ? .35 : .85;
+    s += `<text class="lab" x="0" y="${y + 13}">${b.l}</text><rect x="${x0}" y="${y + 2}" width="${w}" height="${rowH - 8}" rx="3" fill="${fill}" fill-opacity="${op}"/>`;
+    s += `<text x="${W - R + 6}" y="${y + 13}">${b.t === 'base' ? fmtMean(b.v) : fmt(b.v, 3)}</text>`;
+    if (i > 0 && i < bars.length - 1) s += `<line x1="${x(b.from)}" x2="${x(b.from)}" y1="${y - 4}" y2="${y + 2}" stroke="var(--muted)" stroke-dasharray="1.5 1.5"/>`;
+  });
+  return s + '</svg>';
+}
+function trend(g, k) {
+  const eds = D.editions, W = 300, H = 120, L = 34, R = 8, T = 8, Bm = 22;
+  const pts = eds.map((e, i) => { const s = e.stats[g.id]; return s && s.mean != null ? { i, m: s.mean, se: s.se || 0, n: s.n } : null; }).filter(Boolean);
+  if (!pts.length) return '';
+  let lo = Math.min(0, ...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(0, ...pts.map(p => p.m + 1.96 * p.se));
+  const pad = (hi - lo) * 0.08 || 0.05; lo -= pad; hi += pad;
+  const x = i => L + i * (W - L - R) / Math.max(1, eds.length - 1), y = v => T + (hi - v) / (hi - lo) * (H - T - Bm);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="trend across editions">`;
+  for (const v of [lo + pad, 0, hi - pad]) s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${v === 0 ? '' : 'stroke-dasharray="2 3"'}/><text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${fmtMean(v)}</text>`;
+  s += `<rect x="${x(k - 1)}" y="${T}" width="${x(k) - x(k - 1)}" height="${H - T - Bm}" fill="var(--chip)"/>`;
+  s += `<polygon points="${pts.map(p => `${x(p.i)},${y(p.m + 1.96 * p.se)}`).concat(pts.slice().reverse().map(p => `${x(p.i)},${y(p.m - 1.96 * p.se)}`)).join(' ')}" fill="var(--ink)" fill-opacity=".08"/>`;
+  s += `<polyline points="${pts.map(p => `${x(p.i)},${y(p.m)}`).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+  pts.forEach(p => { s += `<circle cx="${x(p.i)}" cy="${y(p.m)}" r="${p.i === k || p.i === k - 1 ? 3.6 : 2.6}" fill="var(--${p.m < 0 ? 'neg' : 'pos'})" stroke="var(--paper)" stroke-width="1"/>`; });
+  eds.forEach((e, i) => { s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(e.label.replace(/^(\w{3}) \d\d(\d\d)$/, '$1 $2'))}</text>`; });
+  return s + '</svg>';
+}
+function evidence(it, A, B, diff, g) {
+  const [t, i, j, c] = it, a = i != null ? A.sentences[i] : null, b = j != null ? B.sentences[j] : null;
+  const ops = i != null && j != null ? diff.ops[i + ':' + j] : null;
+  const sec = (b || a).sec != null ? D.sectionKeys[(b || a).sec] : '';
+  const secLabel = sec ? (D.groups.find(x => x.id === 's:' + sec) || {}).label || sec : '';
+  // an edit that moved a sentence into or out of the group shows both sides
+  const why = t === 'a' && a ? 'entered this group through an edit' : t === 'r' && b ? 'left this group through an edit' : '';
+  let h = `<div class="ev"><div class="meta"><span class="kind ${t}">${KIND[t]}</span><span class="contrib" title="contribution to the change in the mean">${fmt(c, 4)}</span>` +
+    (why ? `<span>${why}</span>` : '') + (secLabel ? `<span class="sec" title="${esc(secLabel)}">${esc(secLabel)}</span>` : '') + '</div>';
+  if (a) h += line(A.label, a, ops ? ops[0] : null, 'del', true);
+  if (b) h += line(B.label, b, ops ? ops[1] : null, 'ins', false);
+  return h + '</div>';
+}
+function line(label, s, spans, tag, old) {
+  return `<div class="ln"><div class="tag">${esc(label.replace(/^(\w{3}) (\d{4})$/, '$1 $2'))}<b>${fmt(s.s, 2)}</b></div><div class="txt${old ? ' old' : ''}">${paint(s, spans, tag)}</div></div>`;
+}
+/* sentence text with the scored words marked (marker colour) and the changed spans wrapped in <del> / <ins>.
+   Offsets in the file are code points; convert to UTF-16 indexes first. */
+function paint(s, spans, tag) {
+  const text = s.t, m = cpMap(text), N = text.length;
+  const cuts = new Set([0, N]);
+  const words = (s.w || []).map(w => [m[w[0]], m[w[1]], w[2]]).filter(w => w[0] != null && w[1] != null);
+  const chg = (spans || []).map(x => [m[x[0]], m[x[1]]]).filter(x => x[0] != null && x[1] != null);
+  words.forEach(w => { cuts.add(w[0]); cuts.add(w[1]); }); chg.forEach(x => { cuts.add(x[0]); cuts.add(x[1]); });
+  const pts = [...cuts].sort((p, q) => p - q);
+  let out = '';
+  for (let n = 0; n < pts.length - 1; n++) {
+    const p = pts[n], q = pts[n + 1]; if (q <= p) continue;
+    let seg = esc(text.slice(p, q));
+    const w = words.find(w => w[0] <= p && q <= w[1]);
+    if (w) seg = `<span class="w ${hueCls(w[2])}" style="--k:${clamp01(Math.abs(w[2]) / (D.scale.word || 2.5)).toFixed(3)}" title="${fmt(w[2], 2)}">${seg}</span>`;
+    if (chg.some(x => x[0] <= p && q <= x[1])) seg = `<${tag}>${seg}</${tag}>`;
+    out += seg;
+  }
+  return out;
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
