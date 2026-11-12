@@ -31,10 +31,9 @@ TOPICS = [{"id": "banks", "label": "Banks", "patterns": ["banks?"], "_re": None}
 
 
 def topics():
-    import re
     out = []
     for t in TOPICS:
-        out.append(dict(t, _re=[re.compile(r"(?<![A-Za-z])" + x + r"(?![A-Za-z])", re.I) for x in t["patterns"]]))
+        out.append(dict(t, _re=[M.compile_pattern(x) for x in t["patterns"]]))
     return out
 
 
@@ -95,6 +94,10 @@ def test_alignment_kinds():
 def test_decomposition_is_exact_and_matches_direct_difference():
     r = build()
     for gid, g in r["diffs"][0]["groups"].items():
+        if g["delta"] is None:
+            assert g["oneSided"] in ("added", "removed")
+            assert all(it[3] is None for it in g["items"])
+            continue
         a = r["editions"][0]["stats"][gid]["mean"]
         b = r["editions"][1]["stats"][gid]["mean"]
         assert abs((b - a) - g["delta"]) < 1e-3, gid
@@ -117,7 +120,10 @@ def test_topic_membership_change_through_edit():
     old = doc([p(("Lending standards are sound.", 0.4))])
     new = doc([p(("Lending standards at banks are sound.", 0.4))])
     r = M.build([("a", old), ("b", new)], topics())
-    assert "t:banks" not in r["diffs"][0]["groups"]               # no banks sentences in the old edition
+    # banks exists only on the new side: no mean, but the sentence is still evidence
+    g = r["diffs"][0]["groups"]["t:banks"]
+    assert g["delta"] is None and g["oneSided"] == "added" and g["counts"]["a"] == 1
+    assert g["items"][0][2] is not None
     assert r["diffs"][0]["groups"]["all"]["counts"]["e"] == 1
 
 
@@ -175,6 +181,65 @@ def test_topic_alternation_keeps_word_boundaries():
     r = M.compile_pattern("bank|ADI")
     assert r.search("The bank said") and r.search("ADI lending")
     assert not r.search("bankruptcy rose") and not r.search("RADIO hosts")
+    assert not r.search("non-bank lenders") and not r.search("non-banks grew")
+
+
+def test_bank_pattern_does_not_match_inside_non_bank():
+    topics = M.load_topics(os.path.join(ROOT, "examples", "fsr-topics.json"))
+    banks = next(t for t in topics if t["id"] == "banks")
+    hit = lambda s: any(r.search(s) for r in banks["_re"])
+    assert hit("Banks remain well capitalised.")
+    assert hit("The banking system is resilient.")
+    assert not hit("Stress in non-bank lenders rose.")
+    assert not hit("non-banks grew quickly.")
+
+
+def test_date_editions_are_sorted_chronologically():
+    early = doc([p(("Banks remain well capitalised and profitable.", 0.2))])
+    late = doc([p(("Banks remain well capitalised and profitable.", 0.5))])
+    r = M.build([("2024-09", late), ("2024-03", early)], topics())
+    assert [e["id"] for e in r["editions"]] == ["2024-03", "2024-09"]
+    assert r["diffs"][0]["groups"]["all"]["delta"] > 0
+    try:
+        M.build([("2024-03", early), ("2024-03", late)], topics())
+    except SystemExit:
+        return
+    raise AssertionError("duplicate edition ids must be refused")
+
+
+def test_single_sentence_has_no_fake_standard_error():
+    s = M.stats([0.4], 0.2)
+    assert s["n"] == 1 and s["mean"] == 0.4 and s["se"] is None
+    s2 = M.stats([0.0, 0.4], 0.2)
+    assert s2["se"] is not None and s2["se"] > 0
+
+
+def test_word_pack_keeps_base_and_rule_and_skips_empty_note():
+    packed = M.pack_word({"start": 0, "end": 4, "score": -1.2, "base": 2.2, "note": "negated not"}, 0)
+    assert packed == [0, 4, -1.2, 2.2, "negated not"]
+    plain = M.pack_word({"start": 1, "end": 5, "score": 1.5, "base": 1.5}, 0)
+    assert plain == [1, 5, 1.5, 1.5]
+    # a zero effective score is still stored as zero, not dropped and not forced positive
+    zero = M.pack_word({"start": 0, "end": 3, "score": 0, "base": 0}, 0)
+    assert zero[2] == 0 and zero[3] == 0
+
+
+def test_clean_prose_repairs_bullet_y_and_slash_without_touching_words():
+    sys.path.insert(0, os.path.join(ROOT, "examples"))
+    import build_fsr_timeline as B
+    src = "Australia: y Further weakness in housing.\n\ny Low risk premia remain.\n\nCosts and/ or wages rose.\n\nby Australian banks in February Statement."
+    out = B.clean_prose(src)
+    assert "y Further" not in out and "• Further weakness" in out
+    assert "• Low risk premia" in out
+    assert "and/or wages" in out and "and/ or" not in out
+    assert "by Australian banks" in out and "February Statement" in out
+
+
+def test_params_record_min_hits_and_assessment_group_is_present():
+    r = build()
+    assert r["params"]["minHits"] == 5
+    assert "as:all" in r["editions"][0]["stats"]
+    assert any(g["kind"] == "assessment" for g in r["groups"])
 
 
 def test_two_sections_of_one_edition_never_merge_into_one_row():

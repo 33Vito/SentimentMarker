@@ -19,12 +19,13 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 
 Compare editions of the same publication: which topics turned more negative, which risk signals faded, and whether that came from rewording or from new and dropped sentences. The demo covers six RBA Financial Stability Reviews, March 2024 to October 2026, all scored with the Finance dictionary.
 
-- Timeline: one row per topic (or section), one cell per edition with the mean sentence score and its change; a sparkline with a 95% band. "vs. edition mean" removes shifts in the whole document's tone
-- Click a cell: the diff against the previous edition. The change splits exactly into edited, added and removed sentences (unchanged ones contribute 0), drawn as a waterfall, then the evidence sorted by contribution: old and new wording side by side, changed words struck through / underlined, scored words in marker colour
-- Sections view, with one-off boxes and focus topics hidden by default
+- Timeline: one row per topic, per the Assessment narrative, or per section. A cell is the mean sentence score and its change from the previous edition. Means are withheld below five sentences, and the trend line breaks across a gap. "vs. edition mean" removes a shift in the whole document's tone
+- Click a cell, including a topic that exists on only one side: the diff against the previous edition. A two-sided change splits exactly into edited, added and removed sentences (unchanged ones contribute 0), drawn as a waterfall, then the evidence sorted by contribution. Changed words are struck through or underlined. A scored word's tooltip shows lexicon base, effective weight and any rule note. Added or removed is not a claim that policy was added or deleted, and a sentence score is not aspect sentiment
+- Sections follow PDF reading order and can drift. The Assessment rows keep one section across editions
 
 ```
 python examples/build_fsr_timeline.py          # score examples/fsr/*.txt (+ examples/fsr-2026-10.txt), then diff
+python examples/build_fsr_timeline.py --check  # rebuild and require a byte-for-byte match of examples/fsr-timeline.diff.js
 python tools/sm_diff.py --edition A=a.scored.json --edition B=b.scored.json --topics topics.json -o out.diff.json
 ```
 
@@ -88,7 +89,8 @@ The script is split in two:
 ```
 node test/core.test.js            # core, app wiring, generator --check, golden vectors, General == the 56f66cb engine
 python3 test/test_golden.py       # the same golden vectors through Python -> Node (also runs under pytest)
-python3 test/test_diff.py         # Diff + Timeline: alignment kinds, exact decomposition, sections (also runs under pytest)
+python test/test_diff.py          # Diff + Timeline: alignment, decomposition, hyphen boundaries (also runs under pytest)
+node test/diff-ui.test.js          # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
 node tools/build-lexicon.js --check
 python3 tools/build_finance_vocab.py --check   # needs pysentiment2 + vaderSentiment
 ```

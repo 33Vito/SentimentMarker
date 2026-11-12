@@ -8,7 +8,7 @@ python tools/sm_diff.py --edition 2026-03=a.scored.json --edition 2026-10=b.scor
 python examples/build_fsr_timeline.py        # the RBA FSR demo: score examples/fsr/*.txt, then diff
 ```
 
-The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)), oldest first. They must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
+The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of the form `YYYY-MM` are sorted chronologically before alignment, so passing them newest-first cannot swap added and removed. Any other ids keep the order given. Duplicate ids are refused. Every file must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
 
 ## Method
 
@@ -39,7 +39,11 @@ removed = −Σ removed       (a − m_A) / n_B
 
 The identity is exact (checked for every group, error < 1e-9). Unchanged sentences contribute 0. An added sentence moves the mean only by how far it sits from the old mean, so adding a sentence exactly as negative as the old average changes nothing. A sentence that enters or leaves a group through an edit (the topic word was written in or out) counts as added or removed for that group. Each term is a sum of per-sentence contributions, which are the evidence list.
 
-The page also shows each mean with a 95% interval (±1.96 standard errors) and says when a change is within that noise. "vs. edition mean" subtracts the edition's all-text mean, so a shift in the whole document's tone does not read as a change in every topic.
+The page draws a band of ±1.96 standard errors around each mean and calls it the **sentence-score spread**. The sentences are the text, not a random sample, so the band is not a confidence interval and not a significance test. A one-sentence group has no standard error (`se` is null); it is not stored as 0. Means and changes are withheld when either side has fewer than `params.minHits` sentences (5). The chart leaves a gap there instead of connecting across it.
+
+"vs. edition mean" subtracts the edition's all-text mean, so a shift in the whole document's tone does not read as a change in every topic. In that mode the heading number is the relative change. The spread sentence is shown only next to the absolute change, and it quotes that same number. A group that exists on only one side still lists its sentences; it has no delta.
+
+An added, removed or unmatched sentence is not by itself a policy addition or deletion. A sentence score is the whole sentence, not aspect-level sentiment. The Assessment rows (`kind: "assessment"`) keep only sentences whose section key is `financial stability assessment`, so those comparisons share one section. Section rows still follow PDF reading order.
 
 ## JSON
 
@@ -48,7 +52,7 @@ The page also shows each mean with a 95% interval (±1.96 standard errors) and s
   "format": "sentiment-diff", "version": 1,
   "title": "RBA Financial Stability Review, 2024–2026",
   "model": {"version": "1.0.0", "profile": "finance"},
-  "params": {"minSim": 0.55, "neutral": 0.2},
+  "params": {"minSim": 0.55, "neutral": 0.2, "minHits": 5},
   "scale": {"word": 2.5, "sentence": 0.8, "mean": 0.4, "delta": 0.2},
   "topics": [{"id": "banks", "label": "Banks", "patterns": ["banks?", "banking"]}],
   "groups": [{"id": "all", "label": "All text", "kind": "all"},
@@ -57,9 +61,13 @@ The page also shows each mean with a 95% interval (±1.96 standard errors) and s
   "sectionKeys": ["financial stability assessment", "banks"],
   "editions": [{
     "id": "2026-03", "label": "Mar 2026", "title": "…",
+    "source": "https://www.rba.gov.au/publications/fsr/2026/mar/",
+    "pages": [1, 79], "assessmentPages": [4, 8],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with pack_fsr.js. Bullet glyphs and 'and/ or' repaired before scoring.",
     "sections": ["financial stability assessment", "banks"],
     "stats": {"t:banks": {"n": 123, "mean": -0.075, "se": 0.021, "neg": 40, "pos": 22}},
-    "sentences": [{"t": "Banks remain well placed…", "s": 0.49, "sec": 1, "tp": [0], "w": [[0, 5, 0], [13, 23, 1.6]], "h": 1}]
+    "sentences": [{"t": "Banks remain well placed…", "s": 0.49, "sec": 1, "tp": [0], "w": [[0, 5, 1.6, 1.6], [13, 23, -1.2, 2.2, "negated not"]], "h": 1}]
   }],
   "diffs": [{
     "from": 0, "to": 1,
@@ -76,8 +84,11 @@ The page also shows each mean with a 95% interval (±1.96 standard errors) and s
 
 | Field | Meaning |
 | --- | --- |
-| `editions[].sentences[]` | `t` text, `s` score (centre removed), `sec` index into `sectionKeys` (or null), `tp` indexes into `topics`, `w` scored words `[start, end, score]` in code points, `h` 1 for a heading |
-| `editions[].stats[group]` | `n`, `mean`, `se` (standard error), `neg` / `pos` counts beyond ±`params.neutral` |
+| `editions[].source / pages / assessmentPages / scope / quality` | Optional per-edition provenance. `pages` and `assessmentPages` are `[first, last]` PDF pages. The page prints them next to the evidence |
+| `editions[].sentences[]` | `t` text, `s` score (centre removed), `sec` index into `sectionKeys` (or null), `tp` indexes into `topics`, `w` scored words, `h` 1 for a heading. A word is `[start, end, effective]`, or with a lexicon base `[start, end, effective, base]`, or `[start, end, effective, base, note]` when a rule note exists. Offsets are code points. Effective is centre-removed; base is the lexicon weight before negation, boosters and caps. A zero effective score is not a positive weight |
+| `editions[].stats[group]` | `n`, `mean`, `se` (standard error; null when `n < 2`), `neg` / `pos` counts beyond ±`params.neutral` |
+| `groups[].kind` | `all`, `topic`, `section`, or `assessment` (the Assessment section, and each topic inside it) |
+| `diffs[].groups[group].oneSided` | `"added"` or `"removed"` when the group has sentences on only one side. `delta` is then null and the items still list those sentences |
 | `diffs[].pairs` | `[i in A, j in B, "u" or "e", similarity]` |
 | `diffs[].ops["i:j"]` | changed word spans of an edited pair: `[deleted spans in A, inserted spans in B]`, code points |
 | `diffs[].groups[group].items` | `[kind, i or null, j or null, contribution]`, kind `e` / `a` / `r`, sorted by \|contribution\| |
@@ -91,3 +102,4 @@ The page also shows each mean with a 95% interval (±1.96 standard errors) and s
 - Most of an FSR is rewritten each edition (only 10–20% of sentences carry over unchanged or edited), so changes are mostly explained by added and removed sentences. That is a property of the text, not a failed alignment: the closest leftover pairs score well below the edit threshold.
 - Topic patterns are keywords; "risk premia" text that never says "equity" is missed, and a sentence that mentions banks in passing counts fully for Banks.
 - The scores are the Finance dictionary's (Loughran-McDonald polarity, VADER strength), a demo-quality lexicon with no sense of context. The diff is only as good as the scorer; swap in a model and rerun.
+- Full-review section rows move when the PDF's box and heading structure moves. Prefer topics, or the Assessment rows, when the comparison should stay on one scope.

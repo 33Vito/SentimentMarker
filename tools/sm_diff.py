@@ -5,8 +5,10 @@
                             --edition 2026-10=examples/fsr-2026-10.scored.json \
                             --topics examples/fsr-topics.json -o examples/fsr-timeline.diff.json [--js out.diff.js]
 
-Input: SentimentMarker scored JSON files (docs/FORMAT.md), oldest first, all scored by the SAME model and profile
+Input: SentimentMarker scored JSON files (docs/FORMAT.md), all scored by the SAME model and profile
 (a timeline across two rulers means nothing; the tool refuses files whose `model` differs).
+Edition ids of the form YYYY-MM are sorted oldest first, so a reversed command line cannot swap added and removed.
+Any other id keeps the order it was given. Duplicate ids are refused.
 Output: one `sentiment-diff` JSON (docs/DIFF_FORMAT.md) that SentimentDiff.html shows.
 
 What it does, per adjacent pair of editions (A = older, B = newer):
@@ -14,7 +16,8 @@ What it does, per adjacent pair of editions (A = older, B = newer):
        unchanged  normalised text identical (matched in order, duplicates paired one to one)
        edited     word-token similarity >= --min-sim, paired greedily, best first (same section breaks ties)
        removed    in A only;  added  in B only
-  2. Exact decomposition of the change in a group's mean sentence score (a group = a topic, a section, or all text):
+  2. Exact decomposition of the change in a group's mean sentence score (a group = all text, a topic, the
+     Assessment narrative, or a section):
        mean_B - mean_A = edit + added + removed
          edit    = sum over edited pairs (b - a) / n_B
          added   = sum over added sentences (b - mean_A) / n_B
@@ -22,6 +25,7 @@ What it does, per adjacent pair of editions (A = older, B = newer):
      Unchanged sentences contribute exactly 0. A sentence that enters or leaves a group through an edit
      (for instance the topic word was added) counts as added / removed for that group.
      Each term is the sum of per-sentence contributions, which are written out as the evidence list.
+     A group with sentences on only one side has no second mean: delta is null and the sentences are still listed.
 
 Standard library only. The decomposition is checked against the direct difference for every group (|err| < 1e-9).
 """
@@ -137,7 +141,7 @@ def flatten(doc):
             text = s.get("text", "")
             if not text.strip() or not isinstance(s.get("score"), (int, float)) or FURNITURE.match(text.strip()):
                 continue
-            words = [[w["start"], w["end"], round(w["score"] - center_of(doc, "word"), 4)]
+            words = [pack_word(w, center_of(doc, "word"))
                      for w in s.get("words", []) if isinstance(w.get("start"), int) and isinstance(w.get("score"), (int, float))]
             out.append({"t": text, "s": round(s["score"] - c, 4), "sec": cur_sec, "w": words, "h": p.get("type") == "h"})
     return out, sections
@@ -145,8 +149,12 @@ def flatten(doc):
 
 # ---------- topics ----------
 def compile_pattern(p):
-    """Whole-word, case-insensitive. The group keeps both boundaries on every branch of a top-level `a|b`."""
-    return re.compile(r"(?<![A-Za-z])(?:" + p + r")(?![A-Za-z])", re.I)
+    """Whole-word, case-insensitive. The group keeps both boundaries on every branch of a top-level `a|b`.
+
+    Hyphen is part of the boundary, so `banks?` does not match inside `non-bank` / `non-banks`.
+    A plain `\\b` would, because `-` is not a word character.
+    """
+    return re.compile(r"(?<![\w-])(?:" + p + r")(?![\w-])", re.I)
 
 
 def load_topics(path):
@@ -237,14 +245,71 @@ def word_ops(a, b):
 
 
 # ---------- statistics ----------
+def pack_word(w, c_word):
+    """[start, end, effective] plus optional base and rule note.
+
+    Effective is the file score after subtracting the word centre. Base is the lexicon
+    weight before negation, boosters and caps, and is not centre-shifted. A rule note
+    is present only when the engine recorded one. Score 0 is not a positive weight.
+    """
+    item = [w["start"], w["end"], round(w["score"] - c_word, 4)]
+    has_base = isinstance(w.get("base"), (int, float))
+    note = w.get("note") if isinstance(w.get("note"), str) and w.get("note") else ""
+    if has_base or note:
+        item.append(round(w["base"], 4) if has_base else None)
+        if note:
+            item.append(note)
+    return item
+
+
 def stats(scores, neutral):
     n = len(scores)
     if not n:
         return {"n": 0, "mean": None, "se": None, "neg": 0, "pos": 0}
     m = sum(scores) / n
-    sd = math.sqrt(sum((x - m) ** 2 for x in scores) / (n - 1)) if n > 1 else 0.0
-    return {"n": n, "mean": round(m, 4), "se": round(sd / math.sqrt(n), 4),
+    # n == 1 has no sample spread. A zero standard error would draw a fake certainty band.
+    if n < 2:
+        sd = None
+    else:
+        sd = math.sqrt(sum((x - m) ** 2 for x in scores) / (n - 1))
+    return {"n": n, "mean": round(m, 4), "se": None if sd is None else round(sd / math.sqrt(n), 4),
             "neg": sum(1 for x in scores if x < -neutral), "pos": sum(1 for x in scores if x > neutral)}
+
+
+def _one_sided(A, B, inA, inB, pairs, removed, added):
+    """A group that exists on only one side has no mean to subtract. Still list the sentences."""
+    ia = [i for i in range(len(A)) if inA(i)]
+    jb = [j for j in range(len(B)) if inB(j)]
+    if ia and jb:
+        return None
+    if not ia and not jb:
+        return None
+    counts = {"u": 0, "e": 0, "a": 0, "r": 0}
+    items, seen = [], set()
+    if jb and not ia:
+        for i, j, _kind, _sim in pairs:
+            if inB(j):
+                counts["a"] += 1
+                items.append(["a", i, j, None])
+                seen.add(j)
+        for j in added:
+            if inB(j) and j not in seen:
+                counts["a"] += 1
+                items.append(["a", None, j, None])
+        side = "added"
+    else:
+        for i, j, _kind, _sim in pairs:
+            if inA(i):
+                counts["r"] += 1
+                items.append(["r", i, j, None])
+                seen.add(i)
+        for i in removed:
+            if inA(i) and i not in seen:
+                counts["r"] += 1
+                items.append(["r", i, None, None])
+        side = "removed"
+    return {"delta": None, "edit": None, "added": None, "removed": None,
+            "counts": counts, "items": items, "oneSided": side}
 
 
 def decompose(A, B, inA, inB, pairs, removed, added):
@@ -252,7 +317,7 @@ def decompose(A, B, inA, inB, pairs, removed, added):
     ia = [i for i in range(len(A)) if inA(i)]
     jb = [j for j in range(len(B)) if inB(j)]
     if not ia or not jb:
-        return None
+        return _one_sided(A, B, inA, inB, pairs, removed, added)
     mA = sum(A[i]["s"] for i in ia) / len(ia)
     mB = sum(B[j]["s"] for j in jb) / len(jb)
     nB = len(jb)
@@ -316,7 +381,27 @@ def nice(x):
 
 
 # ---------- main ----------
-def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
+ASSESS_KEY = "financial stability assessment"
+MIN_HITS = 5
+
+
+def sort_editions(editions):
+    """YYYY-MM ids are ordered chronologically so a reversed CLI cannot swap added and removed.
+
+    Other ids keep the order they were given. Duplicate ids are refused either way.
+    """
+    ids = [eid for eid, _doc in editions]
+    if len(ids) != len(set(ids)):
+        raise SystemExit("duplicate edition ids: " + ", ".join(ids))
+    if all(re.fullmatch(r"\d{4}-\d{2}", eid) for eid in ids):
+        ordered = sorted(editions, key=lambda pair: pair[0])
+        return ordered, [eid for eid, _doc in editions] != [eid for eid, _doc in ordered]
+    return list(editions), False
+
+
+def build(editions, topics, min_sim=0.55, title=None, neutral=0.2, sources=None, min_hits=MIN_HITS):
+    editions, _reordered = sort_editions(editions)
+    sources = sources or {}
     models = {json.dumps(d.get("model"), sort_keys=True) for _, d in editions}
     if len(models) > 1:
         raise SystemExit("editions were scored by different models / profiles: " + ", ".join(sorted(models)))
@@ -349,6 +434,9 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
     groups = [{"id": "all", "label": "All text", "kind": "all"}]
     groups += [{"id": "t:" + t["id"], "label": t["label"], "kind": "topic", "patterns": t["patterns"]} for t in topics]
     groups += [{"id": "s:" + k, "label": sec_titles[k], "kind": "section"} for k in sec_keys]
+    # Same section across editions: the Assessment narrative, then each topic inside it.
+    groups += [{"id": "as:all", "label": "Assessment narrative", "kind": "assessment"}]
+    groups += [{"id": "as:" + t["id"], "label": t["label"], "kind": "assessment", "patterns": t["patterns"]} for t in topics]
 
     def member(e, g):
         ss = e["sents"]
@@ -357,6 +445,13 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
         if g["kind"] == "topic":
             k = next(n for n, t in enumerate(topics) if "t:" + t["id"] == g["id"])
             return lambda i: k in ss[i]["tp"]
+        if g["kind"] == "assessment":
+            def in_assess(i):
+                return ss[i].get("seckey") == ASSESS_KEY
+            if g["id"] == "as:all":
+                return in_assess
+            k = next(n for n, t in enumerate(topics) if "as:" + t["id"] == g["id"])
+            return lambda i, k=k: in_assess(i) and k in ss[i]["tp"]
         key = g["id"][2:]
         return lambda i: ss[i]["seckey"] == key
 
@@ -366,8 +461,14 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
         for g in groups:
             f = member(e, g)
             st[g["id"]] = stats([s["s"] for n, s in enumerate(e["sents"]) if f(n)], neutral)
+        src = sources.get(e["id"]) or {}
+        prov = {}
+        for key in ("source", "pages", "assessmentPages", "scope", "quality"):
+            if src.get(key) not in (None, ""):
+                prov[key] = src[key]
         out_eds.append({
             "id": e["id"], "label": label_for(e["id"]), "title": e["doc"].get("title", e["id"]),
+            **prov,
             "sections": [s["key"] for s in e["sections"]],
             "stats": st,
             "sentences": [{"t": s["t"], "s": s["s"], "sec": sec_pos[s["seckey"]] if s["seckey"] else None,
@@ -394,7 +495,7 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
 
     all_s = [abs(s["s"]) for e in eds for s in e["sents"] if s["s"]]
     means = [abs(st["mean"]) for e in out_eds for st in e["stats"].values() if st["mean"] is not None and st["n"] >= 5]
-    deltas = [abs(g["delta"]) for d in diffs for gid, g in d["groups"].items()]
+    deltas = [abs(g["delta"]) for d in diffs for g in d["groups"].values() if isinstance(g.get("delta"), (int, float))]
     words = [abs(w[2]) for e in eds for s in e["sents"] for w in s["w"]]
     model = eds[0]["doc"].get("model")
     ref = eds[-1]["doc"].get("scale", {})
@@ -402,7 +503,7 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
         "format": FORMAT, "version": VERSION,
         "title": title or eds[-1]["doc"].get("title", ""),
         "model": model,
-        "params": {"minSim": min_sim, "neutral": neutral},
+        "params": {"minSim": min_sim, "neutral": neutral, "minHits": min_hits},
         "scale": {"word": ref.get("word") if isinstance(ref, dict) and ref.get("word") else nice(pct(words, 0.9)),
                   "sentence": nice(pct(all_s, 0.9)), "mean": nice(pct(means, 0.95)), "delta": nice(pct(deltas, 0.9))},
         "topics": [{"id": t["id"], "label": t["label"], "patterns": t["patterns"]} for t in topics],
@@ -426,13 +527,15 @@ def write(obj, path, js=None, note=None):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--edition", action="append", required=True, help="ID=PATH, oldest first (ID like 2026-03)")
+    ap.add_argument("--edition", action="append", required=True, help="ID=PATH (YYYY-MM ids are sorted oldest first; other ids keep the given order)")
     ap.add_argument("--topics", required=True)
     ap.add_argument("-o", "--out", required=True)
     ap.add_argument("--js", help="also write a classic script for file:// pages")
     ap.add_argument("--title")
     ap.add_argument("--note", help="attribution / provenance line for the head of the --js script")
+    ap.add_argument("--sources", help="JSON object keyed by edition id: source, pages, assessmentPages, scope, quality")
     ap.add_argument("--min-sim", type=float, default=0.55)
+    ap.add_argument("--min-hits", type=int, default=MIN_HITS, help="page withholds means and deltas below this many sentences")
     a = ap.parse_args()
     if len(a.edition) < 2:
         sys.exit("need at least two editions")
@@ -441,14 +544,23 @@ if __name__ == "__main__":
         eid, path = spec.split("=", 1)
         with open(path, encoding="utf-8") as f:
             editions.append((eid, json.load(f)))
-    res = build(editions, load_topics(a.topics), a.min_sim, a.title)
+    _ordered, reordered = sort_editions(editions)
+    if reordered:
+        print("edition ids were not chronological; sorted by YYYY-MM so added/removed stay in time order", file=sys.stderr)
+    src = None
+    if a.sources:
+        with open(a.sources, encoding="utf-8") as f:
+            src = json.load(f)
+    res = build(editions, load_topics(a.topics), a.min_sim, a.title, sources=src, min_hits=a.min_hits)
     write(res, a.out, a.js, a.note)
     for d in res["diffs"]:
         c = defaultdict(int)
         for p in d["pairs"]:
             c[p[2]] += 1
         A, B = res["editions"][d["from"]], res["editions"][d["to"]]
+        delta = d["groups"]["all"]["delta"]
+        delta_s = "n/a" if delta is None else f"{delta:+.4f}"
         print(f"{A['id']} -> {B['id']}: unchanged {c['u']}, edited {c['e']}, removed {len(d['removed'])}, "
-              f"added {len(d['added'])}; all-text delta {d['groups']['all']['delta']:+.4f}"
+              f"added {len(d['added'])}; all-text delta {delta_s}"
               + (f"  WARNING {d['unchangedScoreMismatch']} unchanged sentences changed score" if d["unchangedScoreMismatch"] else ""))
     print(f"wrote {a.out} ({os.path.getsize(a.out)} bytes)")

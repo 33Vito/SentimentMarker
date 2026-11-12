@@ -1,10 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sentiment Diff</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..700&family=Literata:opsz,wght@7..72,400..700&display=swap">
@@ -153,6 +152,7 @@ footer code{font-family:var(--font-num)}
     <span class="lbl">Rows</span>
     <div class="seg" role="radiogroup" aria-label="Rows" id="kindSeg">
       <button role="radio" data-v="topic" aria-checked="true">Topics</button>
+      <button role="radio" data-v="assessment" aria-checked="false">Assessment</button>
       <button role="radio" data-v="section" aria-checked="false">Sections</button>
     </div>
     <span class="lbl">Values</span>
@@ -199,6 +199,8 @@ const KIND = { e: 'Edited', a: 'Added', r: 'Removed' };
 
 let D = null;
 const st = { oneoffs: false, kind: 'topic', mode: 'abs', sort: 'doc', sel: null, filter: 'all', shown: 12 };
+const minHits = () => (D && D.params && D.params.minHits) || 5;
+const DISCLAIMER = 'An added, removed or unmatched sentence is not by itself a new or deleted policy. A sentence score is the whole sentence, not aspect-level sentiment.';
 
 /* ---------- loading ---------- */
 function setData(obj, name) {
@@ -206,8 +208,9 @@ function setData(obj, name) {
   D = obj; st.sel = null;
   // open on the topic that moved most in the latest edition (among topics with a reasonable sample)
   const last = D.editions.length - 1, ld = D.diffs[last - 1];
-  const cand = D.groups.filter(g => g.kind === 'topic' && ld && ld.groups[g.id] && D.editions[last].stats[g.id].n >= 15 && D.editions[last - 1].stats[g.id].n >= 15);
-  const first = cand.sort((a, b) => Math.abs(ld.groups[b.id].delta) - Math.abs(ld.groups[a.id].delta))[0] || D.groups[0];
+  const cand = D.groups.filter(g => g.kind === 'topic' && ld && ld.groups[g.id] && (D.editions[last].stats[g.id] || {}).n >= 15 && (D.editions[last - 1].stats[g.id] || {}).n >= 15);
+  const mag = id => { const d = ld.groups[id] && ld.groups[id].delta; return d == null ? 0 : Math.abs(d); };
+  const first = cand.sort((a, b) => mag(b.id) - mag(a.id))[0] || D.groups[0];
   if (first && last > 0) st.sel = { g: first.id, k: last };
   renderHead(name); renderTable(); renderDetail();
 }
@@ -230,10 +233,13 @@ function renderHead(name) {
   $('#badges').innerHTML = [`<span class="badge">${eds.length} editions</span>`, `<span class="badge">${esc(m)}</span>`,
     `<span class="badge">${esc(eds[0].label)} → ${esc(eds[eds.length - 1].label)}</span>`].join('');
   const tot = D.diffs.reduce((a, d) => { d.pairs.forEach(p => a[p[2]]++); a.a += d.added.length; a.r += d.removed.length; return a; }, { u: 0, e: 0, a: 0, r: 0 });
-  $('#lede').innerHTML = `Mean sentence sentiment by topic and section across ${eds.length} editions, every edition scored with the same model. ` +
+  $('#lede').innerHTML = `Mean sentence sentiment by topic, by the Assessment narrative, and by section, across ${eds.length} editions scored with the same model. ` +
     `Between consecutive editions ${tot.u.toLocaleString()} sentences were carried over unchanged, ${tot.e} edited, ${tot.a} added and ${tot.r} removed. ` +
-    `Each change splits exactly into <b>wording edits</b>, <b>added</b> and <b>removed</b> sentences, so a topic that “got more negative” can be traced to the sentences that moved it.`;
-  $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${num(D.params.minSim)} = edited. Colour scale: mean ±${num(D.scale.mean)}, sentence ±${num(D.scale.sentence)}. Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
+    `Each two-sided change splits exactly into <b>wording edits</b>, <b>added</b> and <b>removed</b> sentences. ` +
+    `Means are withheld below ${minHits()} sentences. ${DISCLAIMER}`;
+  $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${num(D.params.minSim)} = edited; anything left over is unmatched, not a policy change. ` +
+    `Bands show the spread of sentence scores (±1.96 × their standard error), not a confidence interval. ` +
+    `Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
 }
 
 /* ---------- timeline ---------- */
@@ -242,22 +248,36 @@ function rows() {
   let gs = D.groups.filter(g => g.kind === st.kind);
   if (st.kind === 'section' && !st.oneoffs) gs = gs.filter(g => seen(g) >= 2);
   if (st.kind === 'topic') gs = [D.groups.find(g => g.kind === 'all')].concat(gs);
+  if (st.kind === 'assessment') {
+    const all = D.groups.find(g => g.id === 'as:all');
+    gs = gs.filter(g => g.id !== 'as:all');
+    if (all) gs = [all].concat(gs);
+  }
   if (st.sort === 'chg') {
     const last = D.diffs[D.diffs.length - 1];
     gs = gs.slice().sort((a, b) => Math.abs((last.groups[b.id] || {}).delta || 0) - Math.abs((last.groups[a.id] || {}).delta || 0));
   }
-  return gs;
+  return gs.filter(Boolean);
+}
+function sampleOf(g, k) {
+  return D.editions[k].stats[g.id] || { n: 0, mean: null, se: null };
 }
 function value(g, k) {
-  const s = D.editions[k].stats[g.id];
-  if (!s || s.mean == null) return null;
+  const s = sampleOf(g, k);
+  if (s.mean == null || s.n < minHits()) return null;
   const m = Number(s.mean);
-  return st.mode === 'rel' ? m - Number(D.editions[k].stats.all.mean) : m;
+  if (st.mode === 'rel') {
+    const all = D.editions[k].stats.all;
+    if (!all || all.mean == null || all.n < minHits()) return null;
+    return m - Number(all.mean);
+  }
+  return m;
 }
 function renderTable() {
   const eds = D.editions;
   const scale = st.mode === 'rel' ? D.scale.mean / 2 : D.scale.mean;
-  let h = '<thead><tr><th class="gl">' + (st.kind === 'topic' ? 'Topic' : 'Section') + '</th>' +
+  const rowHead = st.kind === 'topic' ? 'Topic' : st.kind === 'assessment' ? 'Assessment' : 'Section';
+  let h = '<thead><tr><th class="gl">' + rowHead + '</th>' +
     eds.map(e => `<th>${esc(e.label)}</th>`).join('') + '<th>Trend</th></tr></thead><tbody>';
   for (const g of rows()) {
     const vals = eds.map((_, k) => value(g, k));
@@ -265,14 +285,18 @@ function renderTable() {
     h += `<tr><td class="gl" title="${esc(g.label)}">${esc(g.label)}<small>n ${n.join(' · ')}</small></td>`;
     eds.forEach((e, k) => {
       const v = vals[k];
-      if (v == null) { h += '<td><button class="cell zero" disabled aria-label="not in this edition">–</button></td>'; return; }
-      const prev = k ? vals[k - 1] : null, dl = prev == null ? null : v - prev;
       const sel = st.sel && st.sel.g === g.id && st.sel.k === k;
-      const can = k > 0 && D.diffs[k - 1].groups[g.id];
-      h += `<td><button class="cell ${hueCls(v)}${Math.abs(v) < 1e-9 ? ' zero' : ''}${n[k] < 8 ? ' thin' : ''}" style="--k:${clamp01(Math.abs(v) / scale).toFixed(3)}"` +
+      const group = k > 0 && D.diffs[k - 1].groups[g.id];
+      const can = k > 0 && !!group;
+      if (!n[k]) { h += '<td><button class="cell zero" disabled aria-label="not in this edition">–</button></td>'; return; }
+      const withheld = v == null;
+      const prev = k ? vals[k - 1] : null, dl = prev == null || withheld ? null : v - prev;
+      const hue = withheld ? '' : hueCls(v);
+      h += `<td><button class="cell ${hue}${!withheld && Math.abs(v) < 1e-9 ? ' zero' : ''}${n[k] < minHits() ? ' thin' : ''}"` +
+        (withheld ? '' : ` style="--k:${clamp01(Math.abs(v) / scale).toFixed(3)}"`) +
         ` data-g="${esc(g.id)}" data-k="${k}" aria-pressed="${sel}" ${can ? '' : 'disabled'}` +
-        ` title="${esc(g.label)} · ${esc(e.label)}: ${fmt(v, 3)} (n ${n[k]})${dl != null ? ', change ' + fmt(dl, 3) : ''}">` +
-        `${fmtMean(v)}${dl != null ? `<span class="d ${dl > 0.0005 ? 'up' : dl < -0.0005 ? 'dn' : ''}">${dl > 0.0005 ? '▲' : dl < -0.0005 ? '▼' : '·'}${Math.abs(dl).toFixed(3)}</span>` : ''}</button></td>`;
+        ` title="${esc(g.label)} · ${esc(e.label)}: ${withheld ? 'withheld, n ' + n[k] + ' is below ' + minHits() : fmt(v, 3) + ' (n ' + n[k] + ')'}${dl != null ? ', change ' + fmt(dl, 3) : ''}">` +
+        `${withheld ? '–' : fmtMean(v)}${dl != null ? `<span class="d ${dl > 0.0005 ? 'up' : dl < -0.0005 ? 'dn' : ''}">${dl > 0.0005 ? '▲' : dl < -0.0005 ? '▼' : '·'}${Math.abs(dl).toFixed(3)}</span>` : ''}</button></td>`;
     });
     h += `<td class="spark">${spark(g)}</td></tr>`;
   }
@@ -283,23 +307,43 @@ function renderTable() {
   oo.innerHTML = st.oneoffs ? `Showing ${hiddenN} sections that appear in one edition only (boxes, focus topics). <button class="btn" id="oo">Hide them</button>`
     : `${hiddenN} sections appear in one edition only (boxes, focus topics) and are hidden. <button class="btn" id="oo">Show them</button>`;
   const ob = $('#oo'); if (ob) ob.onclick = () => { st.oneoffs = !st.oneoffs; renderTable(); };
-  $('#tlsub').textContent = (st.mode === 'rel'
-    ? 'Each cell is the topic mean minus that edition’s overall mean, which removes a shift in the whole document’s tone. '
+  const scopeNote = st.kind === 'section'
+    ? 'Section rows follow PDF reading order. A box has no closing heading, so later prose can be counted inside the box. '
+    : st.kind === 'assessment'
+      ? 'Assessment rows use only the Financial Stability Assessment section, so the editions share one scope. '
+      : '';
+  $('#tlsub').textContent = scopeNote + (st.mode === 'rel'
+    ? 'Each cell is the group mean minus that edition’s overall mean, which removes a shift in the whole document’s tone. '
     : 'Each cell is the mean sentence score in that edition. ') +
-    'The small figure is the change from the previous edition; faded cells rest on fewer than 8 sentences. Click a cell to see why it changed.';
+    `Means and changes are withheld below ${minHits()} sentences, and the trend line breaks across a withheld or missing edition. Click a cell to see the sentences.`;
+}
+function runsOf(pts) {
+  const runs = []; let cur = [];
+  pts.forEach(p => {
+    if (cur.length && p.i !== cur[cur.length - 1].i + 1) { runs.push(cur); cur = []; }
+    cur.push(p);
+  });
+  if (cur.length) runs.push(cur);
+  return runs;
 }
 function spark(g) {
   const W = 110, H = 30, eds = D.editions, xs = k => 4 + k * (W - 8) / Math.max(1, eds.length - 1);
-  const pts = eds.map((e, k) => { const s = e.stats[g.id], v = value(g, k); return v != null ? { k, m: v, se: Number(s.se) || 0 } : null; }).filter(Boolean);
-  if (pts.length < 2) return '';
-  const lo = Math.min(...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(...pts.map(p => p.m + 1.96 * p.se));
+  const pts = eds.map((e, k) => { const s = sampleOf(g, k), v = value(g, k); return v != null ? { i: k, m: v, se: s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
+  if (!pts.length) return '';
+  const bandOf = p => p.se == null ? 0 : 1.96 * p.se;
+  const lo = Math.min(...pts.map(p => p.m - bandOf(p))), hi = Math.max(...pts.map(p => p.m + bandOf(p)));
   const pad = (hi - lo) * 0.1 || 0.05, y = v => H - 3 - (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * (H - 6);
-  const band = pts.map(p => `${xs(p.k)},${y(p.m + 1.96 * p.se)}`).concat(pts.slice().reverse().map(p => `${xs(p.k)},${y(p.m - 1.96 * p.se)}`)).join(' ');
-  const line = pts.map(p => `${xs(p.k)},${y(p.m)}`).join(' ');
-  const end = pts[pts.length - 1];
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="trend"><polygon points="${band}" fill="var(--chip)"/>` +
+  let bands = '', lines = '';
+  runsOf(pts).forEach(run => {
+    if (run.length >= 2 && run.every(p => p.se != null)) {
+      bands += `<polygon points="${run.map(p => `${xs(p.i)},${y(p.m + bandOf(p))}`).concat(run.slice().reverse().map(p => `${xs(p.i)},${y(p.m - bandOf(p))}`)).join(' ')}" fill="var(--chip)"/>`;
+    }
+    if (run.length >= 2) lines += `<polyline points="${run.map(p => `${xs(p.i)},${y(p.m)}`).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`;
+  });
+  const dots = pts.map(p => `<circle cx="${xs(p.i)}" cy="${y(p.m)}" r="2.2" fill="var(--${p.m < 0 ? 'neg' : p.m > 0 ? 'pos' : 'ink'})"/>`).join('');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="trend">${bands}` +
     (lo < 0 && hi > 0 ? `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-dasharray="2 2"/>` : '') +
-    `<polyline points="${line}" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="${xs(end.k)}" cy="${y(end.m)}" r="2.4" fill="var(--${end.m < 0 ? 'neg' : 'pos'})"/></svg>`;
+    `${lines}${dots}</svg>`;
 }
 $('#tl').addEventListener('click', e => {
   const b = e.target.closest('.cell'); if (!b || b.disabled) return;
@@ -322,31 +366,53 @@ for (const [id, key] of [['#kindSeg', 'kind'], ['#modeSeg', 'mode'], ['#sortSeg'
 }
 
 /* ---------- detail ---------- */
+function pageSpan(label, pages) {
+  return pages && pages.length ? label + ' pp. ' + pages.map(n => num(n)).join('–') : '';
+}
+function prov(e) {
+  if (!e || (!e.source && !e.quality && !e.scope && !e.pages && !e.assessmentPages)) return '';
+  const bits = [e.scope ? esc(e.scope) : '', pageSpan('assessment PDF', e.assessmentPages), pageSpan('full PDF', e.pages)].filter(Boolean);
+  const link = e.source ? `<a href="${esc(e.source)}" target="_blank" rel="noopener">${esc(e.label)} source</a>` : esc(e.label);
+  return `<p class="note">${link}${bits.length ? ' · ' + bits.join(' · ') : ''}${e.quality ? '<br>' + esc(e.quality) : ''}</p>`;
+}
 function renderDetail() {
   const el = $('#detail');
   if (!D || !st.sel) { el.innerHTML = '<div class="hint">Pick a cell in the timeline (any edition after the first) to open its diff against the previous edition.</div>'; return; }
-  const g = D.groups.find(x => x.id === st.sel.g), k = st.sel.k, diff = D.diffs[k - 1], dg = diff && diff.groups[g.id];
+  const g = D.groups.find(x => x.id === st.sel.g), k = st.sel.k, diff = D.diffs[k - 1], dg = g && diff && diff.groups[g.id];
   const A = D.editions[k - 1], B = D.editions[k];
-  if (!dg) { el.innerHTML = `<div class="hint">${esc(g.label)} does not appear in both ${esc(A.label)} and ${esc(B.label)}.</div>`; return; }
-  const sa = A.stats[g.id], sb = B.stats[g.id], c = dg.counts;
+  if (!g || !dg) { el.innerHTML = `<div class="hint">${g ? esc(g.label) + ' has no sentences on either side of ' + esc(A.label) + ' → ' + esc(B.label) + '.' : 'That row is not in this file.'}</div>`; return; }
+  const sa = A.stats[g.id] || { n: 0, mean: null, se: null }, sb = B.stats[g.id] || { n: 0, mean: null, se: null }, c = dg.counts;
   const items = dg.items.filter(it => st.filter === 'all' || it[0] === st.filter);
   const cnt = t => dg.items.filter(it => it[0] === t).length;
-  // "vs. edition mean": the timeline cell shows the change relative to the whole edition, so the header does too;
-  // the waterfall and evidence decompose the absolute change (the relative one is not a sum over this group's sentences)
-  const rel = st.mode === 'rel' && g.kind !== 'all' && diff.groups.all;
-  const allDelta = rel ? diff.groups.all.delta : 0, relDelta = dg.delta - allDelta, shown = rel ? relDelta : dg.delta;
-  const dir = shown > 0.0005 ? 'up' : shown < -0.0005 ? 'dn' : '';
+  const enough = sa.n >= minHits() && sb.n >= minHits() && dg.delta != null;
+  // The headline number and any spread sentence use the same value. Relative mode shows
+  // group delta minus the whole-edition delta; the waterfall stays the absolute decomposition.
+  const rel = !!(enough && st.mode === 'rel' && g.id !== 'all' && diff.groups.all && diff.groups.all.delta != null);
+  const shown = !enough ? null : (rel ? dg.delta - diff.groups.all.delta : dg.delta);
+  const dir = shown == null ? '' : shown > 0.0005 ? 'up' : shown < -0.0005 ? 'dn' : '';
+  const verdict = shown == null
+    ? (dg.delta == null ? ' No mean on both sides, so there is no numeric change. The sentences are listed below.' : ` Mean and change withheld: at least one side has fewer than ${minHits()} sentences.`)
+    : (dir === 'dn' ? (rel ? ' More negative than the edition as a whole.' : ' More negative.') : dir === 'up' ? (rel ? ' Less negative / more positive than the edition as a whole.' : ' Less negative / more positive.') : ' Essentially unchanged.');
+  let spread = '';
+  if (shown != null && !rel && sa.se != null && sb.se != null) {
+    const band = 1.96 * Math.hypot(Number(sa.se), Number(sb.se));
+    if (Math.abs(shown) < band) spread = ` The change shown above (${fmt(shown, 3)}) is smaller than the sentence-score spread (±${fmt(band, 3)}, 1.96 × the combined standard error of the sentence scores). That spread is not a confidence interval and not a significance test.`;
+  }
+  const meanBit = s => s.n >= minHits() && s.mean != null ? fmtMean(s.mean) : 'withheld';
+  const charts = dg.delta == null
+    ? `<p class="note">This group is only on the ${dg.oneSided === 'removed' ? 'earlier' : 'later'} side. There is no second mean, so the change is not split into edit, added and removed weights.</p>`
+    : !enough
+      ? `<p class="note">The numeric change is withheld below ${minHits()} sentences. The sentences are still listed.</p>`
+      : `<div class="chart"><h3>Where the change comes from${rel ? ' (absolute change)' : ''}</h3>${waterfall(sa.mean, dg, sb.mean)}
+          <p class="note">Unchanged sentences contribute exactly 0. Added and removed sentences count by how far they sit from the old mean. ${rel ? 'The waterfall is the absolute change; the heading number is the change versus the edition mean.' : ''}</p></div>
+          <div class="chart"><h3>${esc(g.label)} across editions (${st.mode === 'rel' ? 'vs. edition mean' : 'mean'}, sentence-score spread)</h3>${trend(g, k)}</div>`;
   el.innerHTML = `
     <div class="dhead"><h2>${esc(g.label)} · ${esc(A.label)} → ${esc(B.label)}</h2><span class="big ${dir}" title="${rel ? 'change vs. edition mean' : 'change in the mean'}">${fmt(shown, 3)}</span></div>
-    <p class="note">Mean ${fmtMean(sa.mean)} (n ${num(sa.n)}) → ${fmtMean(sb.mean)} (n ${num(sb.n)}).${rel ? ` Relative to the edition mean: ${fmt(relDelta, 3)} (the whole edition moved ${fmt(allDelta, 3)}).` : ''}
-      ${dir === 'dn' ? (rel ? 'More negative than the edition as a whole.' : 'More negative.') : dir === 'up' ? (rel ? 'Less negative / more positive than the edition as a whole.' : 'Less negative / more positive.') : 'Essentially unchanged.'}
-      ${sa.se != null && sb.se != null && Math.abs(dg.delta) < 1.96 * Math.hypot(sa.se, sb.se) ? ' Within sampling noise (change smaller than 1.96 × combined standard error).' : ''}</p>
+    <p class="note">Mean ${meanBit(sa)} (n ${num(sa.n)}) → ${meanBit(sb)} (n ${num(sb.n)}).${rel ? ` Relative to the edition mean: ${fmt(shown, 3)} (the whole edition moved ${fmt(diff.groups.all.delta, 3)}).` : ''}${verdict}${spread}</p>
+    <p class="note">${DISCLAIMER}</p>
+    ${prov(A)}${prov(B)}
     <div class="counts"><span>unchanged <b>${num(c.u)}</b></span><span>edited <b>${num(c.e)}</b></span><span>added <b>${num(c.a)}</b></span><span>removed <b>${num(c.r)}</b></span></div>
-    <div class="charts">
-      <div class="chart"><h3>Where the change comes from${rel ? ' (absolute change)' : ''}</h3>${waterfall(sa.mean, dg, sb.mean)}
-        <p class="note">Unchanged sentences contribute exactly 0. Added and removed sentences count by how far they sit from the old mean.</p></div>
-      <div class="chart"><h3>${esc(g.label)} across editions (${st.mode === 'rel' ? 'vs. edition mean' : 'mean'} ± 95% CI)</h3>${trend(g, k)}</div>
-    </div>
+    <div class="charts">${charts}</div>
     ${g.patterns ? `<p class="note">Topic words: ${g.patterns.map(p => '<code>' + esc(p) + '</code>').join(', ')}</p>` : ''}
     <div class="filters" role="group" aria-label="Evidence filter">
       ${[['all', 'All', dg.items.length], ['e', 'Edited', cnt('e')], ['a', 'Added', cnt('a')], ['r', 'Removed', cnt('r')]].map(([v, l, n]) =>
@@ -371,7 +437,7 @@ function waterfall(ma, dg, mb) {
   s += `<line x1="${x(0)}" x2="${x(0)}" y1="0" y2="${H - 4}" stroke="var(--line)"/>`;
   bars.forEach((b, i) => {
     const y = 3 + i * rowH, x0 = Math.min(x(b.from), x(b.to)), w = Math.max(1.5, Math.abs(x(b.to) - x(b.from)));
-    const fill = b.t === 'base' ? (b.v < 0 ? 'var(--neg)' : 'var(--pos)') : (b.v < 0 ? 'var(--neg)' : 'var(--pos)');
+    const fill = b.v < 0 ? 'var(--neg)' : b.v > 0 ? 'var(--pos)' : 'var(--muted)';
     const op = b.t === 'base' ? .35 : .85;
     s += `<text class="lab" x="0" y="${y + 13}">${b.l}</text><rect x="${x0}" y="${y + 2}" width="${w}" height="${rowH - 8}" rx="3" fill="${fill}" fill-opacity="${op}"/>`;
     s += `<text x="${W - R + 6}" y="${y + 13}">${b.t === 'base' ? fmtMean(b.v) : fmt(b.v, 3)}</text>`;
@@ -381,17 +447,20 @@ function waterfall(ma, dg, mb) {
 }
 function trend(g, k) {
   const eds = D.editions, W = 300, H = 120, L = 34, R = 8, T = 8, Bm = 22;
-  const pts = eds.map((e, i) => { const s = e.stats[g.id], v = value(g, i); return v != null ? { i, m: v, se: Number(s.se) || 0 } : null; }).filter(Boolean);
+  const pts = eds.map((e, i) => { const s = sampleOf(g, i), v = value(g, i); return v != null ? { i, m: v, se: s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
   if (!pts.length) return '';
-  let lo = Math.min(0, ...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(0, ...pts.map(p => p.m + 1.96 * p.se));
+  const band = p => p.se == null ? 0 : 1.96 * p.se;
+  let lo = Math.min(0, ...pts.map(p => p.m - band(p))), hi = Math.max(0, ...pts.map(p => p.m + band(p)));
   const pad = (hi - lo) * 0.08 || 0.05; lo -= pad; hi += pad;
   const x = i => L + i * (W - L - R) / Math.max(1, eds.length - 1), y = v => T + (hi - v) / (hi - lo) * (H - T - Bm);
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="trend across editions">`;
   for (const v of [lo + pad, 0, hi - pad]) s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${v === 0 ? '' : 'stroke-dasharray="2 3"'}/><text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${fmtMean(v)}</text>`;
-  s += `<rect x="${x(k - 1)}" y="${T}" width="${x(k) - x(k - 1)}" height="${H - T - Bm}" fill="var(--chip)"/>`;
-  s += `<polygon points="${pts.map(p => `${x(p.i)},${y(p.m + 1.96 * p.se)}`).concat(pts.slice().reverse().map(p => `${x(p.i)},${y(p.m - 1.96 * p.se)}`)).join(' ')}" fill="var(--ink)" fill-opacity=".08"/>`;
-  s += `<polyline points="${pts.map(p => `${x(p.i)},${y(p.m)}`).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
-  pts.forEach(p => { s += `<circle cx="${x(p.i)}" cy="${y(p.m)}" r="${p.i === k || p.i === k - 1 ? 3.6 : 2.6}" fill="var(--${p.m < 0 ? 'neg' : 'pos'})" stroke="var(--paper)" stroke-width="1"/>`; });
+  if (k > 0) s += `<rect x="${x(k - 1)}" y="${T}" width="${Math.max(0, x(k) - x(k - 1))}" height="${H - T - Bm}" fill="var(--chip)"/>`;
+  runsOf(pts).forEach(run => {
+    if (run.length >= 2 && run.every(p => p.se != null)) s += `<polygon points="${run.map(p => `${x(p.i)},${y(p.m + band(p))}`).concat(run.slice().reverse().map(p => `${x(p.i)},${y(p.m - band(p))}`)).join(' ')}" fill="var(--ink)" fill-opacity=".08"/>`;
+    if (run.length >= 2) s += `<polyline points="${run.map(p => `${x(p.i)},${y(p.m)}`).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+  });
+  pts.forEach(p => { s += `<circle cx="${x(p.i)}" cy="${y(p.m)}" r="${p.i === k || p.i === k - 1 ? 3.6 : 2.6}" fill="var(--${p.m < 0 ? 'neg' : p.m > 0 ? 'pos' : 'ink'})" stroke="var(--paper)" stroke-width="1"/>`; });
   eds.forEach((e, i) => { s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(e.label.replace(/^(\w{3}) \d\d(\d\d)$/, '$1 $2'))}</text>`; });
   return s + '</svg>';
 }
@@ -416,7 +485,7 @@ function line(label, s, spans, tag, old) {
 function paint(s, spans, tag) {
   const text = s.t, m = cpMap(text), N = text.length;
   const cuts = new Set([0, N]);
-  const words = (s.w || []).map(w => [m[w[0]], m[w[1]], w[2]]).filter(w => w[0] != null && w[1] != null);
+  const words = (s.w || []).map(w => [m[w[0]], m[w[1]], w[2], w.length > 3 ? w[3] : null, w.length > 4 ? w[4] : '']).filter(w => w[0] != null && w[1] != null);
   const chg = (spans || []).map(x => [m[x[0]], m[x[1]]]).filter(x => x[0] != null && x[1] != null);
   words.forEach(w => { cuts.add(w[0]); cuts.add(w[1]); }); chg.forEach(x => { cuts.add(x[0]); cuts.add(x[1]); });
   const pts = [...cuts].sort((p, q) => p - q);
@@ -425,7 +494,10 @@ function paint(s, spans, tag) {
     const p = pts[n], q = pts[n + 1]; if (q <= p) continue;
     let seg = esc(text.slice(p, q));
     const w = words.find(w => w[0] <= p && q <= w[1]);
-    if (w) seg = `<span class="w ${hueCls(w[2])}" style="--k:${clamp01(Math.abs(w[2]) / (D.scale.word || 2.5)).toFixed(3)}" title="${fmt(w[2], 2)}">${seg}</span>`;
+    if (w && w[2]) {
+      const title = (w[3] != null ? 'base ' + fmt(w[3], 2) + ' → effective ' : 'effective ') + fmt(w[2], 2) + (w[4] ? ' · ' + w[4] : '');
+      seg = `<span class="w ${hueCls(w[2])}" style="--k:${clamp01(Math.abs(w[2]) / (D.scale.word || 2.5)).toFixed(3)}" title="${esc(title)}">${seg}</span>`;
+    }
     if (chg.some(x => x[0] <= p && q <= x[1])) seg = `<${tag}>${seg}</${tag}>`;
     out += seg;
   }
@@ -433,6 +505,7 @@ function paint(s, spans, tag) {
 }
 
 boot();
+window.__smDiffTest = { st, renderTable, renderDetail, rows, setData };
 })();
 </script>
 </body>

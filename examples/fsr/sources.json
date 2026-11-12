@@ -1,0 +1,40 @@
+{
+  "note": "Per-edition provenance for the full-review diff. assessmentPages are PDF pages of the Financial Stability Assessment, the same ranges the Assessment extract uses. pages is the full PDF span when this repo has pinned it. URLs use the RBA month slug (mar, sep, apr, oct), not a fallback that sends every other month to October.",
+  "2024-03": {
+    "source": "https://www.rba.gov.au/publications/fsr/2024/mar/",
+    "assessmentPages": [4, 6],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with examples/pack_fsr.js (pdf.js 3.11.174) from the full Review. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. Section boundaries follow PDF reading order."
+  },
+  "2024-09": {
+    "source": "https://www.rba.gov.au/publications/fsr/2024/sep/",
+    "assessmentPages": [4, 7],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with examples/pack_fsr.js (pdf.js 3.11.174) from the full Review. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. Section boundaries follow PDF reading order."
+  },
+  "2025-04": {
+    "source": "https://www.rba.gov.au/publications/fsr/2025/apr/",
+    "assessmentPages": [4, 8],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with examples/pack_fsr.js (pdf.js 3.11.174) from the full Review. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. Section boundaries follow PDF reading order."
+  },
+  "2025-10": {
+    "source": "https://www.rba.gov.au/publications/fsr/2025/oct/",
+    "assessmentPages": [4, 7],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with examples/pack_fsr.js (pdf.js 3.11.174) from the full Review. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. Section boundaries follow PDF reading order. A box has no closing heading, so text after it can sit in that box until the next heading."
+  },
+  "2026-03": {
+    "source": "https://www.rba.gov.au/publications/fsr/2026/mar/",
+    "assessmentPages": [4, 8],
+    "scope": "Full Financial Stability Review text layer",
+    "quality": "Extracted with examples/pack_fsr.js (pdf.js 3.11.174) from the full Review. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. Section boundaries follow PDF reading order."
+  },
+  "2026-10": {
+    "source": "https://www.rba.gov.au/publications/fsr/2026/oct/",
+    "pages": [1, 79],
+    "assessmentPages": [4, 12],
+    "scope": "Full Financial Stability Review text layer (examples/fsr-2026-10.txt)",
+    "quality": "The existing full-review extract, same joiner as the reader demo. Before scoring, a leading bullet that the text layer kept as 'y ' is restored, and 'and/ or' is joined. The diff drops endnotes, contents and chart furniture. PDF pages 1–79. Section boundaries follow PDF reading order."
+  }
+}
