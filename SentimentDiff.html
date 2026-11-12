@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sentiment Diff</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..700&family=Literata:opsz,wght@7..72,400..700&display=swap">
@@ -35,7 +36,7 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);padding:0 max(16px,env(safe-area-inset-right,0px)) 4rem max(16px,env(safe-area-inset-left,0px));-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);padding-block:0 4rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-text-size-adjust:100%}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -211,7 +212,7 @@ function setData(obj, name) {
 }
 $('#file').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
-  f.text().then(t => setData(JSON.parse(t), f.name)).catch(err => alert('Could not open: ' + err.message));
+  f.text().then(t => setData(JSON.parse(t), f.name)).catch(err => { $('#lede').textContent = 'Could not open ' + f.name + ': ' + err.message + '. Pick a .diff.json written by tools/sm_diff.py.'; });
 });
 function boot() {
   const files = window.DIFF_FILES || {};
