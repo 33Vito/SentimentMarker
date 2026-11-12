@@ -26,7 +26,7 @@ What it does, per adjacent pair of editions (A = older, B = newer):
 Standard library only. The decomposition is checked against the direct difference for every group (|err| < 1e-9).
 """
 import argparse, difflib, json, math, os, re, sys, unicodedata
-from collections import defaultdict
+from collections import defaultdict, deque
 
 FORMAT = "sentiment-diff"
 VERSION = 1
@@ -35,6 +35,9 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 # Headings that are furniture, not sections. Content under an EXCLUDE heading is dropped until the next heading
 # of the same or a higher level (Endnotes are references, Contents is a list of titles).
 EXCLUDE = re.compile(r"^(end ?notes|contents|references|copyright|bibliography|abbreviations)\b", re.I)
+# Back matter that runs over several pages: a running title or date heading on its next page does not end it.
+# (Contents does end there: the page after it is the overview, which opens with the running title.)
+RUNS_ON = re.compile(r"^(end ?notes|references|bibliography)\b", re.I)
 JUNK = re.compile(r"^((january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}"
                   r"|financial stability( review.*)?|review|(chapter\s+\d+\s*)?(focus topics?)?)$", re.I)
 # Chart furniture that leaks into the prose of a PDF (source lines, observation notes, graph captions). Not text the
@@ -106,14 +109,16 @@ def flatten(doc):
         titles[i] = t
 
     sections, sec_index = [], {}
-    out, cur_sec, skip_level = [], None, None
+    out, cur_sec, skip_level, skip_runs = [], None, None, False
     for i, p in enumerate(paras):
         if p.get("type") == "h":
             t, lv = head_text(p).strip(), level(p)
-            if skip_level is not None and lv <= skip_level:
+            # a junk level-1 heading (running title, date) inside Endnotes is page furniture, not the end of them
+            junk = lv == 1 and i not in titles and not EXCLUDE.match(norm_text(t))
+            if skip_level is not None and lv <= skip_level and not (junk and skip_runs):
                 skip_level = None
             if EXCLUDE.match(norm_text(t)):
-                skip_level = lv
+                skip_level, skip_runs = lv, bool(RUNS_ON.match(norm_text(t)))
                 continue
             if i in titles:
                 key = section_key(titles[i])
@@ -139,12 +144,17 @@ def flatten(doc):
 
 
 # ---------- topics ----------
+def compile_pattern(p):
+    """Whole-word, case-insensitive. The group keeps both boundaries on every branch of a top-level `a|b`."""
+    return re.compile(r"(?<![A-Za-z])(?:" + p + r")(?![A-Za-z])", re.I)
+
+
 def load_topics(path):
     with open(path, encoding="utf-8") as f:
         spec = json.load(f)
     topics = []
     for t in spec["topics"]:
-        pats = [re.compile(r"(?<![A-Za-z])" + p + r"(?![A-Za-z])", re.I) for p in t["patterns"]]
+        pats = [compile_pattern(p) for p in t["patterns"]]
         topics.append({"id": t["id"], "label": t["label"], "patterns": t["patterns"], "_re": pats})
     return topics
 
@@ -163,14 +173,14 @@ def align(A, B, min_sim):
     """Returns pairs [(i, j, kind, sim)], removed [i], added [j]."""
     nA = [norm_text(s["t"]) for s in A]
     nB = [norm_text(s["t"]) for s in B]
-    by_text = defaultdict(list)
+    by_text = defaultdict(deque)
     for j, t in enumerate(nB):
         by_text[t].append(j)
     pairs, usedA, usedB = [], set(), set()
     for i, t in enumerate(nA):                        # unchanged: identical text, paired in order
         lst = by_text.get(t)
         if lst:
-            j = lst.pop(0)
+            j = lst.popleft()
             pairs.append((i, j, "u", 1.0)); usedA.add(i); usedB.add(j)
 
     tokA = {i: tokens(A[i]["t"]) for i in range(len(A)) if i not in usedA}
@@ -251,9 +261,11 @@ def decompose(A, B, inA, inB, pairs, removed, added):
     for i, j, kind, sim in pairs:
         a_in, b_in = inA(i), inB(j)
         if a_in and b_in:
-            if kind == "u":
+            if kind == "u" and B[j]["s"] == A[i]["s"]:
                 counts["u"] += 1
                 continue
+            # an "unchanged" pair whose score differs (text equal only after normalisation, e.g. case, which the
+            # engine scores) is reported as unchangedScoreMismatch; its change is counted as an edit so the sum holds
             c = (B[j]["s"] - A[i]["s"]) / nB
             edit += c; counts["e"] += 1
             items.append(["e", i, j, round(c, 5)])
@@ -311,11 +323,16 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
     eds, sec_keys = [], []
     for eid, doc in editions:
         sents, sections = flatten(doc)
+        own = {sec["key"] for sec in sections}
+        claimed = set()
         for sec in sections:                            # renamed slightly between editions -> one row
             if sec["key"] not in sec_keys:
-                near = max(sec_keys, key=lambda k: same_section(k, sec["key"]), default=None)
+                # never onto a key another section of this edition has, or one an earlier rename here took
+                free = [k for k in sec_keys if k not in own and k not in claimed]
+                near = max(free, key=lambda k: same_section(k, sec["key"]), default=None)
                 if near and same_section(near, sec["key"]) >= 0.86:
                     sec["key"] = near
+            claimed.add(sec["key"])
         for s in sents:
             s["seckey"] = sections[s["sec"]]["key"] if s["sec"] is not None else None
         tag_topics(sents, topics)
@@ -323,6 +340,7 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
         for sec in sections:
             if sec["key"] not in sec_keys:
                 sec_keys.append(sec["key"])
+    sec_pos = {k: n for n, k in enumerate(sec_keys)}
     sec_titles = {}
     for e in eds:                                       # the newest title wins for display
         for sec in e["sections"]:
@@ -352,7 +370,7 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
             "id": e["id"], "label": label_for(e["id"]), "title": e["doc"].get("title", e["id"]),
             "sections": [s["key"] for s in e["sections"]],
             "stats": st,
-            "sentences": [{"t": s["t"], "s": s["s"], "sec": sec_keys.index(s["seckey"]) if s["seckey"] else None,
+            "sentences": [{"t": s["t"], "s": s["s"], "sec": sec_pos[s["seckey"]] if s["seckey"] else None,
                            "tp": s["tp"], "w": s["w"], **({"h": 1} if s["h"] else {})} for s in e["sents"]],
         })
 
@@ -397,10 +415,10 @@ def build(editions, topics, min_sim=0.55, title=None, neutral=0.2):
 
 def write(obj, path, js=None, note=None):
     text = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
-    with open(path, "w", encoding="utf-8") as f:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:     # LF on every platform
         f.write(text)
     if js:
-        with open(js, "w", encoding="utf-8") as f:
+        with open(js, "w", encoding="utf-8", newline="\n") as f:
             f.write("/* Generated by tools/sm_diff.py. Do not edit by hand." + (("\n   " + note.replace("*/", "* /")) if note else "") + " */\n"
                     "window.DIFF_FILES = window.DIFF_FILES || {};\n"
                     f"window.DIFF_FILES[{json.dumps(os.path.basename(path))}] = {text};\n")

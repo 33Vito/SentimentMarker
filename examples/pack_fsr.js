@@ -177,7 +177,8 @@ async function main() {
   const pdfArg = arg('--pdf');
   if (pdfArg && pdfArg !== true) pdfPath = path.resolve(process.cwd(), pdfArg);
   const from = Number(arg('--from', 1));
-  const to = Number(arg('--to', 9999));
+  // the default PDF keeps its documented range (1-79); another edition defaults to all of its pages
+  const to = Number(arg('--to', pdfArg && pdfArg !== true ? 9999 : 79));
   const { C, pages, numPages } = await readPages(pdfjs, from, to);
   console.log('pdf pages ' + numPages + ', read ' + pages[0].num + '-' + pages[pages.length - 1].num);
   if (arg('--heads')) {

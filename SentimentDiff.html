@@ -190,6 +190,7 @@ footer code{font-family:var(--font-num)}
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmt = (v, d = 3) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const num = v => esc(Number(v));   // file values that should be numbers: never markup
 const fmtMean = v => v == null ? '–' : (v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const hueCls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
@@ -232,7 +233,7 @@ function renderHead(name) {
   $('#lede').innerHTML = `Mean sentence sentiment by topic and section across ${eds.length} editions, every edition scored with the same model. ` +
     `Between consecutive editions ${tot.u.toLocaleString()} sentences were carried over unchanged, ${tot.e} edited, ${tot.a} added and ${tot.r} removed. ` +
     `Each change splits exactly into <b>wording edits</b>, <b>added</b> and <b>removed</b> sentences, so a topic that “got more negative” can be traced to the sentences that moved it.`;
-  $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${D.params.minSim} = edited. Colour scale: mean ±${D.scale.mean}, sentence ±${D.scale.sentence}. Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
+  $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${num(D.params.minSim)} = edited. Colour scale: mean ±${num(D.scale.mean)}, sentence ±${num(D.scale.sentence)}. Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
 }
 
 /* ---------- timeline ---------- */
@@ -250,7 +251,8 @@ function rows() {
 function value(g, k) {
   const s = D.editions[k].stats[g.id];
   if (!s || s.mean == null) return null;
-  return st.mode === 'rel' ? s.mean - D.editions[k].stats.all.mean : s.mean;
+  const m = Number(s.mean);
+  return st.mode === 'rel' ? m - Number(D.editions[k].stats.all.mean) : m;
 }
 function renderTable() {
   const eds = D.editions;
@@ -259,7 +261,7 @@ function renderTable() {
     eds.map(e => `<th>${esc(e.label)}</th>`).join('') + '<th>Trend</th></tr></thead><tbody>';
   for (const g of rows()) {
     const vals = eds.map((_, k) => value(g, k));
-    const n = eds.map((e, k) => (e.stats[g.id] || {}).n || 0);
+    const n = eds.map((e, k) => Number((e.stats[g.id] || {}).n) || 0);
     h += `<tr><td class="gl" title="${esc(g.label)}">${esc(g.label)}<small>n ${n.join(' · ')}</small></td>`;
     eds.forEach((e, k) => {
       const v = vals[k];
@@ -288,7 +290,7 @@ function renderTable() {
 }
 function spark(g) {
   const W = 110, H = 30, eds = D.editions, xs = k => 4 + k * (W - 8) / Math.max(1, eds.length - 1);
-  const pts = eds.map((e, k) => { const s = e.stats[g.id], v = value(g, k); return v != null ? { k, m: v, se: s.se || 0 } : null; }).filter(Boolean);
+  const pts = eds.map((e, k) => { const s = e.stats[g.id], v = value(g, k); return v != null ? { k, m: v, se: Number(s.se) || 0 } : null; }).filter(Boolean);
   if (pts.length < 2) return '';
   const lo = Math.min(...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(...pts.map(p => p.m + 1.96 * p.se));
   const pad = (hi - lo) * 0.1 || 0.05, y = v => H - 3 - (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * (H - 6);
@@ -329,17 +331,21 @@ function renderDetail() {
   const sa = A.stats[g.id], sb = B.stats[g.id], c = dg.counts;
   const items = dg.items.filter(it => st.filter === 'all' || it[0] === st.filter);
   const cnt = t => dg.items.filter(it => it[0] === t).length;
-  const dir = dg.delta > 0.0005 ? 'up' : dg.delta < -0.0005 ? 'dn' : '';
+  // "vs. edition mean": the timeline cell shows the change relative to the whole edition, so the header does too;
+  // the waterfall and evidence decompose the absolute change (the relative one is not a sum over this group's sentences)
+  const rel = st.mode === 'rel' && g.kind !== 'all' && diff.groups.all;
+  const allDelta = rel ? diff.groups.all.delta : 0, relDelta = dg.delta - allDelta, shown = rel ? relDelta : dg.delta;
+  const dir = shown > 0.0005 ? 'up' : shown < -0.0005 ? 'dn' : '';
   el.innerHTML = `
-    <div class="dhead"><h2>${esc(g.label)} · ${esc(A.label)} → ${esc(B.label)}</h2><span class="big ${dir}">${fmt(dg.delta, 3)}</span></div>
-    <p class="note">Mean ${fmtMean(sa.mean)} (n ${sa.n}) → ${fmtMean(sb.mean)} (n ${sb.n}).
-      ${dir === 'dn' ? 'More negative.' : dir === 'up' ? 'Less negative / more positive.' : 'Essentially unchanged.'}
+    <div class="dhead"><h2>${esc(g.label)} · ${esc(A.label)} → ${esc(B.label)}</h2><span class="big ${dir}" title="${rel ? 'change vs. edition mean' : 'change in the mean'}">${fmt(shown, 3)}</span></div>
+    <p class="note">Mean ${fmtMean(sa.mean)} (n ${num(sa.n)}) → ${fmtMean(sb.mean)} (n ${num(sb.n)}).${rel ? ` Relative to the edition mean: ${fmt(relDelta, 3)} (the whole edition moved ${fmt(allDelta, 3)}).` : ''}
+      ${dir === 'dn' ? (rel ? 'More negative than the edition as a whole.' : 'More negative.') : dir === 'up' ? (rel ? 'Less negative / more positive than the edition as a whole.' : 'Less negative / more positive.') : 'Essentially unchanged.'}
       ${sa.se != null && sb.se != null && Math.abs(dg.delta) < 1.96 * Math.hypot(sa.se, sb.se) ? ' Within sampling noise (change smaller than 1.96 × combined standard error).' : ''}</p>
-    <div class="counts"><span>unchanged <b>${c.u}</b></span><span>edited <b>${c.e}</b></span><span>added <b>${c.a}</b></span><span>removed <b>${c.r}</b></span></div>
+    <div class="counts"><span>unchanged <b>${num(c.u)}</b></span><span>edited <b>${num(c.e)}</b></span><span>added <b>${num(c.a)}</b></span><span>removed <b>${num(c.r)}</b></span></div>
     <div class="charts">
-      <div class="chart"><h3>Where the change comes from</h3>${waterfall(sa.mean, dg, sb.mean)}
+      <div class="chart"><h3>Where the change comes from${rel ? ' (absolute change)' : ''}</h3>${waterfall(sa.mean, dg, sb.mean)}
         <p class="note">Unchanged sentences contribute exactly 0. Added and removed sentences count by how far they sit from the old mean.</p></div>
-      <div class="chart"><h3>${esc(g.label)} across editions (mean ± 95% CI)</h3>${trend(g, k)}</div>
+      <div class="chart"><h3>${esc(g.label)} across editions (${st.mode === 'rel' ? 'vs. edition mean' : 'mean'} ± 95% CI)</h3>${trend(g, k)}</div>
     </div>
     ${g.patterns ? `<p class="note">Topic words: ${g.patterns.map(p => '<code>' + esc(p) + '</code>').join(', ')}</p>` : ''}
     <div class="filters" role="group" aria-label="Evidence filter">
@@ -375,7 +381,7 @@ function waterfall(ma, dg, mb) {
 }
 function trend(g, k) {
   const eds = D.editions, W = 300, H = 120, L = 34, R = 8, T = 8, Bm = 22;
-  const pts = eds.map((e, i) => { const s = e.stats[g.id]; return s && s.mean != null ? { i, m: s.mean, se: s.se || 0, n: s.n } : null; }).filter(Boolean);
+  const pts = eds.map((e, i) => { const s = e.stats[g.id], v = value(g, i); return v != null ? { i, m: v, se: Number(s.se) || 0 } : null; }).filter(Boolean);
   if (!pts.length) return '';
   let lo = Math.min(0, ...pts.map(p => p.m - 1.96 * p.se)), hi = Math.max(0, ...pts.map(p => p.m + 1.96 * p.se));
   const pad = (hi - lo) * 0.08 || 0.05; lo -= pad; hi += pad;
@@ -396,7 +402,7 @@ function evidence(it, A, B, diff, g) {
   const secLabel = sec ? (D.groups.find(x => x.id === 's:' + sec) || {}).label || sec : '';
   // an edit that moved a sentence into or out of the group shows both sides
   const why = t === 'a' && a ? 'entered this group through an edit' : t === 'r' && b ? 'left this group through an edit' : '';
-  let h = `<div class="ev"><div class="meta"><span class="kind ${t}">${KIND[t]}</span><span class="contrib" title="contribution to the change in the mean">${fmt(c, 4)}</span>` +
+  let h = `<div class="ev"><div class="meta"><span class="kind ${esc(t)}">${esc(KIND[t] || t)}</span><span class="contrib" title="contribution to the change in the mean">${fmt(c, 4)}</span>` +
     (why ? `<span>${why}</span>` : '') + (secLabel ? `<span class="sec" title="${esc(secLabel)}">${esc(secLabel)}</span>` : '') + '</div>';
   if (a) h += line(A.label, a, ops ? ops[0] : null, 'del', true);
   if (b) h += line(B.label, b, ops ? ops[1] : null, 'ins', false);
