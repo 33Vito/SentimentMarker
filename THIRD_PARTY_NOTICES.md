@@ -48,9 +48,9 @@ SOFTWARE.
 
 `tools/build_finance_vocab.py` imports pysentiment2 0.1.1 (https://github.com/nickderobertis/pysentiment) only to read the `LM.csv` it ships. No pysentiment2 code is included in this repository or needed to run it. The Loughran-McDonald terms above cover the word list, whichever package delivers it. For the package itself, its metadata says MIT, but the `LICENSE` file in the 0.1.1 distribution is the GNU GPL version 2 text (from the original pysentiment). Check that discrepancy yourself if you redistribute pysentiment2.
 
-## Reserve Bank of Australia, Financial Stability Review, October 2026
+## Reserve Bank of Australia, Financial Stability Review, March 2024 – October 2026
 
-The RBA text in `examples/` (the `.txt` files and the packed demo scripts) is reproduced under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). The full attribution, and what the licence does not cover, are in the README, under "Layout". `examples/financial-stability-review-2026-10.pdf` is the unmodified publication. It includes material the RBA excludes from CC BY 4.0 (https://www.rba.gov.au/copyright/), and this project does not relicense it.
+The RBA text in `examples/` (the `.txt` files and the packed demo scripts, October 2026) and in `examples/fsr/` with `examples/fsr-timeline.diff.js` (March 2024, September 2024, April 2025, October 2025, March 2026) is reproduced under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). The full attribution, and what the licence does not cover, are in the README, under "Layout". `examples/financial-stability-review-2026-10.pdf` is the unmodified publication. It includes material the RBA excludes from CC BY 4.0 (https://www.rba.gov.au/copyright/), and this project does not relicense it.
 
 ## pdf.js (loaded at run time, not included)
 

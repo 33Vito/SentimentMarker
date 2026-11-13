@@ -24,7 +24,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
-const pdfPath = path.join(__dirname, 'financial-stability-review-2026-10.pdf');
+let pdfPath = path.join(__dirname, 'financial-stability-review-2026-10.pdf');   // --pdf picks another edition
 const ATTR = [
   'Source: Reserve Bank of Australia (2026), Financial Stability Review, October 2026.',
   'https://www.rba.gov.au/publications/fsr/2026/oct/',
@@ -174,8 +174,11 @@ async function main() {
     return;
   }
   const pdfjs = loadPdfjs();
+  const pdfArg = arg('--pdf');
+  if (pdfArg && pdfArg !== true) pdfPath = path.resolve(process.cwd(), pdfArg);
   const from = Number(arg('--from', 1));
-  const to = Number(arg('--to', 79));
+  // the default PDF keeps its documented range (1-79); another edition defaults to all of its pages
+  const to = Number(arg('--to', pdfArg && pdfArg !== true ? 9999 : 79));
   const { C, pages, numPages } = await readPages(pdfjs, from, to);
   console.log('pdf pages ' + numPages + ', read ' + pages[0].num + '-' + pages[pages.length - 1].num);
   if (arg('--heads')) {

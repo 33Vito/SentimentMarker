@@ -15,6 +15,22 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 - An emotion spectrum sidebar: where the words of this document sit inside the distribution of a reference lexicon (VADER, for example), listing the most positive and most negative words with percentiles
 - Export the current document's scores (JSON / CSV) and use them as a format template
 
+## Diff + Timeline (`SentimentDiff.html`)
+
+Compare editions of the same publication: which topics turned more negative, which risk signals faded, and whether that came from rewording or from new and dropped sentences. The demo covers six RBA Financial Stability Reviews, March 2024 to October 2026, all scored with the Finance dictionary.
+
+- Timeline: one row per topic, per the Assessment narrative, or per section. A cell is the mean sentence score and its change from the previous edition. Means are withheld below five sentences, and the trend line breaks across a gap. "vs. edition mean" removes a shift in the whole document's tone
+- Click a cell, including a topic that exists on only one side: the diff against the previous edition. A two-sided change splits exactly into edited, added and removed sentences (unchanged ones contribute 0), drawn as a waterfall, then the evidence sorted by contribution. Changed words are struck through or underlined. A scored word's tooltip shows lexicon base, effective weight and any rule note. Added or removed is not a claim that policy was added or deleted, and a sentence score is not aspect sentiment
+- Sections follow PDF reading order and can drift. The Assessment rows keep one section across editions
+
+```
+python examples/build_fsr_timeline.py          # score examples/fsr/*.txt (+ examples/fsr-2026-10.txt), then diff
+python examples/build_fsr_timeline.py --check  # rebuild and require a byte-for-byte match of examples/fsr-timeline.diff.js
+python tools/sm_diff.py --edition A=a.scored.json --edition B=b.scored.json --topics topics.json -o out.diff.json
+```
+
+Method, file format and limits: [docs/DIFF_FORMAT.md](docs/DIFF_FORMAT.md). Topics: `examples/fsr-topics.json`. Earlier editions' text: `examples/fsr/` (extracted with `node examples/pack_fsr.js --pdf <file> --txt <out>`; the PDFs are not committed).
+
 ## Bring your own scores
 
 When you import external scores (a JSON / CSV file, or one pasted into the dialog), the reader only displays them: it never rescores them and never loads a dictionary for them. When you paste or open plain text (TXT, Markdown, PDF), it scores that text itself with its built-in dictionary: the General one, or the optional Finance dictionary chosen in the toolbar.
@@ -36,7 +52,7 @@ python examples/score_financial.py examples/fsr-assessment-2026-10.txt -o report
 
 ## Usage
 
-Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to three Story presentations: [Story](SentimentStoryDemo.html), [Fable](SentimentStoryFable.html) (ink FX and autoplay), and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment).
+Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to the Timeline page and two Story presentations: [Fable](SentimentStoryFable.html) (ink FX and autoplay) and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment). The original [Story](SentimentStoryDemo.html) reading is not in the toolbar; it stays available through its direct link.
 PDF parsing uses pdf.js loaded from cdnjs, so it needs a network connection.
 The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text), the full Review, and a synthetic sample. All three were scored offline with the Finance dictionary through the same engine (`examples/score_financial.py`), so they open as scored files and do not download the dictionary. The first one opens at start-up.
 
@@ -57,6 +73,8 @@ The "Sample article" dropdown in the top bar offers three built-in demos: the As
 - `examples/fsr-assessment-2026-10.txt / .scored.json`: the Assessment text of the RBA FSR, PDF pages 4–12 (printed pages 1–9, including Endnotes). `examples/pack_fsr.js` extracts the text, repairs one split heading, and adds the verified Figure 1 transcription and corrected Endnotes from `examples/fsr-assessment-supplement.md` only to the Assessment. Figure 1 was read from the RBA's vector figure (`https://www.rba.gov.au/publications/fsr/2026/oct/images/figure-0.01.svg`); its five themes intentionally sit at the same outline level as the preceding Box heading.
 - `examples/fsr-2026-10.txt / .scored.json`: the full Review, extracted with the same joiner (`itemsToLines` / `linesToBlocks` in `sentiment-core.js`, pdf.js 3.11.174). Pretty JSON is the readable source; the demo script is generated from it.
 - Those text files and the packed demo scripts reproduce Reserve Bank of Australia (2026), Financial Stability Review, October 2026 (https://www.rba.gov.au/publications/fsr/2026/oct/) under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). Sentiment scores were added by SentimentMarker and are not the Reserve Bank's. The Reserve Bank does not endorse this project. The Assessment includes a text-only transcription of Figure 1, which credits the RBA as its source. Graphs, tables, and series drawn from third parties (including the HILDA and BLADE material noted at the back of the Review) are not covered by that licence and are not part of the text demo.
+- `examples/fsr/fsr-2024-03.txt` … `fsr-2026-03.txt`: the full Reviews of March 2024, September 2024, April 2025, October 2025 and March 2026, extracted with the same joiner (`node examples/pack_fsr.js --pdf … --txt …`). Reserve Bank of Australia, Financial Stability Review (2024–2026), https://www.rba.gov.au/publications/fsr/, CC BY 4.0; same terms and exclusions as the October 2026 text above. `examples/fsr-timeline.diff.js` is built from them and `examples/fsr-2026-10.txt` by `examples/build_fsr_timeline.py`; its sentiment scores and topic tags are SentimentMarker's, not the Reserve Bank's
+- `tools/sm_diff.py`, `SentimentDiff.html`, `docs/DIFF_FORMAT.md`: the Diff + Timeline tool, page and format
 - `examples/financial-stability-review-2026-10.pdf`: the unmodified RBA publication. It includes the Reserve Bank logo and third-party graphs and tables, which the Reserve Bank excludes from CC BY 4.0 (https://www.rba.gov.au/copyright/). This project does not relicense that file.
 
 
@@ -71,6 +89,8 @@ The script is split in two:
 ```
 node test/core.test.js            # core, app wiring, generator --check, golden vectors, General == the 56f66cb engine
 python3 test/test_golden.py       # the same golden vectors through Python -> Node (also runs under pytest)
+python test/test_diff.py          # Diff + Timeline: alignment, decomposition, hyphen boundaries (also runs under pytest)
+node test/diff-ui.test.js          # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
 node tools/build-lexicon.js --check
 python3 tools/build_finance_vocab.py --check   # needs pysentiment2 + vaderSentiment
 ```

@@ -450,7 +450,14 @@ const bodyA2 = dA2.sents.filter(s => dA2.blocks[s.block].type === 'p');
 const astraSents = aA.sections.flatMap(g => g.sents);
 ok(astraSents.length === bodyA2.length && astraSents.every((s, i) => s.text === bodyA2[i].text && s.score === bodyA2[i].score), 'Astra body sentences are the analyzer\'s: same text and score');
 ok(aA.topics.length > 0 && aA.topics.every((t, i) => { const r = C.topicScores(dA2, C.extractTopics(dA2, 8), { sents: bodyA2 })[i]; return t.label === r.label && t.count === r.count && near(t.mean, r.mean); }), 'Astra topic means come from topicScores over body sentences');
-ok(/href="SentimentStoryFable.html"/.test(html) && /href="SentimentStoryAstra.html"/.test(html), 'analyzer toolbar links to Fable and Astra');
+const navStart = html.indexOf('<nav class="views"');
+const viewNav = html.slice(navStart, html.indexOf('</nav>', navStart)).replace(/<!--[\s\S]*?-->/g, '');
+const navLinks = [...viewNav.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].map(mm => [mm[1], mm[2].trim()]);
+const navWant = [['index.html', 'Analyzer'], ['SentimentDiff.html', 'Timeline'], ['SentimentStoryFable.html', 'Fable'], ['SentimentStoryAstra.html', 'Astra']];
+ok(JSON.stringify(navLinks) === JSON.stringify(navWant), 'analyzer toolbar visible links are Analyzer, Timeline, Fable, Astra - got ' + JSON.stringify(navLinks));
+const navCurrent = [...viewNav.matchAll(/<a\b[^>]*>/g)].filter(t => /aria-current="page"/.test(t[0]));
+ok(navCurrent.length === 1 && /href="index.html"/.test(navCurrent[0]), 'aria-current="page" is only on Analyzer');
+for (const navHref of navLinks.map(l => l[0])) ok(fs.existsSync(require('path').join(rootDir, navHref)), 'toolbar link target exists: ' + navHref);
 
 // 5e. lexicon unification: one model file, generated assets, vocabulary profiles, lazy finance, golden vectors
 const P_ = require('path'), cp = require('child_process'), util = require('util'), crypto = require('crypto'), repo = P_.join(__dirname, '..');

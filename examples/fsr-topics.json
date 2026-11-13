@@ -1,0 +1,20 @@
+{
+  "note": "Stable topics for comparing RBA Financial Stability Review editions. A sentence belongs to a topic when any pattern matches (case-insensitive regular expression). tools/sm_diff.py wraps each pattern in (?<![\\w-])…(?![\\w-]), so a hyphen is not a word boundary: banks? does not match non-bank. A sentence can belong to several topics. Edit freely; rerun examples/build_fsr_timeline.py.",
+  "topics": [
+    { "id": "households", "label": "Households", "patterns": ["households?", "borrowers?", "mortgag\\w*", "owner-occupiers?"] },
+    { "id": "housing", "label": "Housing", "patterns": ["housing", "housing prices?", "dwellings?", "property prices?", "high-LVR", "high DTI", "investor lending"] },
+    { "id": "businesses", "label": "Businesses", "patterns": ["business(es)?", "corporates?", "firms?", "insolvenc\\w*", "SMEs?"] },
+    { "id": "cre", "label": "Commercial real estate", "patterns": ["commercial real estate", "CRE", "office (property|market)s?"] },
+    { "id": "banks", "label": "Banks", "patterns": ["banks?", "banking", "ADIs?", "authorised deposit-taking"] },
+    { "id": "nonbank", "label": "Non-bank lenders & private credit", "patterns": ["non-banks?", "non-bank lend\\w*", "NBFIs?", "private credit", "private markets?"] },
+    { "id": "super", "label": "Superannuation", "patterns": ["superannuation", "super funds?"] },
+    { "id": "insurance", "label": "Insurance", "patterns": ["insur\\w*", "underinsurance"] },
+    { "id": "oprisk", "label": "Operational & cyber risk", "patterns": ["operational", "cyber\\w*", "outages?", "third-party providers?", "IT systems?"] },
+    { "id": "sovereign", "label": "Sovereign bond markets", "patterns": ["sovereign", "government bonds?", "bond markets?", "bond yields?", "fiscal"] },
+    { "id": "equity", "label": "Asset valuations & AI", "patterns": ["equity (prices|markets|valuations)", "risk premi(a|um)", "valuations?", "artificial intelligence", "AI"] },
+    { "id": "china", "label": "China", "patterns": ["Chin(a|ese)"] },
+    { "id": "geopolitics", "label": "Geopolitics & trade", "patterns": ["geopolitic\\w*", "tariffs?", "conflicts?", "trade (policy|tensions?|barriers?)", "Middle East"] },
+    { "id": "liquidity", "label": "Liquidity & funding", "patterns": ["liquidity", "funding", "leverage(d)?", "margin calls?"] },
+    { "id": "energy", "label": "Energy prices", "patterns": ["energy", "oil prices?", "fuel"] }
+  ]
+}
