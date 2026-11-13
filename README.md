@@ -52,7 +52,7 @@ python examples/score_financial.py examples/fsr-assessment-2026-10.txt -o report
 
 ## Usage
 
-Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to three Story presentations: [Story](SentimentStoryDemo.html), [Fable](SentimentStoryFable.html) (ink FX and autoplay), and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment).
+Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to the Timeline page and two Story presentations: [Fable](SentimentStoryFable.html) (ink FX and autoplay) and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment). The original [Story](SentimentStoryDemo.html) reading is not in the toolbar; it stays available through its direct link.
 PDF parsing uses pdf.js loaded from cdnjs, so it needs a network connection.
 The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text), the full Review, and a synthetic sample. All three were scored offline with the Finance dictionary through the same engine (`examples/score_financial.py`), so they open as scored files and do not download the dictionary. The first one opens at start-up.
 
