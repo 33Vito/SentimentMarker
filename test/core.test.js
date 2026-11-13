@@ -459,6 +459,54 @@ const navCurrent = [...viewNav.matchAll(/<a\b[^>]*>/g)].filter(t => /aria-curren
 ok(navCurrent.length === 1 && /href="index.html"/.test(navCurrent[0]), 'aria-current="page" is only on Analyzer');
 for (const navHref of navLinks.map(l => l[0])) ok(fs.existsSync(require('path').join(rootDir, navHref)), 'toolbar link target exists: ' + navHref);
 
+// 5d-bis. the archived Story page (SentimentStoryDemo.html): kept for the shared-data test, linked from nowhere
+const archivedStory = 'SentimentStoryDemo.html';
+const hasArchivedStoryLink = md => [
+  /\]\(\s*<?[^)\s>]*SentimentStoryDemo\.html/,                            // inline destination: plain, ./path, <angle>, query / fragment or a title after it
+  /^[ \t]{0,3}\[[^\]\n]+\]:\s*<?[^\s>]*SentimentStoryDemo\.html/m,        // reference-style definition, target on this line or the next
+  /<a\b[^>]*\bhref\s*=\s*["']?[^"'>\s]*SentimentStoryDemo\.html/i,       // an HTML anchor written inside Markdown, even split over lines
+  /(?:<|\b)[a-z][\w+.-]*:\/\/[^>\s)]*SentimentStoryDemo\.html/i          // an autolink or a bare URL
+].some(re => re.test(md));
+const shippedPages = fs.readdirSync(rootDir).filter(n => n.endsWith('.html') && n !== archivedStory).sort();
+ok(['index.html', 'SentimentDiff.html', 'SentimentStoryFable.html', 'SentimentStoryAstra.html'].every(p => shippedPages.includes(p)), 'every shipped root page is scanned against the archive: ' + shippedPages.join(', '));
+for (const page of shippedPages) {
+  const h = fs.readFileSync(require('path').join(rootDir, page), 'utf8');
+  ok(!h.includes(archivedStory), page + ' no longer links the archived Story page (' + archivedStory + ')');
+}
+ok(fs.existsSync(require('path').join(rootDir, archivedStory)), 'the archived Story file is kept: the shared-data test above reads it');
+const trackedMarkdown = () => require('child_process').execFileSync('git', ['ls-files', '--', '*.md'], { cwd: rootDir, encoding: 'utf8' }).trim().split('\n').filter(f => f && !f.startsWith('.hermes/'));
+const mdFiles = (() => {
+  try { return trackedMarkdown(); }
+  catch (e) { // no checkout to ask (a zip download): walk the tree instead, so the suite still runs
+    const walk = (dir, rel) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(ent => (ent.name === '.git' || ent.name === '.hermes') ? [] : ent.isDirectory() ? walk(require('path').join(dir, ent.name), rel + ent.name + '/') : (ent.name.endsWith('.md') ? [rel + ent.name] : []));
+    return walk(rootDir, '');
+  }
+})();
+ok(['README.md', 'docs/FORMAT.md', 'examples/launch-week.md'].every(f => mdFiles.includes(f)), 'every tracked Markdown file is scanned against the archive: ' + mdFiles.join(', '));
+for (const f of mdFiles) ok(!hasArchivedStoryLink(fs.readFileSync(require('path').join(rootDir, f), 'utf8')), f + ' no longer links the archived Story page');
+[ '[Story](SentimentStoryDemo.html)',
+  '[Story](SentimentStoryDemo.html "the old reading")',
+  '[Story](<SentimentStoryDemo.html>)',
+  '[Story](./SentimentStoryDemo.html)',
+  '[Story](SentimentStoryDemo.html#story)',
+  '[Story](SentimentStoryDemo.html?demo=1)',
+  '[Story](\n  SentimentStoryDemo.html)',
+  '[story]: SentimentStoryDemo.html',
+  '[Story][old]\n\n[old]:\n  SentimentStoryDemo.html',
+  '<a href="SentimentStoryDemo.html">Story</a>',
+  "<a class='ed' href='./SentimentStoryDemo.html'>Story</a>",
+  '<a href\n  ="SentimentStoryDemo.html">Story</a>',
+  '<https://example.com/SentimentStoryDemo.html>',
+  'https://example.com/SentimentStoryDemo.html'
+].forEach(s => ok(hasArchivedStoryLink(s), 'archive-link detector catches this form: ' + s));
+[ '`SentimentStoryDemo.html`: scroll-driven Story reading',
+  'One copy for both pages: `index.html` and `SentimentStoryDemo.html` load it as a classic <script src>',
+  'the archived file SentimentStoryDemo.html stays in the repo, reachable by direct URL',
+  '[Fable](SentimentStoryFable.html) is that page plus the ink FX layer',
+  '<https://example.com/SentimentStoryFable.html>',
+  'https://example.com/SentimentStoryFable.html'
+].forEach(s => ok(!hasArchivedStoryLink(s), 'archive-link detector leaves a plain mention alone: ' + s));
+
 // 5e. lexicon unification: one model file, generated assets, vocabulary profiles, lazy finance, golden vectors
 const P_ = require('path'), cp = require('child_process'), util = require('util'), crypto = require('crypto'), repo = P_.join(__dirname, '..');
 const gen = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'build-lexicon.js'), '--check'], { encoding: 'utf8' });

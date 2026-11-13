@@ -52,7 +52,7 @@ python examples/score_financial.py examples/fsr-assessment-2026-10.txt -o report
 
 ## Usage
 
-Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to the Timeline page and two Story presentations: [Fable](SentimentStoryFable.html) (ink FX and autoplay) and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment). The original [Story](SentimentStoryDemo.html) reading is not in the toolbar; it stays available through its direct link.
+Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to the Timeline page and two Story presentations: [Fable](SentimentStoryFable.html) (ink FX and autoplay) and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment). The original Story reading (`SentimentStoryDemo.html`) is archived: the file stays in the repo - the tests still read its `//<story-data>` step as the reference copy - but no page links to it any more, so it opens by direct URL only.
 PDF parsing uses pdf.js loaded from cdnjs, so it needs a network connection.
 The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text), the full Review, and a synthetic sample. All three were scored offline with the Finance dictionary through the same engine (`examples/score_financial.py`), so they open as scored files and do not download the dictionary. The first one opens at start-up.
 
@@ -80,9 +80,9 @@ The "Sample article" dropdown in the top bar offers three built-in demos: the As
 
 The script is split in two:
 
-- `sentiment-core.js` (between `//<core>` markers): input parsing (PDF line rejoining, Markdown, plain text), the sentiment engine, the scored-file reader and the pure summaries (outline, topics, spectrum) - DOM-free and testable under Node. One copy for the analyzer and the Story pages: `index.html`, `SentimentStoryDemo.html`, `SentimentStoryFable.html` and `SentimentStoryAstra.html` load it as a classic `<script src>` (not `fetch()`, because `file://` blocks fetch) and use it through `window.SMCore`, so they read a scored file the same way (centre, word placement, colour scale)
+- `sentiment-core.js` (between `//<core>` markers): input parsing (PDF line rejoining, Markdown, plain text), the sentiment engine, the scored-file reader and the pure summaries (outline, topics, spectrum) - DOM-free and testable under Node. One copy for the analyzer and the Story pages: `index.html`, `SentimentStoryFable.html` and `SentimentStoryAstra.html` - plus the archived `SentimentStoryDemo.html` - load it as a classic `<script src>` (not `fetch()`, because `file://` blocks fetch) and use it through `window.SMCore`, so they read a scored file the same way (centre, word placement, colour scale)
 - `//<app>` inside `index.html`: rendering and interaction. The story view keeps its own layout code; its data step (`//<story-data>`) is built on `SMCore`
-- `SentimentStoryDemo.html`: scroll-driven Story reading. `SentimentStoryFable.html` is that page plus the ink FX layer and Play/Space autoplay. `SentimentStoryAstra.html` is an editorial "Stability under pressure" reading of the same files, still scored through `SMCore`
+- `SentimentStoryDemo.html`: scroll-driven Story reading, archived - the file is retained (the tests still compare against it) but no page links to it any more, so open it by direct URL. `SentimentStoryFable.html` is that page plus the ink FX layer and Play/Space autoplay. `SentimentStoryAstra.html` is an editorial "Stability under pressure" reading of the same files, still scored through `SMCore`
 
 ## Tests
 
