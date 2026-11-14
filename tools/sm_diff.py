@@ -8,6 +8,7 @@
 Input: SentimentMarker scored JSON files (docs/FORMAT.md), all scored by the SAME model and profile
 (a timeline across two rulers means nothing; the tool refuses files whose `model` differs).
 Edition ids of the form YYYY-MM are sorted oldest first, so a reversed command line cannot swap added and removed.
+Other ids require --assume-ordered to confirm they are supplied oldest first.
 Any other id keeps the order it was given. Duplicate ids are refused.
 Output: one `sentiment-diff` JSON (docs/DIFF_FORMAT.md) that SentimentDiff.html shows.
 
@@ -385,22 +386,30 @@ ASSESS_KEY = "financial stability assessment"
 MIN_HITS = 5
 
 
-def sort_editions(editions):
+def sort_editions(editions, assume_ordered=False):
     """YYYY-MM ids are ordered chronologically so a reversed CLI cannot swap added and removed.
 
-    Other ids keep the order they were given. Duplicate ids are refused either way.
+    Other ids require an explicit oldest-to-newest order confirmation.
     """
     ids = [eid for eid, _doc in editions]
     if len(ids) != len(set(ids)):
         raise SystemExit("duplicate edition ids: " + ", ".join(ids))
-    if all(re.fullmatch(r"\d{4}-\d{2}", eid) for eid in ids):
+    dates = [bool(re.fullmatch(r"[0-9]{4}-[0-9]{2}", eid)) for eid in ids]
+    for eid, is_date in zip(ids, dates):
+        if is_date and (int(eid[:4]) == 0 or not 1 <= int(eid[5:]) <= 12):
+            raise SystemExit(f"invalid YYYY-MM edition id: {eid}")
+    if any(dates) and not all(dates):
+        raise SystemExit("cannot mix YYYY-MM and other edition ids; use a consistent format")
+    if all(dates):
         ordered = sorted(editions, key=lambda pair: pair[0])
         return ordered, [eid for eid, _doc in editions] != [eid for eid, _doc in ordered]
+    if not assume_ordered:
+        raise SystemExit("non-YYYY-MM edition ids: confirm oldest-to-newest order with --assume-ordered (or assume_ordered=True)")
     return list(editions), False
 
 
-def build(editions, topics, min_sim=0.55, title=None, neutral=0.2, sources=None, min_hits=MIN_HITS):
-    editions, _reordered = sort_editions(editions)
+def build(editions, topics, min_sim=0.55, title=None, neutral=0.2, sources=None, min_hits=MIN_HITS, assume_ordered=False):
+    editions, _reordered = sort_editions(editions, assume_ordered)
     sources = sources or {}
     models = {json.dumps(d.get("model"), sort_keys=True) for _, d in editions}
     if len(models) > 1:
@@ -527,7 +536,8 @@ def write(obj, path, js=None, note=None):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--edition", action="append", required=True, help="ID=PATH (YYYY-MM ids are sorted oldest first; other ids keep the given order)")
+    ap.add_argument("--edition", action="append", required=True, help="ID=PATH (YYYY-MM ids are sorted oldest first; other ids require --assume-ordered)")
+    ap.add_argument("--assume-ordered", action="store_true", help="confirm non-date IDs are supplied oldest first")
     ap.add_argument("--topics", required=True)
     ap.add_argument("-o", "--out", required=True)
     ap.add_argument("--js", help="also write a classic script for file:// pages")
@@ -544,14 +554,14 @@ if __name__ == "__main__":
         eid, path = spec.split("=", 1)
         with open(path, encoding="utf-8") as f:
             editions.append((eid, json.load(f)))
-    _ordered, reordered = sort_editions(editions)
+    _ordered, reordered = sort_editions(editions, a.assume_ordered)
     if reordered:
         print("edition ids were not chronological; sorted by YYYY-MM so added/removed stay in time order", file=sys.stderr)
     src = None
     if a.sources:
         with open(a.sources, encoding="utf-8") as f:
             src = json.load(f)
-    res = build(editions, load_topics(a.topics), a.min_sim, a.title, sources=src, min_hits=a.min_hits)
+    res = build(editions, load_topics(a.topics), a.min_sim, a.title, sources=src, min_hits=a.min_hits, assume_ordered=a.assume_ordered)
     write(res, a.out, a.js, a.note)
     for d in res["diffs"]:
         c = defaultdict(int)

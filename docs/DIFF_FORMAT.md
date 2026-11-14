@@ -8,7 +8,7 @@ python tools/sm_diff.py --edition 2026-03=a.scored.json --edition 2026-10=b.scor
 python examples/build_fsr_timeline.py        # the RBA FSR demo: score examples/fsr/*.txt, then diff
 ```
 
-The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of the form `YYYY-MM` are sorted chronologically before alignment, so passing them newest-first cannot swap added and removed. Any other ids keep the order given. Duplicate ids are refused. Every file must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
+The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of the form `YYYY-MM` are sorted chronologically before alignment, so passing them newest-first cannot swap added and removed. Valid months are 01–12 (and years 0001–9999); invalid dates and mixed date/non-date IDs are refused. For non-date IDs, the CLI requires `--assume-ordered` to confirm they are supplied oldest first; the Python API requires `assume_ordered=True`. Their actual chronology cannot be verified. Duplicate ids are refused. Every file must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
 
 ## Method
 
@@ -39,7 +39,7 @@ removed = −Σ removed       (a − m_A) / n_B
 
 The identity is exact (checked for every group, error < 1e-9). Unchanged sentences contribute 0. An added sentence moves the mean only by how far it sits from the old mean, so adding a sentence exactly as negative as the old average changes nothing. A sentence that enters or leaves a group through an edit (the topic word was written in or out) counts as added or removed for that group. Each term is a sum of per-sentence contributions, which are the evidence list.
 
-The page draws a band of ±1.96 standard errors around each mean and calls it the **sentence-score spread**. The sentences are the text, not a random sample, so the band is not a confidence interval and not a significance test. A one-sentence group has no standard error (`se` is null); it is not stored as 0. Means and changes are withheld when either side has fewer than `params.minHits` sentences (5). The chart leaves a gap there instead of connecting across it.
+In absolute mode, the page draws a descriptive mean-score band of ±1.96 standard errors around each mean. Relative-mode bands are omitted because the group and edition means overlap and their covariance is not captured by the stored standard errors. The sentences are the text, not a random sample, so the band is not a confidence interval and not a significance test. A one-sentence group has no standard error (`se` is null); it is not stored as 0. Means and changes are withheld when either side has fewer than `params.minHits` sentences (5). The chart leaves a gap there instead of connecting across it.
 
 "vs. edition mean" subtracts the edition's all-text mean, so a shift in the whole document's tone does not read as a change in every topic. In that mode the heading number is the relative change. The spread sentence is shown only next to the absolute change, and it quotes that same number. A group that exists on only one side still lists its sentences; it has no delta.
 
