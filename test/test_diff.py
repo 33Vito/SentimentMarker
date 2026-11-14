@@ -3,7 +3,7 @@
 
     python3 test/test_diff.py
 """
-import json, os, sys
+import json, os, sys, subprocess, tempfile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -119,7 +119,7 @@ def test_all_text_numbers():
 def test_topic_membership_change_through_edit():
     old = doc([p(("Lending standards are sound.", 0.4))])
     new = doc([p(("Lending standards at banks are sound.", 0.4))])
-    r = M.build([("a", old), ("b", new)], topics())
+    r = M.build([("a", old), ("b", new)], topics(), assume_ordered=True)
     # banks exists only on the new side: no mean, but the sentence is still evidence
     g = r["diffs"][0]["groups"]["t:banks"]
     assert g["delta"] is None and g["oneSided"] == "added" and g["counts"]["a"] == 1
@@ -131,7 +131,7 @@ def test_refuses_mixed_models():
     a = doc([p(("x y z.", 0.1))], {"version": "1.0.0", "profile": "finance"})
     b = doc([p(("x y z.", 0.1))], {"version": "1.0.0", "profile": "general"})
     try:
-        M.build([("a", a), ("b", b)], topics())
+        M.build([("a", a), ("b", b)], topics(), assume_ordered=True)
     except SystemExit:
         return
     raise AssertionError("mixed models must be refused")
@@ -145,7 +145,7 @@ def test_unchanged_text_with_a_different_score_is_reported_not_fatal():
     # equal after normalisation (case), but the engine scores capitals, so the score differs
     old = doc([p(("Risks remain elevated.", -0.4), ("Banks are sound.", 0.3))])
     new = doc([p(("RISKS REMAIN ELEVATED.", -0.6), ("Banks are sound.", 0.3))])
-    d = M.build([("a", old), ("b", new)], topics())["diffs"][0]
+    d = M.build([("a", old), ("b", new)], topics(), assume_ordered=True)["diffs"][0]
     assert d["unchangedScoreMismatch"] == 1
     g = d["groups"]["all"]
     assert abs(g["delta"] - (-0.1)) < 1e-9
@@ -207,6 +207,46 @@ def test_date_editions_are_sorted_chronologically():
     raise AssertionError("duplicate edition ids must be refused")
 
 
+def test_edition_order_validation():
+    empty = doc([])
+    for ids in [("2024-00", "2024-01"), ("2024-13", "2025-01"),
+                ("0000-01", "2024-01"), ("2024-01", "later"), ("later", "earlier")]:
+        try:
+            M.build([(x, empty) for x in ids], topics())
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"must reject {ids}")
+    ordered, changed = M.sort_editions([("earlier", empty), ("later", empty)], assume_ordered=True)
+    assert [x[0] for x in ordered] == ["earlier", "later"] and not changed
+    try:
+        M.sort_editions([("2024-13", empty), ("2025-01", empty)], assume_ordered=True)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("explicit ordering must not accept invalid dates")
+
+
+def test_cli_order_validation():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "doc.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(doc([p(("One sentence.", 0.1))]), f)
+        output = os.path.join(tmp, "out.json")
+        cmd = [sys.executable, os.path.join(ROOT, "tools", "sm_diff.py"),
+               "--topics", os.path.join(ROOT, "examples", "fsr-topics.json"), "-o", output]
+        def run(ids, extra=()):
+            args = [arg for eid in ids for arg in ("--edition", eid + "=" + path)]
+            return subprocess.run(cmd + args + list(extra), capture_output=True, text=True)
+        assert run(["a", "b"]).returncode != 0
+        assert run(["a", "b"], ["--assume-ordered"]).returncode == 0
+        assert run(["2024-13", "2025-01"], ["--assume-ordered"]).returncode != 0
+        result = run(["2024-09", "2024-03"])
+        assert result.returncode == 0 and "sorted by YYYY-MM" in result.stderr
+        with open(output, encoding="utf-8") as f:
+            assert [e["id"] for e in json.load(f)["editions"]] == ["2024-03", "2024-09"]
+
+
 def test_single_sentence_has_no_fake_standard_error():
     s = M.stats([0.4], 0.2)
     assert s["n"] == 1 and s["mean"] == 0.4 and s["se"] is None
@@ -246,7 +286,7 @@ def test_two_sections_of_one_edition_never_merge_into_one_row():
     old = doc([h("1.1 Risks to household and business finances in Australia"), p(("Arrears are low.", 0.2))])
     new = doc([h("1.1 Risks to household and business finance in Australia"), p(("Arrears are low.", 0.2)),
                h("1.2 Risks to household and business finances in Australia now"), p(("Insolvencies rose.", -0.5))])
-    r = M.build([("a", old), ("b", new)], topics())
+    r = M.build([("a", old), ("b", new)], topics(), assume_ordered=True)
     keys = r["editions"][1]["sections"]
     assert len(keys) == 2 and len(set(keys)) == 2, keys
     assert keys[0] == r["editions"][0]["sections"][0]               # the first rename still joins the old row

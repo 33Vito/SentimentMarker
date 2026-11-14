@@ -238,7 +238,7 @@ function renderHead(name) {
     `Each two-sided change splits exactly into <b>wording edits</b>, <b>added</b> and <b>removed</b> sentences. ` +
     `Means are withheld below ${minHits()} sentences. ${DISCLAIMER}`;
   $('#foot').innerHTML = `Scores are the scorer's, not the publisher's. Alignment: identical text = unchanged; word similarity ≥ ${num(D.params.minSim)} = edited; anything left over is unmatched, not a policy change. ` +
-    `Bands show the spread of sentence scores (±1.96 × their standard error), not a confidence interval. ` +
+    `Absolute-mode bands show ±1.96 × the standard error of the mean sentence score. They are descriptive, not confidence intervals; relative-mode bands are omitted. ` +
     `Built by <code>tools/sm_diff.py</code>${name ? ' · ' + esc(name) : ''}.`;
 }
 
@@ -328,7 +328,7 @@ function runsOf(pts) {
 }
 function spark(g) {
   const W = 110, H = 30, eds = D.editions, xs = k => 4 + k * (W - 8) / Math.max(1, eds.length - 1);
-  const pts = eds.map((e, k) => { const s = sampleOf(g, k), v = value(g, k); return v != null ? { i: k, m: v, se: s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
+  const pts = eds.map((e, k) => { const s = sampleOf(g, k), v = value(g, k); return v != null ? { i: k, m: v, se: st.mode === 'rel' || s.n < 2 || s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
   if (!pts.length) return '';
   const bandOf = p => p.se == null ? 0 : 1.96 * p.se;
   const lo = Math.min(...pts.map(p => p.m - bandOf(p))), hi = Math.max(...pts.map(p => p.m + bandOf(p)));
@@ -385,18 +385,20 @@ function renderDetail() {
   const items = dg.items.filter(it => st.filter === 'all' || it[0] === st.filter);
   const cnt = t => dg.items.filter(it => it[0] === t).length;
   const enough = sa.n >= minHits() && sb.n >= minHits() && dg.delta != null;
-  // The headline number and any spread sentence use the same value. Relative mode shows
+  // The headline number and any mean-change band sentence use the same value. Relative mode shows
   // group delta minus the whole-edition delta; the waterfall stays the absolute decomposition.
-  const rel = !!(enough && st.mode === 'rel' && g.id !== 'all' && diff.groups.all && diff.groups.all.delta != null);
+  const rel = !!(enough && st.mode === 'rel' && diff.groups.all && diff.groups.all.delta != null);
   const shown = !enough ? null : (rel ? dg.delta - diff.groups.all.delta : dg.delta);
   const dir = shown == null ? '' : shown > 0.0005 ? 'up' : shown < -0.0005 ? 'dn' : '';
-  const verdict = shown == null
+  const verdict = rel && g.id === 'all'
+    ? ` The whole text is the reference in this mode, so its relative change is 0 by definition. Switch to absolute mode to see its own change.`
+    : shown == null
     ? (dg.delta == null ? ' No mean on both sides, so there is no numeric change. The sentences are listed below.' : ` Mean and change withheld: at least one side has fewer than ${minHits()} sentences.`)
     : (dir === 'dn' ? (rel ? ' More negative than the edition as a whole.' : ' More negative.') : dir === 'up' ? (rel ? ' Less negative / more positive than the edition as a whole.' : ' Less negative / more positive.') : ' Essentially unchanged.');
   let spread = '';
-  if (shown != null && !rel && sa.se != null && sb.se != null) {
+  if (shown != null && !rel && sa.n >= 2 && sb.n >= 2 && sa.se != null && sb.se != null) {
     const band = 1.96 * Math.hypot(Number(sa.se), Number(sb.se));
-    if (Math.abs(shown) < band) spread = ` The change shown above (${fmt(shown, 3)}) is smaller than the sentence-score spread (±${fmt(band, 3)}, 1.96 × the combined standard error of the sentence scores). That spread is not a confidence interval and not a significance test.`;
+    if (Math.abs(shown) < band) spread = ` The change shown above (${fmt(shown, 3)}) is smaller than the descriptive mean-change band (±${fmt(band, 3)}, 1.96 × the combined standard error of the mean scores). That band is not a confidence interval and not a significance test.`;
   }
   const meanBit = s => s.n >= minHits() && s.mean != null ? fmtMean(s.mean) : 'withheld';
   const charts = dg.delta == null
@@ -405,7 +407,7 @@ function renderDetail() {
       ? `<p class="note">The numeric change is withheld below ${minHits()} sentences. The sentences are still listed.</p>`
       : `<div class="chart"><h3>Where the change comes from${rel ? ' (absolute change)' : ''}</h3>${waterfall(sa.mean, dg, sb.mean)}
           <p class="note">Unchanged sentences contribute exactly 0. Added and removed sentences count by how far they sit from the old mean. ${rel ? 'The waterfall is the absolute change; the heading number is the change versus the edition mean.' : ''}</p></div>
-          <div class="chart"><h3>${esc(g.label)} across editions (${st.mode === 'rel' ? 'vs. edition mean' : 'mean'}, sentence-score spread)</h3>${trend(g, k)}</div>`;
+          <div class="chart"><h3>${esc(g.label)} across editions (${st.mode === 'rel' ? 'vs. edition mean; no band' : 'mean; descriptive mean-score band'})</h3>${trend(g, k)}</div>`;
   el.innerHTML = `
     <div class="dhead"><h2>${esc(g.label)} · ${esc(A.label)} → ${esc(B.label)}</h2><span class="big ${dir}" title="${rel ? 'change vs. edition mean' : 'change in the mean'}">${fmt(shown, 3)}</span></div>
     <p class="note">Mean ${meanBit(sa)} (n ${num(sa.n)}) → ${meanBit(sb)} (n ${num(sb.n)}).${rel ? ` Relative to the edition mean: ${fmt(shown, 3)} (the whole edition moved ${fmt(diff.groups.all.delta, 3)}).` : ''}${verdict}${spread}</p>
@@ -447,7 +449,7 @@ function waterfall(ma, dg, mb) {
 }
 function trend(g, k) {
   const eds = D.editions, W = 300, H = 120, L = 34, R = 8, T = 8, Bm = 22;
-  const pts = eds.map((e, i) => { const s = sampleOf(g, i), v = value(g, i); return v != null ? { i, m: v, se: s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
+  const pts = eds.map((e, i) => { const s = sampleOf(g, i), v = value(g, i); return v != null ? { i, m: v, se: st.mode === 'rel' || s.n < 2 || s.se == null ? null : Number(s.se) } : null; }).filter(Boolean);
   if (!pts.length) return '';
   const band = p => p.se == null ? 0 : 1.96 * p.se;
   let lo = Math.min(0, ...pts.map(p => p.m - band(p))), hi = Math.max(0, ...pts.map(p => p.m + band(p)));
