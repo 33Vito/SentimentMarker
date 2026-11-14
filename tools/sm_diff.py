@@ -8,8 +8,8 @@
 Input: SentimentMarker scored JSON files (docs/FORMAT.md), all scored by the SAME model and profile
 (a timeline across two rulers means nothing; the tool refuses files whose `model` differs).
 Edition ids of the form YYYY-MM are sorted oldest first, so a reversed command line cannot swap added and removed.
-Other ids require --assume-ordered to confirm they are supplied oldest first.
-Any other id keeps the order it was given. Duplicate ids are refused.
+Other ids keep the order given, and require --assume-ordered to confirm that order is oldest first.
+Invalid YYYY-MM dates, mixed date/non-date ids and duplicate ids are refused.
 Output: one `sentiment-diff` JSON (docs/DIFF_FORMAT.md) that SentimentDiff.html shows.
 
 What it does, per adjacent pair of editions (A = older, B = newer):

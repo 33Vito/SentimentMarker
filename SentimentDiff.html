@@ -385,12 +385,14 @@ function renderDetail() {
   const items = dg.items.filter(it => st.filter === 'all' || it[0] === st.filter);
   const cnt = t => dg.items.filter(it => it[0] === t).length;
   const enough = sa.n >= minHits() && sb.n >= minHits() && dg.delta != null;
-  // The headline number and any spread sentence use the same value. Relative mode shows
+  // The headline number and any mean-change band sentence use the same value. Relative mode shows
   // group delta minus the whole-edition delta; the waterfall stays the absolute decomposition.
   const rel = !!(enough && st.mode === 'rel' && diff.groups.all && diff.groups.all.delta != null);
   const shown = !enough ? null : (rel ? dg.delta - diff.groups.all.delta : dg.delta);
   const dir = shown == null ? '' : shown > 0.0005 ? 'up' : shown < -0.0005 ? 'dn' : '';
-  const verdict = shown == null
+  const verdict = rel && g.id === 'all'
+    ? ` The whole text is the reference in this mode, so its relative change is 0 by definition. Switch to absolute mode to see its own change.`
+    : shown == null
     ? (dg.delta == null ? ' No mean on both sides, so there is no numeric change. The sentences are listed below.' : ` Mean and change withheld: at least one side has fewer than ${minHits()} sentences.`)
     : (dir === 'dn' ? (rel ? ' More negative than the edition as a whole.' : ' More negative.') : dir === 'up' ? (rel ? ' Less negative / more positive than the edition as a whole.' : ' Less negative / more positive.') : ' Essentially unchanged.');
   let spread = '';

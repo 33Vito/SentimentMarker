@@ -276,6 +276,15 @@ function runFixture() {
   assert.equal(relRow.includes('<polygon'), false, 'relative sparkline must not draw an absolute standard error band');
   assert.match(relRow, /data-k="3"[^>]*>0\.10</);
 
+  // The whole text is the reference in relative mode: 0 by definition, said as such.
+  api.st.sel = { g: 'all', k: 3 };
+  api.renderDetail();
+  const allRel = nodes.get('detail').innerHTML;
+  assert.equal(allRel.match(/class="big[^"]*"[^>]*>([^<]+)/)[1], '0.000');
+  assert.match(allRel, /relative change is 0 by definition/);
+  assert.equal(/Essentially unchanged/.test(allRel), false, 'the reference group must not read as "unchanged"');
+  api.st.sel = { g: 't:houses', k: 3 };
+
   api.st.mode = 'abs';
   api.st.sel = { g: 't:cyber', k: 3 };
   api.renderDetail();
