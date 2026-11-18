@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -84,7 +84,7 @@ button{cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
 .chip[aria-pressed="true"] small{color:inherit;opacity:.7}
 .chip .rm{opacity:.6;margin-right:-.2rem;padding:0 .15rem}
-/* topic chip + its ▾ (strongest passages); the mean rides in the chip: a dot (hue = sign, depth = strength) and the value */
+/* topic chip + its ▾ (strongest passages); the mean rides in the chip (a dot: hue = sign, depth = strength, and the value) once TOPIC_MIN_HITS sentences mention it */
 .tg{display:inline-flex;flex:none}
 .tg>.chip:first-child{border-top-right-radius:0;border-bottom-right-radius:0;padding-right:.6rem}
 .tg>.more{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)}
@@ -584,14 +584,16 @@ segPol.addEventListener('click', e => {
 /* topic chips: sentences that mention the topic, then their mean score (topicScores: sentence-level, overlaps count
    toward each topic). t.count from extractTopics is word occurrences; it only ranks the auto-picked topics. */
 const topicLv = () => (S.doc.has.sent ? 'sent' : 'para');   /* the colour scale a topic mean is read on (paragraph-only files: paragraphs) */
+/* below this many sentences a topic shows its count, not a mean: the same floor as the diff timeline (tools/sm_diff.py MIN_HITS) */
+const TOPIC_MIN_HITS = 5;
 function renderChips() {
   const anyOn = S.topics.some(t => t.on);
   S.tstats = topicScores(S.doc, S.topics);
   E.chips.innerHTML = S.topics.map((t, i) => {
-    const st = S.tstats[i], k = strength(topicLv(), st.mean, S.doc.cap).toFixed(3);
-    const tip = st.count ? `${st.count} sentence${st.count === 1 ? '' : 's'} mention “${t.label}” · mean ${fmt(st.mean)}` : `No sentence mentions “${t.label}”`;
+    const st = S.tstats[i], k = strength(topicLv(), st.mean, S.doc.cap).toFixed(3), thin = st.count < TOPIC_MIN_HITS;
+    const tip = st.count ? `${st.count} sentence${st.count === 1 ? '' : 's'} mention “${t.label}” · ${thin ? `mean withheld below ${TOPIC_MIN_HITS}` : 'mean ' + fmt(st.mean)}` : `No sentence mentions “${t.label}”`;
     return `<span class="tg"><button type="button" class="chip" data-i="${i}" aria-pressed="${t.on}" title="${esc(tip)}">${esc(t.label)} <small>${st.count}</small>`
-      + `<span class="tmean ${sg(st.mean)}" style="--k:${k}" aria-label="mean ${fmt(st.mean)}"><i></i>${fmt(st.mean)}</span>${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="Remove">×</span>' : ''}</button>`
+      + `${thin ? '' : `<span class="tmean ${sg(st.mean)}" style="--k:${k}" aria-label="mean ${fmt(st.mean)}"><i></i>${fmt(st.mean)}</span>`}${t.custom ? '<span class="rm" data-rm="' + i + '" aria-label="Remove">×</span>' : ''}</button>`
       + `<button type="button" class="chip more" data-more="${i}" aria-controls="tpop" aria-expanded="${S.tpop === t}" aria-label="Strongest passages about ${esc(t.label)}" title="Strongest passages">▾</button></span>`;
   }).join('') + (anyOn ? '<button type="button" class="chip" data-clear="1">Clear</button>' : '');
   if (S.tpop) renderTpop();
@@ -625,7 +627,7 @@ function renderTpop() {
   const n = st.count;
   const group = (title, list) => `<h3>${title}</h3>` + (list.length ? `<ul class="tql">${list.map(x => `<li><button type="button" class="${sg(x.score)}" data-sent="${x.id}" title="Go to this sentence"><span class="sc">${fmt(x.score)}</span><span>${esc(clip(x.text, 160))}</span></button></li>`).join('')}</ul>` : '<p class="none">none</p>');
   E.tpop.innerHTML = `<div class="ih"><span class="ik">Topic</span><b>${esc(t.label)}</b><button class="x" type="button" data-tpop-close aria-label="Close">×</button></div>
-    <p class="ctx">${n ? `${n} sentence${n === 1 ? '' : 's'} mention it · mean <b>${fmt(st.mean)}</b>` : 'No sentence mentions this topic.'}</p>
+    <p class="ctx">${n ? `${n} sentence${n === 1 ? '' : 's'} mention it · ${n < TOPIC_MIN_HITS ? `mean withheld below ${TOPIC_MIN_HITS}` : `mean <b>${fmt(st.mean)}</b>`}` : 'No sentence mentions this topic.'}</p>
     ${n ? `<div class="dist" role="img" aria-label="negative ${st.neg}, neutral ${st.neu}, positive ${st.pos}"><i class="neg" style="flex:${st.neg}"></i><i class="neu" style="flex:${st.neu}"></i><i class="pos" style="flex:${st.pos}"></i></div>
     <p class="dlg"><span>Negative ${st.neg}</span><span>Neutral ${st.neu}</span><span>Positive ${st.pos}</span></p>
     <p class="scl" data-neutral>${neutralText(st)}</p>` : ''}
