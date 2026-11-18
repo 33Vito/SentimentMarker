@@ -11,6 +11,44 @@ sys.dont_write_bytecode = True
 import sm_diff as M  # noqa: E402
 
 
+def test_quantised_statistics_ignore_float_addition_order():
+    # Exact decimal ties: binary sum used to choose either neighbour.
+    scores = [-0.1001, -0.0910]
+    assert M.stats(scores, 0.2)["mean"] == -0.0956
+    assert M.stats(list(reversed(scores)), 0.2)["mean"] == -0.0956
+    assert M.stats([0.0001, 0.0], 0.2)["mean"] == 0.0  # half-even
+    assert M.stats([0.0003, 0.0], 0.2)["mean"] == 0.0002
+    # Packed scores use 1e-4; the mean difference has an exact 5-dp tie.
+    B = [{"s": -0.3000}, {"s": -0.2435}, {"s": -0.2717}, {"s": -0.2717}]
+    A = [{"s": 0.0} for _ in B]
+    result = M.decompose(A, B, lambda _: True, lambda _: True,
+                         [(i, i, "e", 1) for i in range(len(B))], [], [])
+    assert result["delta"] == -0.27172
+    assert result["edit"] == -0.27172
+
+
+def test_pack_check_compares_canonical_quantised_payloads():
+    sys.path.insert(0, os.path.join(ROOT, "examples"))
+    from build_fsr_timeline import canonical_payload
+    payload = {"editions": [{"stats": {"all": {"mean": -0.0956, "n": 2}}}],
+               "diffs": [{"groups": {"all": {"delta": -0.27172, "edit": -0.27172,
+                                               "added": 0, "removed": 0, "items": []}}}]}
+    def script(obj, **kwargs):
+        return '/* provenance */\nwindow.DIFF_FILES["fsr-timeline.diff.json"] = ' + json.dumps(obj, **kwargs) + ';\n'
+    expected = canonical_payload(script(payload))
+    assert expected == canonical_payload(script(payload, sort_keys=True, indent=2))
+    assert expected["editions"][0]["stats"]["all"]["mean"] == -956
+    assert expected["diffs"][0]["groups"]["all"]["delta"] == -27172
+    for target, key, value in [(payload["editions"][0]["stats"]["all"], "mean", -0.0955),
+                               (payload["diffs"][0]["groups"]["all"], "delta", -0.27173),
+                               (payload["editions"][0]["stats"]["all"], "n", 3),
+                               (payload["diffs"][0]["groups"]["all"], "items", [["e", 0, 0, 0.1]])]:
+        old = target[key]
+        target[key] = value
+        assert canonical_payload(script(payload)) != expected, key
+        target[key] = old
+
+
 def doc(paras, model=None):
     d = {"version": 1, "title": "t", "paragraphs": paras}
     if model:

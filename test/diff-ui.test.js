@@ -8,7 +8,7 @@
    same way.
 
    The default run also rebuilds examples/fsr-timeline.diff.js and compares it
-   byte for byte (`python examples/build_fsr_timeline.py --check`).
+   as canonical, quantised JSON (`examples/build_fsr_timeline.py --check`).
    Set SM_DIFF_SKIP_CHECK=1 to run only the page smoke.
 */
 const assert = require('node:assert/strict');
@@ -355,7 +355,14 @@ runPack();
 if (process.env.SM_DIFF_SKIP_CHECK === '1') {
   console.log('skipped --check (SM_DIFF_SKIP_CHECK=1)');
 } else {
-  execFileSync('python', [path.join('examples', 'build_fsr_timeline.py'), '--check'], {
+  let python = process.env.PYTHON || 'python3';
+  try {
+    execFileSync(python, ['--version'], { stdio: 'ignore' });
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    python = 'python';
+  }
+  execFileSync(python, [path.join('examples', 'build_fsr_timeline.py'), '--check'], {
     cwd: root, stdio: 'inherit', timeout: 30 * 60 * 1000,
   });
 }
