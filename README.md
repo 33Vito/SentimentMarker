@@ -26,7 +26,7 @@ Compare editions of the same publication: which topics turned more negative, whi
 ```
 python examples/build_fsr_timeline.py          # score examples/fsr/*.txt (+ examples/fsr-2026-10.txt), then diff
 python examples/build_fsr_timeline.py --check  # rebuild and require a byte-for-byte match of examples/fsr-timeline.diff.js
-python tools/sm_diff.py --edition A=a.scored.json --edition B=b.scored.json --topics topics.json -o out.diff.json
+python tools/sm_diff.py --edition A=a.scored.json --edition B=b.scored.json --assume-ordered --topics topics.json -o out.diff.json
 ```
 
 Method, file format and limits: [docs/DIFF_FORMAT.md](docs/DIFF_FORMAT.md). Topics: `examples/fsr-topics.json`. Earlier editions' text: `examples/fsr/` (extracted with `node examples/pack_fsr.js --pdf <file> --txt <out>`; the PDFs are not committed).
