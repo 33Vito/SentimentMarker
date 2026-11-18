@@ -95,6 +95,8 @@ node tools/build-lexicon.js --check
 python3 tools/build_finance_vocab.py --check   # needs pysentiment2 + vaderSentiment
 ```
 
+The Diff + Timeline pack check rebuilds all six editions and compares canonical JSON payloads, independent of key order and indentation. Means and decomposition use exact arithmetic over integer 1e-4 sentence-score units, with half-even rounding at the existing precision (means: 4 decimal places; deltas and contributions: 5). The check compares those summaries in integer units at that precision and checks the remaining data exactly. A full rebuild measured 3.14 seconds on macOS with Python 3.13 / Node 22; CI runs the full check without `SM_DIFF_SKIP_CHECK` and has a 10-minute job limit. The UI test chooses `PYTHON`, then `python3`, falling back to `python` if the selected executable is missing.
+
 `test/golden.json` holds the shared golden vectors (negation, boosters, contrast, caps / exclamation, the "financial stability" neutral phrase, exact-match collisions such as goods / bridging, Chinese). Every field is checked: sentence score and raw sum, each scored word's code-point offsets, base and effective score and the engine's notes, and the negators / boosters / neutralised words that acted. Both runners must reproduce them exactly. `test/test_golden.py` skips only the vocabulary rebuild when pysentiment2 is missing.
 `node test/core.test.js` also deep-compares the General profile with the pre-model engine in `test/fixtures/` over every example text, the golden inputs and edge cases (sentences, tokens, whole documents, exports, topics): they must be identical.
 

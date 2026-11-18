@@ -2,7 +2,7 @@
 """Build the RBA FSR Diff + Timeline demo from the extracted texts in examples/fsr/.
 
     python examples/build_fsr_timeline.py            # score every edition, then diff them
-    python examples/build_fsr_timeline.py --check    # rebuild in a temp dir and compare the committed script byte for byte
+    python examples/build_fsr_timeline.py --check    # rebuild in a temp dir and compare canonical, quantised JSON payloads
 
 1. Text: examples/fsr/fsr-YYYY-MM.txt (plus examples/fsr-2026-10.txt, the reader demo), one per edition, extracted from the RBA PDF with the page's own joiner:
        node examples/pack_fsr.js --pdf financial-stability-review-2025-04.pdf --txt examples/fsr/fsr-2025-04.txt
@@ -18,7 +18,8 @@
 Text: Reserve Bank of Australia, Financial Stability Review (March 2024 - October 2026), CC BY 4.0.
 Scores are SentimentMarker's, not the Reserve Bank's.
 """
-import glob, os, re, subprocess, sys, tempfile
+import glob, json, os, re, subprocess, sys, tempfile
+from decimal import Decimal, ROUND_HALF_EVEN
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "examples", "fsr")
@@ -95,7 +96,6 @@ def build_pack(js_path, json_path):
         out = os.path.join(BUILD, f"fsr-{eid}.scored.json")
         run(os.path.join("examples", "score_financial.py"), cleaned, "--title",
             f"RBA Financial Stability Review ({MONTHS[int(m) - 1]} {y})", "-o", out)
-        import json
         with open(out, encoding="utf-8") as f:
             doc = json.load(f)
         attach_word_detail(doc)
@@ -107,6 +107,29 @@ def build_pack(js_path, json_path):
         "--title", "RBA Financial Stability Review, " + re.search(r"(\d{4})", os.path.basename(texts[0])).group(1)
         + "–" + re.search(r"(\d{4})", os.path.basename(texts[-1])).group(1),
         "--note", ATTR, "-o", json_path, "--js", js_path)
+
+
+def canonical_payload(script):
+    """Compare data, not JS whitespace, comments or JSON object insertion order.
+
+    Keep the shipped precision: means use integer 1e-4 units; decomposition
+    values use 1e-5 units. All other fields (including evidence) compare exactly.
+    Decimal parsing avoids introducing binary float rounding during the check.
+    """
+    match = re.search(r'window\.DIFF_FILES\["fsr-timeline\.diff\.json"\]\s*=\s*(\{.*\})\s*;\s*$', script, re.S)
+    if not match:
+        raise ValueError("missing fsr-timeline.diff.json assignment")
+    payload = json.loads(match.group(1), parse_float=Decimal)
+    for edition in payload["editions"]:
+        for stats in edition["stats"].values():
+            if stats["mean"] is not None:
+                stats["mean"] = int((Decimal(stats["mean"]) * 10000).to_integral_value(rounding=ROUND_HALF_EVEN))
+    for diff in payload["diffs"]:
+        for group in diff["groups"].values():
+            for key in ("delta", "edit", "added", "removed"):
+                if group[key] is not None:
+                    group[key] = int((Decimal(group[key]) * 100000).to_integral_value(rounding=ROUND_HALF_EVEN))
+    return payload
 
 
 def main():
@@ -121,7 +144,7 @@ def main():
             got = f.read()
         with open(committed, encoding="utf-8", newline="\n") as f:
             have = f.read()
-        if got != have:
+        if canonical_payload(got) != canonical_payload(have):
             sys.exit("examples/fsr-timeline.diff.js is stale; run python examples/build_fsr_timeline.py")
         print("examples/fsr-timeline.diff.js matches the rebuild")
     else:

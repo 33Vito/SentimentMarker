@@ -30,6 +30,7 @@ What it does, per adjacent pair of editions (A = older, B = newer):
 Standard library only. The decomposition is checked against the direct difference for every group (|err| < 1e-9).
 """
 import argparse, difflib, json, math, os, re, sys, unicodedata
+from fractions import Fraction
 from collections import defaultdict, deque
 
 FORMAT = "sentiment-diff"
@@ -262,17 +263,26 @@ def pack_word(w, c_word):
     return item
 
 
+def score_fraction(score):
+    """Sentence scores are packed at 1e-4; sum those integer units exactly.
+
+    Rational arithmetic keeps half-even rounding independent of float addition order.
+    Do not round the means before subtracting them or computing contributions.
+    """
+    return Fraction(round(score * 10000), 10000)
+
+
 def stats(scores, neutral):
     n = len(scores)
     if not n:
         return {"n": 0, "mean": None, "se": None, "neg": 0, "pos": 0}
-    m = sum(scores) / n
+    m = sum(map(score_fraction, scores)) / n
     # n == 1 has no sample spread. A zero standard error would draw a fake certainty band.
     if n < 2:
         sd = None
     else:
-        sd = math.sqrt(sum((x - m) ** 2 for x in scores) / (n - 1))
-    return {"n": n, "mean": round(m, 4), "se": None if sd is None else round(sd / math.sqrt(n), 4),
+        sd = math.sqrt(sum((x - float(m)) ** 2 for x in scores) / (n - 1))
+    return {"n": n, "mean": float(round(m, 4)), "se": None if sd is None else round(sd / math.sqrt(n), 4),
             "neg": sum(1 for x in scores if x < -neutral), "pos": sum(1 for x in scores if x > neutral)}
 
 
@@ -318,10 +328,12 @@ def decompose(A, B, inA, inB, pairs, removed, added):
     jb = [j for j in range(len(B)) if inB(j)]
     if not ia or not jb:
         return _one_sided(A, B, inA, inB, pairs, removed, added)
-    mA = sum(A[i]["s"] for i in ia) / len(ia)
-    mB = sum(B[j]["s"] for j in jb) / len(jb)
+    a_scores = {i: score_fraction(A[i]["s"]) for i in ia}
+    b_scores = {j: score_fraction(B[j]["s"]) for j in jb}
+    mA = sum(a_scores.values()) / len(ia)
+    mB = sum(b_scores.values()) / len(jb)
     nB = len(jb)
-    items, edit, add, rem = [], 0.0, 0.0, 0.0
+    items, edit, add, rem = [], Fraction(0), Fraction(0), Fraction(0)
     counts = {"u": 0, "e": 0, "a": 0, "r": 0}
     for i, j, kind, sim in pairs:
         a_in, b_in = inA(i), inB(j)
@@ -331,33 +343,33 @@ def decompose(A, B, inA, inB, pairs, removed, added):
                 continue
             # an "unchanged" pair whose score differs (text equal only after normalisation, e.g. case, which the
             # engine scores) is reported as unchangedScoreMismatch; its change is counted as an edit so the sum holds
-            c = (B[j]["s"] - A[i]["s"]) / nB
+            c = (b_scores[j] - a_scores[i]) / nB
             edit += c; counts["e"] += 1
-            items.append(["e", i, j, round(c, 5)])
+            items.append(["e", i, j, float(round(c, 5))])
         elif b_in:                                      # entered the group through an edit
-            c = (B[j]["s"] - mA) / nB
+            c = (b_scores[j] - mA) / nB
             add += c; counts["a"] += 1
-            items.append(["a", i, j, round(c, 5)])
+            items.append(["a", i, j, float(round(c, 5))])
         elif a_in:                                      # left the group through an edit
-            c = -(A[i]["s"] - mA) / nB
+            c = -(a_scores[i] - mA) / nB
             rem += c; counts["r"] += 1
-            items.append(["r", i, j, round(c, 5)])
+            items.append(["r", i, j, float(round(c, 5))])
     for j in added:
         if inB(j):
-            c = (B[j]["s"] - mA) / nB
+            c = (b_scores[j] - mA) / nB
             add += c; counts["a"] += 1
-            items.append(["a", None, j, round(c, 5)])
+            items.append(["a", None, j, float(round(c, 5))])
     for i in removed:
         if inA(i):
-            c = -(A[i]["s"] - mA) / nB
+            c = -(a_scores[i] - mA) / nB
             rem += c; counts["r"] += 1
-            items.append(["r", i, None, round(c, 5)])
+            items.append(["r", i, None, float(round(c, 5))])
     delta = mB - mA
     err = abs(delta - (edit + add + rem))
     if err > 1e-9:
         raise AssertionError(f"decomposition does not add up (err {err})")
     items.sort(key=lambda it: -abs(it[3]))
-    return {"delta": round(delta, 5), "edit": round(edit, 5), "added": round(add, 5), "removed": round(rem, 5),
+    return {"delta": float(round(delta, 5)), "edit": float(round(edit, 5)), "added": float(round(add, 5)), "removed": float(round(rem, 5)),
             "counts": counts, "items": items}
 
 
