@@ -4,7 +4,7 @@ Requires Chrome/Edge and Python websocket-client:  uv run --with websocket-clien
 Checks narrow-sheet rotation, docked inspector geometry, active row, hold clearing, auto-open floors.
 Not part of node test/core.test.js - that suite is dependency-free; this one is the interactive layer.
 """
-import json, os, subprocess, sys, time, urllib.request
+import json, os, shutil, subprocess, sys, time, urllib.request
 from pathlib import Path
 import websocket
 
@@ -12,10 +12,24 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 PAGE = Path(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'index.html')).resolve().as_uri()
 PROFILE = os.path.join(os.environ.get('LOCALAPPDATA', '/tmp'), 'sm-ui-smoke-profile')
 PORT = 9337
-CHROME_CANDIDATES = [r"C:\Program Files\Google\Chrome\Application\chrome.exe", r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"]
-chrome_bin = next((c for c in CHROME_CANDIDATES if os.path.exists(c)), None)
+# CHROME_BIN overrides the search. Otherwise: Windows, macOS, then Linux names looked up on PATH.
+CHROME_CANDIDATES = [r"C:\Program Files\Google\Chrome\Application\chrome.exe", r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                     "google-chrome", "chromium-browser", "chromium"]
+def find_chrome():
+    env = os.environ.get('CHROME_BIN')
+    if env:
+        found = env if os.path.exists(env) else shutil.which(env)
+        if not found: print(f'FAIL: CHROME_BIN={env!r} not found'); sys.exit(1)
+        return found
+    for c in CHROME_CANDIDATES:
+        found = c if os.path.isabs(c) else shutil.which(c)
+        if found and os.path.exists(found): return found
+    return None
+chrome_bin = find_chrome()
 if not chrome_bin:
-    print('SKIP: no Chrome/Edge found'); sys.exit(0)
+    print('SKIP: no Chrome/Edge found (set CHROME_BIN to point at one)'); sys.exit(0)
+print(f'using {chrome_bin}')
 
 chrome = subprocess.Popen([chrome_bin, '--headless=new', '--disable-gpu', f'--user-data-dir={PROFILE}',
                            f'--remote-debugging-port={PORT}', '--window-size=1500,1000', 'about:blank'],
