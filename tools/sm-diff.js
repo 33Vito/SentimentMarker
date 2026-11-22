@@ -1022,7 +1022,7 @@ function write(obj, outPath, jsPath = null, note = null) {
   return text;
 }
 
-function parseFloatArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
+function parseFloatArg(raw, flag) {
   const s = String(raw).trim();
   if (!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) {
     throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
@@ -1031,13 +1031,10 @@ function parseFloatArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
   if (!Number.isFinite(n)) {
     throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
   }
-  if (n < min || n > max) {
-    throw new Error(`${flag} must be between ${min} and ${max}, got ${n}`);
-  }
   return n;
 }
 
-function parseIntArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
+function parseIntArg(raw, flag) {
   const s = String(raw).trim();
   if (!/^[+-]?\d+$/.test(s)) {
     throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
@@ -1045,10 +1042,6 @@ function parseIntArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
   const n = Number(s);
   if (!Number.isSafeInteger(n)) {
     throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
-  }
-  if (n < min || n > max) {
-    const bound = max === Infinity ? `>= ${min}` : `between ${min} and ${max}`;
-    throw new Error(`${flag} must be ${bound}, got ${n}`);
   }
   return n;
 }
@@ -1100,8 +1093,8 @@ function parseArgs(argv) {
     else if (flag === '--title') opts.title = nextValue();
     else if (flag === '--note') opts.note = nextValue();
     else if (flag === '--sources') opts.sources = nextValue({ nonEmpty: true });
-    else if (flag === '--min-sim') opts.minSim = parseFloatArg(nextValue({ allowNumericDash: true }), flag, { min: 0, max: 1 });
-    else if (flag === '--min-hits') opts.minHits = parseIntArg(nextValue({ allowNumericDash: true }), flag, { min: 1 });
+    else if (flag === '--min-sim') opts.minSim = parseFloatArg(nextValue({ allowNumericDash: true }), flag);
+    else if (flag === '--min-hits') opts.minHits = parseIntArg(nextValue({ allowNumericDash: true }), flag);
     else throw new Error(`unknown argument: ${arg}`);
   }
   return opts;

@@ -90,7 +90,7 @@ node test/core.test.js            # core, app wiring, generator --check, golden 
 node test/diff.test.js            # Diff + Timeline, score-financial.js, build-finance-vocab.js, score-external.js
 node test/diff-ui.test.js         # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
 node tools/build-lexicon.js --check
-node tools/build-finance-vocab.js --check --lm <LM.csv> --vader <vader_lexicon.txt>   # verifies finance vocab against upstream lexicons (run in CI)
+node tools/build-finance-vocab.js --check --lm "$LM_CSV" --vader "$VADER_LEXICON"   # verifies finance vocab against upstream lexicons (run in CI)
 node test/ui-smoke.js             # optional headless Chrome/Edge CDP smoke test (zero dependencies)
 ```
 

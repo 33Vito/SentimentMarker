@@ -323,18 +323,12 @@ function test_cli_numeric_and_equals_validation() {
       [['--min-sim', 'NaN'], /invalid float value for --min-sim/],
       [['--min-sim', 'Infinity'], /invalid float value for --min-sim/],
       [['--min-sim', '0.5oops'], /invalid float value for --min-sim/],
-      [['--min-sim', '-0.1'], /--min-sim must be between 0 and 1/],
-      [['--min-sim=-0.1'], /--min-sim must be between 0 and 1/],
-      [['--min-sim=1.01'], /--min-sim must be between 0 and 1/],
-      [['--min-sim', '1e3'], /--min-sim must be between 0 and 1/],
       [['--min-sim', '--help'], /missing value for --min-sim/],
       [['--min-hits', '5oops'], /invalid int value for --min-hits/],
       [['--min-hits=5oops'], /invalid int value for --min-hits/],
       [['--min-hits', 'nonsense'], /invalid int value for --min-hits/],
       [['--min-hits', '3.5'], /invalid int value for --min-hits/],
       [['--min-hits='], /invalid int value for --min-hits/],
-      [['--min-hits', '0'], /--min-hits must be >= 1/],
-      [['--min-hits=-1'], /--min-hits must be >= 1/],
       [['--min-hits', '9007199254740992'], /invalid int value for --min-hits/],
       [['--assume-ordered=true'], /option --assume-ordered does not take a value/],
       [['--help=1'], /option --help does not take a value/],
@@ -371,7 +365,7 @@ function test_cli_numeric_and_equals_validation() {
     }
     assert.equal(fs.existsSync(path.join(tmp, '--help')), false);
 
-    // Valid equals syntax, boundary values (minSim=0/1, minHits=1), and literal dash-prefixed path via --out=
+    // Valid equals syntax, literal dash-prefixed path via --out=, and compatibility values (--min-sim=1.1, --min-hits=0)
     const okOut = path.join(tmp, 'ok-equals.json');
     const okRes = spawnSync(process.execPath, [
       cli,
@@ -402,6 +396,31 @@ function test_cli_numeric_and_equals_validation() {
     const bound = JSON.parse(fs.readFileSync(path.join(tmp, '-dashed.json'), 'utf8'));
     assert.equal(bound.params.minSim, 0);
     assert.equal(bound.params.minHits, 1);
+
+    // --min-sim=1.1 disables fuzzy pairing while keeping exact matches; --min-hits=0 writes 0
+    const docAPath = path.join(tmp, 'doc-a.json');
+    const docBPath = path.join(tmp, 'doc-b.json');
+    fs.writeFileSync(docAPath, JSON.stringify(doc([p(['Exact sentence stays.', 0.1], ['Bank credit rose, abruptly.', -0.2])])), 'utf8');
+    fs.writeFileSync(docBPath, JSON.stringify(doc([p(['Exact sentence stays.', 0.1], ['Bank credit rose abruptly.', -0.2])])), 'utf8');
+    const compatOut = path.join(tmp, 'compat-exact-only.json');
+    const compatRes = spawnSync(process.execPath, [
+      cli,
+      `--edition=2024-03=${docAPath}`,
+      `--edition=2024-09=${docBPath}`,
+      `--topics=${topicsPath}`,
+      `--out=${compatOut}`,
+      '--min-sim=1.1',
+      '--min-hits=0',
+    ], { encoding: 'utf8', cwd: tmp });
+    assert.equal(compatRes.status, 0, compatRes.stderr);
+    const compat = JSON.parse(fs.readFileSync(compatOut, 'utf8'));
+    assert.equal(compat.params.minSim, 1.1);
+    assert.equal(compat.params.minHits, 0);
+    const d0 = compat.diffs[0];
+    assert.equal(d0.pairs.filter(pair => pair[2] === 'u').length, 1);
+    assert.equal(d0.pairs.filter(pair => pair[2] === 'e').length, 0);
+    assert.equal(d0.removed.length, 1);
+    assert.equal(d0.added.length, 1);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
