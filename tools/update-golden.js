@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Refill test/golden.json's `expected` from the JS engine and print every case whose expectation changed.
    Only run this after a deliberate model / engine change, and review the printed diff: the golden file is what
-   test/core.test.js (JS direct) and test/test_golden.py (Python -> Node batch) both hold the engine to.
+   test/core.test.js checks both the JS engine directly and the batch CLI (tools/score-cli.js) against this file.
      node tools/update-golden.js            rewrite test/golden.json
      node tools/update-golden.js --dry      print the changes only */
 'use strict';

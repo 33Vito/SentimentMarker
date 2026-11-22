@@ -21,7 +21,7 @@
 */
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { scoreFile } = require('./score-financial.js');
 
 const root = path.join(__dirname, '..');
 let pdfPath = path.join(__dirname, 'financial-stability-review-2026-10.pdf');   // --pdf picks another edition
@@ -115,11 +115,7 @@ function arg(name, fallback) {
 }
 
 function score(txt, title, out) {
-  const py = process.env.PYTHON || 'python';
-  const r = spawnSync(py, [path.join(__dirname, 'score_financial.py'), txt, '--title', title, '-o', out], {
-    cwd: root, stdio: 'inherit',
-  });
-  if (r.status !== 0) process.exit(r.status || 1);
+  scoreFile(txt, title, out);
 }
 
 function writeSide(scoredPath, sidePath) {

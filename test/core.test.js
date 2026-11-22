@@ -618,7 +618,7 @@ const asyncTests = (async () => {
   ok(noWarn(keptM) && util.isDeepStrictEqual(C.docToJSON(keptM).model, { version: '0.9.0', profile: 'my-model' }), 'a file that carries model keeps it as given (unknown profile fine, no warnings)');
   ok([{ model: 'x' }, { model: { version: 1, profile: 'finance' } }, { model: { profile: 'finance' } }, { model: null }].every(o => { const d = withM(o); return noWarn(d) && C.docToJSON(d).model === undefined; }), 'a malformed model is ignored, not an error, and not written back');
   ok([dlist[0].scored, dlist[2].scored, fullObj].every(o => util.isDeepStrictEqual(o.model, { version: ver, profile: 'finance' })) && noWarn(C.docFromScored(dlist[0].scored)), 'regenerated finance examples carry model {version, finance} and load cleanly');
-  // golden vectors, JS direct (test/test_golden.py runs the same file through Python -> Node)
+  // golden vectors, JS direct + batch CLI round-trip over every profile
   const golden = JSON.parse(fs.readFileSync(P_.join(__dirname, 'golden.json'), 'utf8'));
   ok(golden.modelVersion === C.modelVersion && golden.cases.length >= 40, 'golden file: ' + golden.cases.length + ' cases for model ' + golden.modelVersion);
   /* every field: score, raw, each word's offsets / base / effective score / notes / note text, and the cues */
@@ -633,11 +633,20 @@ const asyncTests = (async () => {
   ok(['negator', 'booster', 'neutral', 'neg', 'boost', 'but', 'caps'].every(k => kinds.has(k)), 'golden exercises every cue kind and note kind: ' + [...kinds].join());
   const need = ['not strong', 'very strong', 'financial stability'];
   ok(need.every(t => ['general', 'finance'].every(p => golden.cases.some(c => c.text === t && c.profile === p))), 'golden covers not strong / very strong / financial stability under both profiles');
-  // the batch CLI is the same engine
-  const cli = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'score-cli.js')], { input: JSON.stringify({ jobs: [{ profile: 'finance', sentences: golden.cases.filter(c => c.profile === 'finance').map(c => c.text) }, { profile: 'finance', title: 't', paragraphs: [{ type: 'p', text: 'Financial stability is strong. Losses rose.' }] }] }), encoding: 'utf8' });
+  // the batch CLI runs every golden profile in one Node process and preserves exact doubles
+  const goldenProfiles = [...new Set(golden.cases.map(c => c.profile))].sort();
+  const cliJobs = goldenProfiles.map(p => ({ profile: p, sentences: golden.cases.filter(c => c.profile === p).map(c => c.text) }));
+  cliJobs.push({ profile: 'finance', title: 't', paragraphs: [{ type: 'p', text: 'Financial stability is strong. Losses rose.' }] });
+  const cli = cp.spawnSync(process.execPath, [P_.join(repo, 'tools', 'score-cli.js')], { input: JSON.stringify({ jobs: cliJobs }), encoding: 'utf8' });
   const cr = cli.status === 0 && JSON.parse(cli.stdout).results;
-  ok(cr && cr[0].sentences.every((s, i) => { const c = golden.cases.filter(g => g.profile === 'finance')[i]; const { text, ...rest } = s; return text === c.text && util.isDeepStrictEqual(rest, c.expected); }), 'tools/score-cli.js sentence jobs give the golden detail, every field');
-  ok(cr && JSON.stringify(cr[1].doc) === JSON.stringify(C.docToJSON(fdoc)), 'tools/score-cli.js document jobs give the page\'s Export JSON');
+  ok(cr && goldenProfiles.every((p, pi) => {
+    const want = golden.cases.filter(g => g.profile === p);
+    return cr[pi].sentences.every((s, i) => {
+      const c = want[i], { text, ...rest } = s;
+      return text === c.text && Object.is(s.score, c.expected.score) && Object.is(s.raw, c.expected.raw) && util.isDeepStrictEqual(rest, c.expected);
+    });
+  }), 'tools/score-cli.js sentence jobs match every golden profile and exact float');
+  ok(cr && JSON.stringify(cr[goldenProfiles.length].doc) === JSON.stringify(C.docToJSON(fdoc)), 'tools/score-cli.js document jobs give the page\'s Export JSON');
   // index.html: the dictionary picker; only text the page scores itself goes through the lazy load
   ok(/<select[^>]*id="selDict"/.test(html) && /initDictSel\(\);/.test(appSrc), 'analyzer has a dictionary picker');
   const fnSrc = name => appSrc.slice(appSrc.indexOf('function ' + name + '('), appSrc.indexOf('\n}\n', appSrc.indexOf('function ' + name + '(')));

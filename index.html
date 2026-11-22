@@ -584,7 +584,7 @@ segPol.addEventListener('click', e => {
 /* topic chips: sentences that mention the topic, then their mean score (topicScores: sentence-level, overlaps count
    toward each topic). t.count from extractTopics is word occurrences; it only ranks the auto-picked topics. */
 const topicLv = () => (S.doc.has.sent ? 'sent' : 'para');   /* the colour scale a topic mean is read on (paragraph-only files: paragraphs) */
-/* below this many sentences a topic shows its count, not a mean: the same floor as the diff timeline (tools/sm_diff.py MIN_HITS) */
+/* below this many sentences a topic shows its count, not a mean: the same floor as the diff timeline (tools/sm-diff.js MIN_HITS) */
 const TOPIC_MIN_HITS = 5;
 function renderChips() {
   const anyOn = S.topics.some(t => t.on);

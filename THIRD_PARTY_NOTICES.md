@@ -10,12 +10,12 @@ SentimentMarker's own code is in this repository. The following third-party mate
 - **Licence:** free for non-commercial / academic use only. **Commercial use requires a licence from the authors.** Terms and contact: https://sraf.nd.edu/loughranmcdonald-master-dictionary/
 - **Citation:** Loughran, T. and McDonald, B. (2011), "When Is a Liability Not a Liability? Textual Analysis, Dictionaries, and 10-Ks", *Journal of Finance* 66(1), 35–65.
 
-If you use SentimentMarker's Finance dictionary commercially, obtain that licence first, or replace the finance vocabulary (`tools/build_finance_vocab.py` builds it; any `{word: score}` list can take its place in `data/sentiment-model.json`).
+If you use SentimentMarker's Finance dictionary commercially, obtain that licence first, or replace the finance vocabulary (`tools/build-finance-vocab.js` builds it from raw `LM.csv` and `vader_lexicon.txt`; any `{word: score}` list can take its place in `data/sentiment-model.json`).
 
 ## VADER sentiment lexicon
 
 - **What:** the VADER lexicon by C.J. Hutto and Eric Gilbert. Its mean valences give the strength of Finance dictionary words where VADER agrees with LM on the sign, plus strongly polarised VADER-only words (|score| ≥ 2.5).
-- **Where:** the same files as above. Also `examples/launch-week.scored.json` / `.csv`, which `examples/score_with_python.py` scored with vaderSentiment; the JSON's `reference` lists every VADER lexicon score.
+- **Where:** the same files as above. Also `examples/launch-week.scored.json` / `.csv`, which were scored with vaderSentiment as an external-score fixture; the JSON's `reference` lists every VADER lexicon score.
 - **Source:** `vader_lexicon.txt` from vaderSentiment 3.3.2, sha256 `1ec9c6e9ee19aade328f8beb393a6afa71a5bb3acf7d3cc22d4ef568df374bf5` (`sources.upstream.vader`).
 - **Citation:** Hutto, C.J. and Gilbert, E.E. (2014), "VADER: A Parsimonious Rule-based Model for Sentiment Analysis of Social Media Text", Eighth International Conference on Weblogs and Social Media (ICWSM-14).
 - **Licence:** MIT:
@@ -44,9 +44,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## pysentiment2 (build-time only)
+## pysentiment2 (historical build provenance only)
 
-`tools/build_finance_vocab.py` imports pysentiment2 0.1.1 (https://github.com/nickderobertis/pysentiment) only to read the `LM.csv` it ships. No pysentiment2 code is included in this repository or needed to run it. The Loughran-McDonald terms above cover the word list, whichever package delivers it. For the package itself, its metadata says MIT, but the `LICENSE` file in the 0.1.1 distribution is the GNU GPL version 2 text (from the original pysentiment). Check that discrepancy yourself if you redistribute pysentiment2.
+The current `LM.csv` hash recorded in `data/sentiment-model.json` (`sources.upstream.loughranMcDonald`) came from `pysentiment2` 0.1.1 (https://github.com/nickderobertis/pysentiment). No `pysentiment2` code or Python dependency is included in or required by this repository; `tools/build-finance-vocab.js` reads raw `LM.csv` and `vader_lexicon.txt` directly. The Loughran-McDonald terms above cover the word list, whichever package delivers it. For `pysentiment2` itself, its metadata says MIT, but the `LICENSE` file in the 0.1.1 distribution is the GNU GPL version 2 text (from the original pysentiment). Check that discrepancy yourself if you obtain or redistribute `pysentiment2`.
 
 ## Reserve Bank of Australia, Financial Stability Review, March 2024 – October 2026
 

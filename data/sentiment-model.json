@@ -109,7 +109,7 @@
     },
     "vocabularies": {
       "finance": {
-        "origin": "Loughran-McDonald polarity x VADER strength, built by tools/build_finance_vocab.py.",
+        "origin": "Loughran-McDonald polarity x VADER strength, built by tools/build-finance-vocab.js.",
         "sha256": "0c9333a780944b3ad9d31bd728c2d2e450ce0db475fa9441bbb0e0bb21b2be07",
         "words": 3381
       },

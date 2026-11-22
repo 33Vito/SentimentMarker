@@ -14,15 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - name: Install vocabulary check dependencies
-        run: python3 -m pip install pysentiment2==0.1.1 vaderSentiment==3.3.2
       # README Tests commands, including the full six-edition rebuild (no skip).
       - run: node test/core.test.js
-      - run: python3 test/test_golden.py
-      - run: python test/test_diff.py
+      - run: node test/diff.test.js
       - run: node test/diff-ui.test.js
       - run: node tools/build-lexicon.js --check
-      - run: python3 tools/build_finance_vocab.py --check

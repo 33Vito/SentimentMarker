@@ -1,14 +1,14 @@
 # Diff + Timeline format
 
-`tools/sm_diff.py` compares N editions of one publication and writes a `sentiment-diff` JSON file. `SentimentDiff.html` shows it: a timeline of topic and section means, and for any edition the diff against the previous one, with the change split into its sources and the sentences behind it.
+`tools/sm-diff.js` compares N editions of one publication and writes a `sentiment-diff` JSON file. `SentimentDiff.html` shows it: a timeline of topic and section means, and for any edition the diff against the previous one, with the change split into its sources and the sentences behind it.
 
 ```
-python tools/sm_diff.py --edition 2026-03=a.scored.json --edition 2026-10=b.scored.json \
-                        --topics examples/fsr-topics.json -o out.diff.json --js out.diff.js
-python examples/build_fsr_timeline.py        # the RBA FSR demo: score examples/fsr/*.txt, then diff
+node tools/sm-diff.js --edition 2026-03=a.scored.json --edition 2026-10=b.scored.json \
+                      --topics examples/fsr-topics.json -o out.diff.json --js out.diff.js
+node examples/build-fsr-timeline.js          # the RBA FSR demo: score examples/fsr/*.txt, then diff
 ```
 
-The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of the form `YYYY-MM` are sorted chronologically before alignment, so passing them newest-first cannot swap added and removed. Valid months are 01–12 (and years 0001–9999); invalid dates and mixed date/non-date IDs are refused. For non-date IDs, the CLI requires `--assume-ordered` to confirm they are supplied oldest first; the Python API requires `assume_ordered=True`. Their actual chronology cannot be verified. Duplicate ids are refused. Every file must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
+The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of the form `YYYY-MM` are sorted chronologically before alignment, so passing them newest-first cannot swap added and removed. Valid months are 01–12 (and years 0001–9999); invalid dates and mixed date/non-date IDs are refused. For non-date IDs, the CLI requires `--assume-ordered` to confirm they are supplied oldest first; the JS API requires `{ assumeOrdered: true }`. Their actual chronology cannot be verified. Duplicate ids are refused. Every file must come from the same model and profile: the tool compares their `model` fields and refuses a mix, because a timeline measured with two rulers shows the change of ruler, not of text. Files with external scores and no `model` are accepted together.
 
 ## Method
 
@@ -23,7 +23,7 @@ The inputs are ordinary scored files ([FORMAT.md](FORMAT.md)). Edition ids of th
 | Kind | Rule |
 | --- | --- |
 | unchanged | normalised text identical (case, whitespace, quotes, dashes, leading bullets). Duplicates are paired one to one, in order |
-| edited | word-token similarity (`difflib` ratio) ≥ `--min-sim` (0.55). Candidates share rare words; pairs are taken greedily, best first; the same section breaks ties |
+| edited | word-token similarity (Ratcliff/Obershelp `SequenceMatcher` ratio) ≥ `--min-sim` (0.55). Candidates share rare words; pairs are taken greedily, best first; the same section breaks ties |
 | removed / added | left over in A / in B |
 
 Unchanged sentences must keep their score exactly (the built-in engine scores a sentence on its own). The tool reports any that do not as `unchangedScoreMismatch`, which would mean the editions were not scored the same way.
