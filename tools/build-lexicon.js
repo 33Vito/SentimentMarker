@@ -5,7 +5,7 @@
      node tools/build-lexicon.js --check               exit 1 if any of the three files is stale (run by test/core.test.js)
      node tools/build-lexicon.js --import-finance F    replace the finance vocabulary and upstream records with
                                                        F (JSON {words, upstream}; "-" = stdin), then regenerate.
-                                                       tools/build_finance_vocab.py calls this.
+                                                       tools/build-finance-vocab.js calls this.
 
    Outputs (all deterministic: sorted words and groups, JS number formatting, no timestamps):
      data/sentiment-model.json  canonical form: keys sorted (modelVersion first), negators / contrast words sorted,

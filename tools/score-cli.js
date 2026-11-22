@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Batch scoring through the one JS engine (sentiment-core.js), for offline / Python use. One process per run:
+/* Batch scoring through the one JS engine (sentiment-core.js), for offline / CLI use. One process per run:
    read one JSON request on stdin, write one JSON response on stdout.
 
      {"jobs": [job, …]}  ->  {"modelVersion": "…", "results": [result, …]}     (a bare job is accepted too)
@@ -16,7 +16,7 @@
      {"profile": "finance", "title": "…", "paragraphs": [{"type": "p"|"h", "level"?: 2, "text": "…"} | {"type", "sentences": ["…"]}]}
         -> {"profile", "doc": <scored JSON exactly as the page's Export JSON writes it, docs/FORMAT.md>}
            paragraphs with `text` are split with the engine's own sentence splitter.
-   Offsets are Unicode code points (Python str indices). */
+   Offsets are Unicode code points (matching UTF-32 / Python str indices). */
 'use strict';
 const fs = require('fs');
 const path = require('path');

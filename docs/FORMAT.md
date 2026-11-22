@@ -1,6 +1,6 @@
 # Scoring file format
 
-When you import external scores (this format, through "Open file", drag and drop or the paste dialog), SentimentMarker only displays them: they are not rescored and no dictionary is loaded for them. When you paste or open plain text, the page scores it with its built-in dictionary - the General one, or the optional Finance dictionary chosen in the toolbar (see "The built-in scoring model" below). That dictionary approach is a demo; compute real scores with your own Python module or API, save them as JSON or CSV, and bring them in.
+When you import external scores (this format, through "Open file", drag and drop or the paste dialog), SentimentMarker only displays them: they are not rescored and no dictionary is loaded for them. When you paste or open plain text, the page scores it with its built-in dictionary - the General one, or the optional Finance dictionary chosen in the toolbar (see "The built-in scoring model" below). That dictionary approach is a demo; compute real scores with your own model or API (in Node.js, Python, R, etc.), save them as JSON or CSV, and bring them in.
 
 You may supply just one level (words only, sentences only or paragraphs only); the missing levels are greyed out in the interface.
 When both words and sentences are given, a sentence is coloured from the sentence score you supplied - it is never recomputed from the words. When only words are given, sentence and paragraph scores are derived from them, and opening a sentence or paragraph labels it "Derived from words" / "Derived from sentences".
@@ -52,7 +52,7 @@ If some sentences in one file carry a score and others do not, the header warns 
 | `center` | no | The neutral point, 0 by default. A number (shared by all three levels) or `{word, sentence, paragraph}`. Scores are first shifted down by the centre of that level (so a 1-5 star rating is centred at 3); `reference` uses the `word` centre |
 | `scale` | no, but worth always writing | Which absolute score counts as "strongest colour". A number (shared) or `{word, sentence, paragraph}`, applied to the score after subtracting `center`. When missing it takes the 90th percentile of non-zero \|scores\| for that level, which makes colour intensity incomparable across files |
 | `reference` | no | The reference lexicon used to draw the emotion spectrum. See below |
-| `model` | no | Provenance: `{"version": "1.0.0", "profile": "finance"}` = scored by SentimentMarker's engine, model version and dictionary. Written by the page's Export JSON for text the page scored, and by `tools/score-cli.js` / `examples/score_financial.py`. The reader shows a file the same with or without it. A file that carries a well-formed `model` (both strings) keeps it through import and export, unchanged and unchecked. A malformed one is ignored and not written back. The reader never adds it to scores it did not compute |
+| `model` | no | Provenance: `{"version": "1.0.0", "profile": "finance"}` = scored by SentimentMarker's engine, model version and dictionary. Written by the page's Export JSON for text the page scored, and by `tools/score-cli.js` / `examples/score-financial.js`. The reader shows a file the same with or without it. A file that carries a well-formed `model` (both strings) keeps it through import and export, unchanged and unchecked. A malformed one is ignored and not written back. The reader never adds it to scores it did not compute |
 
 The sign of a score decides the colour: negative is orange, positive is teal, 0 stays uncoloured. The numeric range is yours to choose - normalisation is not required, `scale` is what tells the reader which values count as strong.
 The header shows the colour scale currently in use and whether it came from the file, was computed automatically, or comes from the built-in dictionary.
@@ -100,14 +100,14 @@ The emotion spectrum places the words used in this document inside the distribut
 
 Words are grouped by "word + sign", so "good" and the negated "not good" (negative score) stay two separate entries instead of averaging out to something near 0.
 
-In Python, VADER's lexicon is the convenient choice - see `examples/score_with_python.py`: `vader.lexicon.values()` are exactly the lexicon scores. Any other lexicon (AFINN, NRC, your own) works the same way.
+For an external scorer (such as VADER, see `examples/launch-week.scored.json`), supplying `reference.scores` draws the emotion spectrum distribution; `examples/score-external.js` provides a Node.js template (`examples/launch-week.scored.json` was generated with VADER as an external-score fixture). Any other lexicon (AFINN, NRC, your own) works the same way.
 The reference lexicon must use the same ruler as `words[].score`, otherwise the ranking means nothing. If the largest absolute word score in this document is far below the reference (under 1/4) or far above it (over 4x), the spectrum warns that the two may not be on the same scale.
 
 ## Chinese text
 
-`examples/score_with_python.py` splits Chinese on `。！？` and line breaks, and takes offsets straight from Python string indexes (code points).
-VADER only knows English, so Chinese gets no word or sentence scores by default. Pass `--lexicon my_lexicon.json` (`{"词": score}`) or a TSV (`词<TAB>score`) with Chinese entries and the script matches the longest Chinese word in each sentence; the sentence score is then derived by the reader from those word scores.
-To plug in your own Chinese model, replace the `cjk_words` and `score_sentence` functions.
+`examples/score-external.js` splits Chinese on `。！？` and line breaks, and maps UTF-16 indices to Unicode code points (`[...s]` / code-point offsets).
+Pass `--lexicon my_lexicon.json` (`{"词": score}`) or a TSV (`词<TAB>score`) with Chinese entries and the script matches the longest Chinese word in each sentence; the sentence score is then derived by the reader from those word scores.
+To plug in your own Chinese model, replace the `cjkWords` and `scoreSentence` functions.
 
 ## Export
 
@@ -130,7 +130,7 @@ Everything the built-in engine knows is in `data/sentiment-model.json`, one hand
 | `negators`, `boosters`, `contrastWords` | Shared by all profiles. `boosters` maps a word to its multiplier (< 1 weakens). Every word ending in `n't` already negates, so the generator rejects such negators as redundant |
 | `neutralPhrases` | `{profiles, tokens, neutral, note}`: in the named profiles, where the lower-cased word tokens `tokens` follow each other with only whitespace between them, the tokens at the indexes in `neutral` are not scored. Example: finance, `["financial", "stability"]`, `[1]` |
 | `vocabularies.<name>` | `label` (also shown in the colour-scale line), `description`, `words` (`{word: score}`, lower case), `suffixPolicy`, `scale`, `referenceName` / `referenceExamples` (the emotion spectrum for text scored with it), and `asset` for a lazily loaded profile |
-| `scale` | The colour scale of text scored with the profile: `{word, sentence, paragraph}`, each a number or `"auto"` (the 90th percentile of the document's non-zero \|scores\| at that level, the rule the reader applies to a file without `scale`). general: 3 / 0.6 / 0.3; finance: word 2.5, sentence and paragraph `"auto"`. `examples/score_financial.py` writes the numeric levels as the file's `scale` and leaves the `"auto"` ones out, so the page and the file colour a text the same way |
+| `scale` | The colour scale of text scored with the profile: `{word, sentence, paragraph}`, each a number or `"auto"` (the 90th percentile of the document's non-zero \|scores\| at that level, the rule the reader applies to a file without `scale`). general: 3 / 0.6 / 0.3; finance: word 2.5, sentence and paragraph `"auto"`. `examples/score-financial.js` writes the numeric levels as the file's `scale` and leaves the `"auto"` ones out, so the page and the file colour a text the same way |
 | `suffixPolicy` | `{"type": "exact"}`, or `{"type": "suffix", "minStemLength", "skipCJK", "rules": [[suffix, replacement], …]}`: after an exact miss, every rule whose suffix ends the word gives a candidate, in rule order; the first candidate of at least `minStemLength` characters that is in the vocabulary wins |
 | `sources` | Licence note, upstream lists (`loughranMcDonald`, `vader`: name, version, file, sha256 of the upstream file, licence), and per vocabulary its word count and the sha256 of its canonical content: UTF-8 of one `word<TAB>score\n` line per entry, words sorted by UTF-16 code unit, scores as JavaScript prints them. See THIRD_PARTY_NOTICES.md |
 
@@ -146,7 +146,7 @@ The Loughran-McDonald word list is free for non-commercial / academic use only; 
 - the `//<model>` … `//</model>` region of `sentiment-core.js`: rules, parameters, the profiles (with the expected sha256 of each lazy vocabulary) and the general vocabulary, so General is there synchronously on every page and under `require('./sentiment-core.js')`
 - `lexicon/finance.js`: `SMCore.registerLexicon("finance", {words: [[score, "word word …"], …]})`, words grouped by score. The asset carries no hash of its own (its header comment repeats it for people). `registerLexicon` rebuilds the canonical content from the words it receives, computes its SHA-256 (about 1 ms), and installs the vocabulary only if that equals the sha256 generated into the core. Otherwise it throws, the load fails, and nothing is installed. So a stale, truncated or edited asset is refused, and the same words grouped differently are accepted
 
-`--check` writes nothing and exits 1 when any of them is stale; `node test/core.test.js` runs it. `python tools/build_finance_vocab.py` rebuilds the finance words and upstream hashes from pysentiment2's `LM.csv` and VADER's `vader_lexicon.txt`, then calls the generator.
+`--check` writes nothing and exits 1 when any of them is stale; `node test/core.test.js` runs it. `node tools/build-finance-vocab.js --lm LM.csv --vader vader_lexicon.txt` rebuilds the finance words and upstream hashes from raw upstream files and regenerates the model and browser assets.
 
 ### Lazy loading in the page
 
@@ -161,9 +161,9 @@ The Loughran-McDonald word list is free for non-commercial / academic use only; 
           {"profile": "finance", "title": "t", "paragraphs": [{"type": "p", "text": "…"}, {"type": "h", "level": 2, "sentences": ["…"]}]}]}
 ```
 
-A `sentences` job scores each string as one sentence and returns `score`, `raw` (the sum before squashing), the scored `words` (`text`, code-point `start` / `end`, `base`, effective `score`, `notes` - the engine's own records: `{t: "boost", w, m}`, `{t: "neg", w}`, `{t: "caps"}`, `{t: "but", w: weight}` - and `note`, their text) and the `cues` (negators, boosters with their multiplier, neutralised words, with offsets). A `paragraphs` job returns the document in this file format, exactly as "Export JSON" writes it, `model` included. `tools/sm_engine.py` wraps it for Python; `examples/score_financial.py` uses it, so its output equals the page's Finance scores.
+A `sentences` job scores each string as one sentence and returns `score`, `raw` (the sum before squashing), the scored `words` (`text`, code-point `start` / `end`, `base`, effective `score`, `notes` - the engine's own records: `{t: "boost", w, m}`, `{t: "neg", w}`, `{t: "caps"}`, `{t: "but", w: weight}` - and `note`, their text) and the `cues` (negators, boosters with their multiplier, neutralised words, with offsets). A `paragraphs` job returns the document in this file format, exactly as "Export JSON" writes it, `model` included. `examples/score-financial.js` calls it in-process, so its output equals the page's Finance scores.
 
 ### Golden vectors
 
-`test/golden.json` lists `{name, profile, text, expected}`, where `expected` is exactly the `sentences` job result above (without the echoed text). `node test/core.test.js` checks them on the JS engine, `python3 test/test_golden.py` through Python -> Node. Both compare every field, floats exactly.
+`test/golden.json` lists `{name, profile, text, expected}`, where `expected` is exactly the `sentences` job result above (without the echoed text). `node test/core.test.js` checks them both on the JS engine directly and through `tools/score-cli.js`, comparing every field and float bit-for-bit.
 The General profile is also held to the engine before this model existed: `test/fixtures/sentiment-core-56f66cb.js` is main's `sentiment-core.js` byte for byte, and the test deep-compares both engines over every example text, the golden inputs and edge cases. After a deliberate change, `node tools/update-golden.js` refills them and prints the differences to review.

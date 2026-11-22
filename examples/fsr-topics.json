@@ -1,5 +1,5 @@
 {
-  "note": "Stable topics for comparing RBA Financial Stability Review editions. A sentence belongs to a topic when any pattern matches (case-insensitive regular expression). tools/sm_diff.py wraps each pattern in (?<![\\w-])…(?![\\w-]), so a hyphen is not a word boundary: banks? does not match non-bank. A sentence can belong to several topics. Edit freely; rerun examples/build_fsr_timeline.py.",
+  "note": "Stable topics for comparing RBA Financial Stability Review editions. A sentence belongs to a topic when any pattern matches (case-insensitive regular expression). tools/sm-diff.js wraps each pattern in a boundary guard excluding letters, digits, underscores and hyphens, so banks? does not match non-bank. A sentence can belong to several topics. Edit freely; rerun node examples/build-fsr-timeline.js.",
   "topics": [
     { "id": "households", "label": "Households", "patterns": ["households?", "borrowers?", "mortgag\\w*", "owner-occupiers?"] },
     { "id": "housing", "label": "Housing", "patterns": ["housing", "housing prices?", "dwellings?", "property prices?", "high-LVR", "high DTI", "investor lending"] },

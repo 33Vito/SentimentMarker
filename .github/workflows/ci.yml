@@ -14,15 +14,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - name: Install vocabulary check dependencies
-        run: python3 -m pip install pysentiment2==0.1.1 vaderSentiment==3.3.2
       # README Tests commands, including the full six-edition rebuild (no skip).
       - run: node test/core.test.js
-      - run: python3 test/test_golden.py
-      - run: python test/test_diff.py
+      - run: node test/diff.test.js
       - run: node test/diff-ui.test.js
       - run: node tools/build-lexicon.js --check
-      - run: python3 tools/build_finance_vocab.py --check
+      - name: Cache upstream lexicon wheels
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sentimentmarker-wheels
+          key: finance-vocab-wheels-d0ff7a0b-3bf1d243
+      - name: Check finance vocabulary against upstream lexicons
+        run: |
+          CACHE_DIR="$HOME/.cache/sentimentmarker-wheels"
+          mkdir -p "$CACHE_DIR"
+          WORK="$(mktemp -d)"
+          trap 'rm -rf "$WORK"' EXIT
+          LM_WHL="$CACHE_DIR/pysentiment2-0.1.1-py3-none-any.whl"
+          VADER_WHL="$CACHE_DIR/vaderSentiment-3.3.2-py2.py3-none-any.whl"
+          if [ ! -f "$LM_WHL" ]; then
+            curl -fsSL -o "$WORK/pysentiment2.whl" \
+              https://files.pythonhosted.org/packages/d1/7c/596f3028260310d6206b7b88fe7d37fdb367913bfac9195912b27ab3cadb/pysentiment2-0.1.1-py3-none-any.whl
+            mv "$WORK/pysentiment2.whl" "$LM_WHL"
+          fi
+          if [ ! -f "$VADER_WHL" ]; then
+            curl -fsSL -o "$WORK/vaderSentiment.whl" \
+              https://files.pythonhosted.org/packages/76/fc/310e16254683c1ed35eeb97386986d6c00bc29df17ce280aed64d55537e9/vaderSentiment-3.3.2-py2.py3-none-any.whl
+            mv "$WORK/vaderSentiment.whl" "$VADER_WHL"
+          fi
+          printf '%s  %s\n' \
+            "d0ff7a0b702654baeff6a6bec231e56ba4c4c9bc9ad4730856e8ca69335450c7" "$LM_WHL" \
+            "3bf1d243b98b1afad575b9f22bc2cb1e212b94ff89ca74f8a23a588d024ea311" "$VADER_WHL" \
+            | sha256sum -c -
+          unzip -oq "$LM_WHL" pysentiment2/static/LM.csv -d "$WORK"
+          unzip -oq "$VADER_WHL" vaderSentiment/vader_lexicon.txt -d "$WORK"
+          node tools/build-finance-vocab.js --check \
+            --lm "$WORK/pysentiment2/static/LM.csv" \
+            --vader "$WORK/vaderSentiment/vader_lexicon.txt"

@@ -11,7 +11,7 @@ A lightweight reader that paints the sentiment score of every word, sentence and
 - A heat strip on the right shows the sentiment distribution of the whole document; click or drag it to jump
 - An outline panel for long articles: two heading levels, each row carrying a sentiment bar and the running sum of its section, click to jump, the current section stays highlighted
 - Reads PDF, Markdown, TXT and pasted text, scored in the page with the built-in General dictionary or the optional Finance dictionary (Loughran-McDonald × VADER), picked in the toolbar
-- **Open externally scored files** (JSON / CSV): the scores come from your own Python module or API, the reader only displays them
+- **Open externally scored files** (JSON / CSV): the scores come from your own model or API (for example via Node.js, Python, or R), the reader only displays them
 - An emotion spectrum sidebar: where the words of this document sit inside the distribution of a reference lexicon (VADER, for example), listing the most positive and most negative words with percentiles
 - Export the current document's scores (JSON / CSV) and use them as a format template
 
@@ -24,9 +24,9 @@ Compare editions of the same publication: which topics turned more negative, whi
 - Sections follow PDF reading order and can drift. The Assessment rows keep one section across editions
 
 ```
-python examples/build_fsr_timeline.py          # score examples/fsr/*.txt (+ examples/fsr-2026-10.txt), then diff
-python examples/build_fsr_timeline.py --check  # rebuild and require a byte-for-byte match of examples/fsr-timeline.diff.js
-python tools/sm_diff.py --edition A=a.scored.json --edition B=b.scored.json --assume-ordered --topics topics.json -o out.diff.json
+node examples/build-fsr-timeline.js          # score examples/fsr/*.txt (+ examples/fsr-2026-10.txt), then diff
+node examples/build-fsr-timeline.js --check  # rebuild and compare canonical, quantised JSON payloads against examples/fsr-timeline.diff.js
+node tools/sm-diff.js --edition A=a.scored.json --edition B=b.scored.json --assume-ordered --topics topics.json -o out.diff.json
 ```
 
 Method, file format and limits: [docs/DIFF_FORMAT.md](docs/DIFF_FORMAT.md). Topics: `examples/fsr-topics.json`. Earlier editions' text: `examples/fsr/` (extracted with `node examples/pack_fsr.js --pdf <file> --txt <out>`; the PDFs are not committed).
@@ -34,47 +34,46 @@ Method, file format and limits: [docs/DIFF_FORMAT.md](docs/DIFF_FORMAT.md). Topi
 ## Bring your own scores
 
 When you import external scores (a JSON / CSV file, or one pasted into the dialog), the reader only displays them: it never rescores them and never loads a dictionary for them. When you paste or open plain text (TXT, Markdown, PDF), it scores that text itself with its built-in dictionary: the General one, or the optional Finance dictionary chosen in the toolbar.
-To use your own model, score every word / sentence / paragraph with Python or an API, save it as JSON or CSV, and drop it on the page:
+To use your own model, score every word / sentence / paragraph in Node.js (or any language / API), save it as JSON or CSV, and drop it on the page:
 
 ```
-pip install vaderSentiment
-python examples/score_with_python.py examples/launch-week.md   # writes launch-week.scored.json
+node examples/score-external.js examples/launch-week.md -o /tmp/launch-week.scored.json   # template to swap in your model
 ```
 
-See [docs/FORMAT.md](docs/FORMAT.md). You may supply only some of the three levels; giving `reference` (the scores of the reference lexicon) is what draws the emotion spectrum.
+Pass `-o` when trying it on `examples/launch-week.md`: without `-o` (and likewise with `--csv`), the default output path would overwrite the tracked `examples/launch-week.scored.json` / `.csv` VADER fixtures loaded by the tests. Those committed VADER fixtures can no longer be regenerated from this repo alone (VADER is not bundled). See [docs/FORMAT.md](docs/FORMAT.md). You may supply only some of the three levels; giving `reference` (the scores of the reference lexicon) is what draws the emotion spectrum.
 Without external scores the page scores the text with its built-in dictionary and says so in the badge next to the file name ("Built-in" or "Finance") and in the colour-scale line, which names the dictionary - demo quality. Its Export JSON then records `model: {version, profile}`, so a file says which engine and dictionary scored it.
 
-For finance prose there is an offline path that gives exactly the page's Finance scores (it runs the same JS engine through Node; Node.js is the only requirement):
+For finance prose there is an offline path that gives exactly the page's Finance scores (it runs the same JS engine in-process under Node.js; Node.js is the only requirement):
 
 ```
-python examples/score_financial.py examples/fsr-assessment-2026-10.txt -o report.scored.json
+node examples/score-financial.js examples/fsr-assessment-2026-10.txt -o report.scored.json
 ```
 
 ## Usage
 
 Pure front end, no build step. Open `index.html` in a browser, or host it on any static server. The toolbar links to the Timeline page and two Story presentations: [Fable](SentimentStoryFable.html) (ink FX and autoplay) and [Astra](SentimentStoryAstra.html) (editorial layout of the Assessment). The original Story reading (`SentimentStoryDemo.html`) is archived: the file stays in the repo - the tests still read its `//<story-data>` step as the reference copy - but no page links to it any more, so it opens by direct URL only.
 PDF parsing uses pdf.js loaded from cdnjs, so it needs a network connection.
-The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text), the full Review, and a synthetic sample. All three were scored offline with the Finance dictionary through the same engine (`examples/score_financial.py`), so they open as scored files and do not download the dictionary. The first one opens at start-up.
+The "Sample article" dropdown in the top bar offers three built-in demos: the Assessment section of the RBA Financial Stability Review, October 2026 (real text), the full Review, and a synthetic sample. All three were scored offline with the Finance dictionary through the same engine (`examples/score-financial.js`), so they open as scored files and do not download the dictionary. The first one opens at start-up.
 
 ## Layout
 
 - `docs/FORMAT.md`: the scoring file format, and the built-in scoring model (profiles, rules, lazy loading)
 - `data/sentiment-model.json`: the canonical scoring model - rules, parameters, negators, boosters, contrast words, neutral phrases, and the named vocabularies `general` and `finance` with their suffix policies and sources. Hand-maintained; everything the browser uses is generated from it
 - `tools/build-lexicon.js`: the deterministic generator. Writes the model back in canonical form, the `//<model>` region of `sentiment-core.js` (rules + the general vocabulary, so they are there synchronously) and `lexicon/finance.js`. `--check` fails on stale files (run by the tests)
-- `tools/build_finance_vocab.py`: rebuilds the finance vocabulary and the upstream hashes from `pysentiment2` / `vaderSentiment` and hands them to the generator (`--check` compares without writing)
+- `tools/build-finance-vocab.js`: rebuilds the finance vocabulary and upstream hashes from `LM.csv` + `vader_lexicon.txt` and regenerates the model + assets (`--check` compares without writing)
 - `lexicon/finance.js`: generated Finance dictionary, a classic script inserted the first time finance scoring is needed
-- `tools/score-cli.js`, `tools/sm_engine.py`: batch scoring through the JS engine (JSON on stdin / stdout, one Node process per run) and its Python wrapper
+- `tools/score-cli.js`: batch scoring through the JS engine (JSON on stdin / stdout, one Node process per run)
 - `tools/update-golden.js`: refills `test/golden.json` after a deliberate model change and prints what changed
 - `test/fixtures/sentiment-core-56f66cb.js`: the engine as it was before the model file (main at 56f66cb), kept byte for byte so the tests can prove the General profile still scores exactly like it
-- `THIRD_PARTY_NOTICES.md`: licences of the word lists and other third-party material (Loughran-McDonald, VADER, pysentiment2, the RBA text, pdf.js)
-- `examples/`: sample text, scored results in both formats, and the Python scoring scripts (swap in your own model). After a model change, `node examples/pack_fsr.js --rescore` re-scores the three finance examples from their `.txt` / `.md` and repacks `demos.js` and `fsr-2026-10.demo.js` (no PDF needed). `launch-week.scored.json / .csv` are the "bring your own scores" example, scored by VADER via `examples/score_with_python.py`, not by this engine; re-running that script reproduces them byte for byte
+- `THIRD_PARTY_NOTICES.md`: licences of the word lists and other third-party material (Loughran-McDonald, VADER, the RBA text, pdf.js)
+- `examples/`: sample text, scored results in both formats, and the Node.js scoring scripts (swap in your own model). After a model change, `node examples/pack_fsr.js --rescore` re-scores the three finance examples from their `.txt` / `.md` and repacks `demos.js` and `fsr-2026-10.demo.js` (no PDF needed). `launch-week.scored.json / .csv` are the committed VADER "bring your own scores" fixtures (static fixtures that cannot be regenerated from this repo without external VADER); `examples/score-external.js` is the Node.js template for bringing your own scores
 - `examples/demos.js`: the picker list (`window.DEMOS`). The Assessment and the synthetic sample are inlined. The full Review is only a `{label, file, src}` stub. Packed by `examples/pack_fsr.js` (needs `pdfjs-dist@3.11.174` via `PDFJS_DIST` or `node_modules`; this repo has no `package.json`). Loaded as a classic `<script>`, not `fetch()`, because `file://` blocks fetch.
 - `examples/fsr-2026-10.demo.js`: the full Review as a second classic script (`window.DEMO_FILES`). The page inserts it the first time that article is chosen, so start-up does not parse it.
 - `examples/fsr-assessment-2026-10.txt / .scored.json`: the Assessment text of the RBA FSR, PDF pages 4–12 (printed pages 1–9, including Endnotes). `examples/pack_fsr.js` extracts the text, repairs one split heading, and adds the verified Figure 1 transcription and corrected Endnotes from `examples/fsr-assessment-supplement.md` only to the Assessment. Figure 1 was read from the RBA's vector figure (`https://www.rba.gov.au/publications/fsr/2026/oct/images/figure-0.01.svg`); its five themes intentionally sit at the same outline level as the preceding Box heading.
 - `examples/fsr-2026-10.txt / .scored.json`: the full Review, extracted with the same joiner (`itemsToLines` / `linesToBlocks` in `sentiment-core.js`, pdf.js 3.11.174). Pretty JSON is the readable source; the demo script is generated from it.
 - Those text files and the packed demo scripts reproduce Reserve Bank of Australia (2026), Financial Stability Review, October 2026 (https://www.rba.gov.au/publications/fsr/2026/oct/) under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). Sentiment scores were added by SentimentMarker and are not the Reserve Bank's. The Reserve Bank does not endorse this project. The Assessment includes a text-only transcription of Figure 1, which credits the RBA as its source. Graphs, tables, and series drawn from third parties (including the HILDA and BLADE material noted at the back of the Review) are not covered by that licence and are not part of the text demo.
-- `examples/fsr/fsr-2024-03.txt` … `fsr-2026-03.txt`: the full Reviews of March 2024, September 2024, April 2025, October 2025 and March 2026, extracted with the same joiner (`node examples/pack_fsr.js --pdf … --txt …`). Reserve Bank of Australia, Financial Stability Review (2024–2026), https://www.rba.gov.au/publications/fsr/, CC BY 4.0; same terms and exclusions as the October 2026 text above. `examples/fsr-timeline.diff.js` is built from them and `examples/fsr-2026-10.txt` by `examples/build_fsr_timeline.py`; its sentiment scores and topic tags are SentimentMarker's, not the Reserve Bank's
-- `tools/sm_diff.py`, `SentimentDiff.html`, `docs/DIFF_FORMAT.md`: the Diff + Timeline tool, page and format
+- `examples/fsr/fsr-2024-03.txt` … `fsr-2026-03.txt`: the full Reviews of March 2024, September 2024, April 2025, October 2025 and March 2026, extracted with the same joiner (`node examples/pack_fsr.js --pdf … --txt …`). Reserve Bank of Australia, Financial Stability Review (2024–2026), https://www.rba.gov.au/publications/fsr/, CC BY 4.0; same terms and exclusions as the October 2026 text above. `examples/fsr-timeline.diff.js` is built from them and `examples/fsr-2026-10.txt` by `examples/build-fsr-timeline.js`; its sentiment scores and topic tags are SentimentMarker's, not the Reserve Bank's
+- `tools/sm-diff.js`, `SentimentDiff.html`, `docs/DIFF_FORMAT.md`: the Diff + Timeline tool, page and format
 - `examples/financial-stability-review-2026-10.pdf`: the unmodified RBA publication. It includes the Reserve Bank logo and third-party graphs and tables, which the Reserve Bank excludes from CC BY 4.0 (https://www.rba.gov.au/copyright/). This project does not relicense that file.
 
 
@@ -87,29 +86,29 @@ The script is split in two:
 ## Tests
 
 ```
-node test/core.test.js            # core, app wiring, generator --check, golden vectors, General == the 56f66cb engine
-python3 test/test_golden.py       # the same golden vectors through Python -> Node (also runs under pytest)
-python test/test_diff.py          # Diff + Timeline: alignment, decomposition, hyphen boundaries (also runs under pytest)
-node test/diff-ui.test.js          # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
+node test/core.test.js            # core, app wiring, generator --check, golden vectors (direct + batch CLI), General == 56f66cb engine
+node test/diff.test.js            # Diff + Timeline, score-financial.js, build-finance-vocab.js, score-external.js
+node test/diff-ui.test.js         # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
 node tools/build-lexicon.js --check
-python3 tools/build_finance_vocab.py --check   # needs pysentiment2 + vaderSentiment
+node tools/build-finance-vocab.js --check --lm "$LM_CSV" --vader "$VADER_LEXICON"   # verifies finance vocab against upstream lexicons (run in CI)
+node test/ui-smoke.js             # optional headless Chrome/Edge CDP smoke test (zero dependencies)
 ```
 
-The Diff + Timeline pack check rebuilds all six editions and compares canonical JSON payloads, independent of key order and indentation. Means and decomposition use exact arithmetic over integer 1e-4 sentence-score units, with half-even rounding at the existing precision (means: 4 decimal places; deltas and contributions: 5). The check compares those summaries in integer units at that precision and checks the remaining data exactly. A full rebuild measured 3.14 seconds on macOS with Python 3.13 / Node 22; CI runs the full check without `SM_DIFF_SKIP_CHECK` and has a 10-minute job limit. The UI test chooses `PYTHON`, then `python3`, falling back to `python` if the selected executable is missing.
+The Diff + Timeline pack check rebuilds all six editions and compares canonical JSON payloads, independent of key order and indentation. Means and decomposition use exact BigInt rational arithmetic over integer 1e-4 sentence-score units, with half-even rounding at the existing precision (means: 4 decimal places; deltas and contributions: 5). The check compares those summaries in integer units at that precision and checks the remaining data exactly. CI runs Node 22 with no Python runtime or npm dependencies; for the finance-vocabulary check it downloads two SHA-256-pinned upstream lexicon archives (cached by hash), verifies their checksums, and runs `tools/build-finance-vocab.js --check`.
 
-`test/golden.json` holds the shared golden vectors (negation, boosters, contrast, caps / exclamation, the "financial stability" neutral phrase, exact-match collisions such as goods / bridging, Chinese). Every field is checked: sentence score and raw sum, each scored word's code-point offsets, base and effective score and the engine's notes, and the negators / boosters / neutralised words that acted. Both runners must reproduce them exactly. `test/test_golden.py` skips only the vocabulary rebuild when pysentiment2 is missing.
+`test/golden.json` holds the shared golden vectors (negation, boosters, contrast, caps / exclamation, the "financial stability" neutral phrase, exact-match collisions such as goods / bridging, Chinese). Every field is checked: sentence score and raw sum, each scored word's code-point offsets, base and effective score and the engine's notes, and the negators / boosters / neutralised words that acted. Both direct engine calls and the `tools/score-cli.js` batch runner must reproduce them exactly.
 `node test/core.test.js` also deep-compares the General profile with the pre-model engine in `test/fixtures/` over every example text, the golden inputs and edge cases (sentences, tokens, whole documents, exports, topics): they must be identical.
 
 ## Built-in sentiment engine (demo only)
 
 A dictionary approach inside the browser, handling negation, degree adverbs (boosters and dampeners), contrasts (but / however), ALL CAPS and exclamation marks.
 A sentence score is the weighted sum of its word scores squashed into -1..1; a paragraph score is the mean of its sentences.
-There is one implementation, `sentiment-core.js`; Python reaches it through `tools/score-cli.js`, so offline and in-page scores are identical.
+There is one implementation, `sentiment-core.js`; offline scoring runs it directly under Node (`tools/score-cli.js` / `examples/score-financial.js`), so offline and in-page scores are identical.
 
 Two vocabulary profiles share those rules:
 
 - **General** (default): 293 English and 55 Chinese entries, with a suffix fallback (`improved` -> `improve`, `happily` -> `happy`). Built into `sentiment-core.js`, available as soon as it loads. Colour scale word ±3, sentence ±0.6, paragraph ±0.3
-- **Finance**: 3381 words, Loughran-McDonald polarity with VADER strength. Exact match only, because the fallback produced false matches (`goods` -> `good`, `bridging` -> `bridge`); words LM leaves neutral, such as `risk`, `capital`, `credit`, stay neutral. Inside "financial stability" the word stability is not scored. It is a separate dictionary, not merged into General. The page downloads `lexicon/finance.js` (about 37 KB, 13 KB gzipped) only when text is first scored with it; showing an already scored file never downloads it. A failed download is reported and retried the next time Finance is chosen. The core recomputes the sha256 of the words it receives and installs them only if it matches the one recorded in the model, so a stale or edited asset is refused. Colour scale word ±2.5; sentence and paragraph scales follow the document (90th percentile), the same in the page and in `score_financial.py` output
+- **Finance**: 3381 words, Loughran-McDonald polarity with VADER strength. Exact match only, because the fallback produced false matches (`goods` -> `good`, `bridging` -> `bridge`); words LM leaves neutral, such as `risk`, `capital`, `credit`, stay neutral. Inside "financial stability" the word stability is not scored. It is a separate dictionary, not merged into General. The page downloads `lexicon/finance.js` (about 37 KB, 13 KB gzipped) only when text is first scored with it; showing an already scored file never downloads it. A failed download is reported and retried the next time Finance is chosen. The core recomputes the sha256 of the words it receives and installs them only if it matches the one recorded in the model, so a stale or edited asset is refused. Colour scale word ±2.5; sentence and paragraph scales follow the document (90th percentile), the same in the page and in `examples/score-financial.js` output
 
 ### Licences of the word lists
 
