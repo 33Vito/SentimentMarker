@@ -4,8 +4,8 @@
  * "Bring your own scores" Node.js template: read a text or Markdown file, score words/sentences/paragraphs
  * using your own model, lexicon, or API call, and emit SentimentMarker JSON or CSV (docs/FORMAT.md).
  *
- *   node examples/score-external.js examples/launch-week.md
- *   node examples/score-external.js examples/launch-week.md --csv
+ *   node examples/score-external.js examples/launch-week.md -o my-launch-week.scored.json
+ *   node examples/score-external.js examples/launch-week.md --csv -o my-launch-week.scored.csv
  *   node examples/score-external.js notes.md --lexicon my_zh.json
  *
  * Swap `scoreWord` / `scoreSentence` / `scoreParagraph` for your own model or `fetch()` API call

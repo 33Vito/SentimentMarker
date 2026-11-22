@@ -1022,25 +1022,64 @@ function write(obj, outPath, jsPath = null, note = null) {
   return text;
 }
 
+function parseFloatArg(raw, flag) {
+  const s = String(raw).trim();
+  if (!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) {
+    throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
+  }
+  const n = Number(s);
+  if (!Number.isFinite(n)) {
+    throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
+  }
+  return n;
+}
+
+function parseIntArg(raw, flag) {
+  const s = String(raw).trim();
+  if (!/^[+-]?\d+$/.test(s)) {
+    throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
+  }
+  const n = Number(s);
+  if (!Number.isSafeInteger(n)) {
+    throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
+  }
+  return n;
+}
+
 function parseArgs(argv) {
   const opts = { edition: [], assumeOrdered: false, minSim: 0.55, minHits: MIN_HITS };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+    let flag = arg;
+    let hasInline = false;
+    let inlineVal = null;
+    if (arg.startsWith('--')) {
+      const eq = arg.indexOf('=');
+      if (eq > 2) {
+        flag = arg.slice(0, eq);
+        hasInline = true;
+        inlineVal = arg.slice(eq + 1);
+      }
+    }
     const next = () => {
-      if (i + 1 >= argv.length) throw new Error(`missing value for ${arg}`);
+      if (hasInline) return inlineVal;
+      if (i + 1 >= argv.length) throw new Error(`missing value for ${flag}`);
       return argv[++i];
     };
-    if (arg === '-h' || arg === '--help') { opts.help = true; continue; }
-    if (arg === '--edition') opts.edition.push(next());
-    else if (arg === '--assume-ordered') opts.assumeOrdered = true;
-    else if (arg === '--topics') opts.topics = next();
-    else if (arg === '-o' || arg === '--out') opts.out = next();
-    else if (arg === '--js') opts.js = next();
-    else if (arg === '--title') opts.title = next();
-    else if (arg === '--note') opts.note = next();
-    else if (arg === '--sources') opts.sources = next();
-    else if (arg === '--min-sim') opts.minSim = Number(next());
-    else if (arg === '--min-hits') opts.minHits = parseInt(next(), 10);
+    const noValue = () => {
+      if (hasInline) throw new Error(`option ${flag} does not take a value`);
+    };
+    if (flag === '-h' || flag === '--help') { noValue(); opts.help = true; continue; }
+    if (flag === '--edition') opts.edition.push(next());
+    else if (flag === '--assume-ordered') { noValue(); opts.assumeOrdered = true; }
+    else if (flag === '--topics') opts.topics = next();
+    else if (flag === '-o' || flag === '--out') opts.out = next();
+    else if (flag === '--js') opts.js = next();
+    else if (flag === '--title') opts.title = next();
+    else if (flag === '--note') opts.note = next();
+    else if (flag === '--sources') opts.sources = next();
+    else if (flag === '--min-sim') opts.minSim = parseFloatArg(next(), flag);
+    else if (flag === '--min-hits') opts.minHits = parseIntArg(next(), flag);
     else throw new Error(`unknown argument: ${arg}`);
   }
   return opts;
@@ -1097,5 +1136,5 @@ module.exports = {
   FORMAT, VERSION, ASSESS_KEY, MIN_HITS,
   SequenceMatcher, roundPy, roundFrac, roundFracInt, floatToFrac, fracToNumber, scoreFraction,
   normText, sectionKey, sameSection, labelFor, flatten, compilePattern, loadTopics, tagTopics,
-  tokens, align, wordOps, packWord, stats, decompose, pct, nice, sortEditions, build, formatJsWrapper, write,
+  tokens, align, wordOps, packWord, stats, decompose, pct, nice, sortEditions, build, formatJsWrapper, write, parseArgs,
 };

@@ -309,6 +309,59 @@ function test_cli_order_validation() {
   }
 }
 
+function test_cli_numeric_and_equals_validation() {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sm-diff-cli-num-'));
+  try {
+    const docPath = path.join(tmp, 'doc.json');
+    fs.writeFileSync(docPath, JSON.stringify(doc([p(['One sentence.', 0.1])])), 'utf8');
+    const topicsPath = path.join(ROOT, 'examples', 'fsr-topics.json');
+    const cli = path.join(ROOT, 'tools', 'sm-diff.js');
+    const badCases = [
+      ['--min-sim', 'garbage'],
+      ['--min-sim=garbage'],
+      ['--min-sim='],
+      ['--min-sim', 'NaN'],
+      ['--min-sim', 'Infinity'],
+      ['--min-sim', '0.5oops'],
+      ['--min-hits', '5oops'],
+      ['--min-hits=5oops'],
+      ['--min-hits', 'nonsense'],
+      ['--min-hits', '3.5'],
+      ['--min-hits='],
+      ['--assume-ordered=true'],
+    ];
+    badCases.forEach((extra, idx) => {
+      const output = path.join(tmp, `bad-${idx}.json`);
+      const res = spawnSync(process.execPath, [
+        cli,
+        '--edition', `2024-03=${docPath}`,
+        '--edition', `2024-09=${docPath}`,
+        '--topics', topicsPath,
+        '-o', output,
+        ...extra,
+      ], { encoding: 'utf8' });
+      assert.notEqual(res.status, 0, `expected failure for ${extra.join(' ')}`);
+      assert.equal(fs.existsSync(output), false, `must not write output for ${extra.join(' ')}`);
+    });
+    const okOut = path.join(tmp, 'ok-equals.json');
+    const okRes = spawnSync(process.execPath, [
+      cli,
+      `--edition=2024-03=${docPath}`,
+      `--edition=2024-09=${docPath}`,
+      `--topics=${topicsPath}`,
+      `--out=${okOut}`,
+      '--min-sim=0.7',
+      '--min-hits=3',
+    ], { encoding: 'utf8' });
+    assert.equal(okRes.status, 0, okRes.stderr);
+    const written = JSON.parse(fs.readFileSync(okOut, 'utf8'));
+    assert.equal(written.params.minSim, 0.7);
+    assert.equal(written.params.minHits, 3);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 function test_single_sentence_has_no_fake_standard_error() {
   const s = M.stats([0.4], 0.2);
   assert.equal(s.n, 1);
@@ -485,6 +538,7 @@ const TESTS = [
   test_date_editions_are_sorted_chronologically,
   test_edition_order_validation,
   test_cli_order_validation,
+  test_cli_numeric_and_equals_validation,
   test_single_sentence_has_no_fake_standard_error,
   test_word_pack_keeps_base_and_rule_and_skips_empty_note,
   test_clean_prose_repairs_bullet_y_and_slash_without_touching_words,
