@@ -1022,7 +1022,7 @@ function write(obj, outPath, jsPath = null, note = null) {
   return text;
 }
 
-function parseFloatArg(raw, flag) {
+function parseFloatArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
   const s = String(raw).trim();
   if (!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) {
     throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
@@ -1031,10 +1031,13 @@ function parseFloatArg(raw, flag) {
   if (!Number.isFinite(n)) {
     throw new Error(`invalid float value for ${flag}: ${JSON.stringify(raw)}`);
   }
+  if (n < min || n > max) {
+    throw new Error(`${flag} must be between ${min} and ${max}, got ${n}`);
+  }
   return n;
 }
 
-function parseIntArg(raw, flag) {
+function parseIntArg(raw, flag, { min = -Infinity, max = Infinity } = {}) {
   const s = String(raw).trim();
   if (!/^[+-]?\d+$/.test(s)) {
     throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
@@ -1042,6 +1045,10 @@ function parseIntArg(raw, flag) {
   const n = Number(s);
   if (!Number.isSafeInteger(n)) {
     throw new Error(`invalid int value for ${flag}: ${JSON.stringify(raw)}`);
+  }
+  if (n < min || n > max) {
+    const bound = max === Infinity ? `>= ${min}` : `between ${min} and ${max}`;
+    throw new Error(`${flag} must be ${bound}, got ${n}`);
   }
   return n;
 }
@@ -1061,25 +1068,40 @@ function parseArgs(argv) {
         inlineVal = arg.slice(eq + 1);
       }
     }
-    const next = () => {
-      if (hasInline) return inlineVal;
-      if (i + 1 >= argv.length) throw new Error(`missing value for ${flag}`);
-      return argv[++i];
+    const longFlag = flag === '-o' ? '--out' : flag;
+    const nextValue = ({ nonEmpty = false, allowNumericDash = false } = {}) => {
+      let val;
+      if (hasInline) {
+        val = inlineVal;
+      } else {
+        if (i + 1 >= argv.length) throw new Error(`missing value for ${flag}`);
+        val = argv[++i];
+        const looksLikeFlag = allowNumericDash
+          ? (val === '-h' || val === '-o' || val.startsWith('--'))
+          : val.startsWith('-');
+        if (looksLikeFlag) {
+          throw new Error(`missing value for ${flag} (got ${JSON.stringify(val)}; pass ${longFlag}=${val} for a literal dash-prefixed value)`);
+        }
+      }
+      if (nonEmpty && val === '') {
+        throw new Error(`empty value for ${flag}`);
+      }
+      return val;
     };
     const noValue = () => {
       if (hasInline) throw new Error(`option ${flag} does not take a value`);
     };
     if (flag === '-h' || flag === '--help') { noValue(); opts.help = true; continue; }
-    if (flag === '--edition') opts.edition.push(next());
+    if (flag === '--edition') opts.edition.push(nextValue({ nonEmpty: true }));
     else if (flag === '--assume-ordered') { noValue(); opts.assumeOrdered = true; }
-    else if (flag === '--topics') opts.topics = next();
-    else if (flag === '-o' || flag === '--out') opts.out = next();
-    else if (flag === '--js') opts.js = next();
-    else if (flag === '--title') opts.title = next();
-    else if (flag === '--note') opts.note = next();
-    else if (flag === '--sources') opts.sources = next();
-    else if (flag === '--min-sim') opts.minSim = parseFloatArg(next(), flag);
-    else if (flag === '--min-hits') opts.minHits = parseIntArg(next(), flag);
+    else if (flag === '--topics') opts.topics = nextValue({ nonEmpty: true });
+    else if (flag === '-o' || flag === '--out') opts.out = nextValue({ nonEmpty: true });
+    else if (flag === '--js') opts.js = nextValue({ nonEmpty: true });
+    else if (flag === '--title') opts.title = nextValue();
+    else if (flag === '--note') opts.note = nextValue();
+    else if (flag === '--sources') opts.sources = nextValue({ nonEmpty: true });
+    else if (flag === '--min-sim') opts.minSim = parseFloatArg(nextValue({ allowNumericDash: true }), flag, { min: 0, max: 1 });
+    else if (flag === '--min-hits') opts.minHits = parseIntArg(nextValue({ allowNumericDash: true }), flag, { min: 1 });
     else throw new Error(`unknown argument: ${arg}`);
   }
   return opts;
@@ -1097,7 +1119,7 @@ if (require.main === module) {
     if (!a.out) throw new Error('-o / --out is required');
     const editions = a.edition.map(spec => {
       const idx = spec.indexOf('=');
-      if (idx < 0) throw new Error(`invalid --edition spec (expected ID=PATH): ${spec}`);
+      if (idx <= 0 || idx === spec.length - 1) throw new Error(`invalid --edition spec (expected ID=PATH): ${spec}`);
       const eid = spec.slice(0, idx);
       const p = spec.slice(idx + 1);
       return [eid, JSON.parse(fs.readFileSync(p, 'utf8'))];

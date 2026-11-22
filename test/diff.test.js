@@ -317,20 +317,33 @@ function test_cli_numeric_and_equals_validation() {
     const topicsPath = path.join(ROOT, 'examples', 'fsr-topics.json');
     const cli = path.join(ROOT, 'tools', 'sm-diff.js');
     const badCases = [
-      ['--min-sim', 'garbage'],
-      ['--min-sim=garbage'],
-      ['--min-sim='],
-      ['--min-sim', 'NaN'],
-      ['--min-sim', 'Infinity'],
-      ['--min-sim', '0.5oops'],
-      ['--min-hits', '5oops'],
-      ['--min-hits=5oops'],
-      ['--min-hits', 'nonsense'],
-      ['--min-hits', '3.5'],
-      ['--min-hits='],
-      ['--assume-ordered=true'],
+      [['--min-sim', 'garbage'], /invalid float value for --min-sim/],
+      [['--min-sim=garbage'], /invalid float value for --min-sim/],
+      [['--min-sim='], /invalid float value for --min-sim/],
+      [['--min-sim', 'NaN'], /invalid float value for --min-sim/],
+      [['--min-sim', 'Infinity'], /invalid float value for --min-sim/],
+      [['--min-sim', '0.5oops'], /invalid float value for --min-sim/],
+      [['--min-sim', '-0.1'], /--min-sim must be between 0 and 1/],
+      [['--min-sim=-0.1'], /--min-sim must be between 0 and 1/],
+      [['--min-sim=1.01'], /--min-sim must be between 0 and 1/],
+      [['--min-sim', '1e3'], /--min-sim must be between 0 and 1/],
+      [['--min-sim', '--help'], /missing value for --min-sim/],
+      [['--min-hits', '5oops'], /invalid int value for --min-hits/],
+      [['--min-hits=5oops'], /invalid int value for --min-hits/],
+      [['--min-hits', 'nonsense'], /invalid int value for --min-hits/],
+      [['--min-hits', '3.5'], /invalid int value for --min-hits/],
+      [['--min-hits='], /invalid int value for --min-hits/],
+      [['--min-hits', '0'], /--min-hits must be >= 1/],
+      [['--min-hits=-1'], /--min-hits must be >= 1/],
+      [['--min-hits', '9007199254740992'], /invalid int value for --min-hits/],
+      [['--assume-ordered=true'], /option --assume-ordered does not take a value/],
+      [['--help=1'], /option --help does not take a value/],
+      [['--js='], /empty value for --js/],
+      [['--sources='], /empty value for --sources/],
+      [['--js', '--help'], /missing value for --js/],
+      [['--sources', '--help'], /missing value for --sources/],
     ];
-    badCases.forEach((extra, idx) => {
+    badCases.forEach(([extra, errRe], idx) => {
       const output = path.join(tmp, `bad-${idx}.json`);
       const res = spawnSync(process.execPath, [
         cli,
@@ -339,10 +352,26 @@ function test_cli_numeric_and_equals_validation() {
         '--topics', topicsPath,
         '-o', output,
         ...extra,
-      ], { encoding: 'utf8' });
-      assert.notEqual(res.status, 0, `expected failure for ${extra.join(' ')}`);
+      ], { encoding: 'utf8', cwd: tmp });
+      assert.equal(res.status, 1, `expected exit 1 for ${extra.join(' ')} (got ${res.status})`);
+      assert.match(res.stderr, errRe, `unexpected stderr for ${extra.join(' ')}: ${res.stderr}`);
       assert.equal(fs.existsSync(output), false, `must not write output for ${extra.join(' ')}`);
     });
+
+    // Missing/flag-like/empty path operands on -o / --out / --edition must fail before any I/O
+    const pathBadCases = [
+      [['--edition', `2024-03=${docPath}`, '--edition', `2024-09=${docPath}`, '--topics', topicsPath, '-o', '--help'], /missing value for -o/],
+      [['--edition', `2024-03=${docPath}`, '--edition', `2024-09=${docPath}`, '--topics', topicsPath, '--out='], /empty value for --out/],
+      [['--edition', `2024-03=`, '--edition', `2024-09=${docPath}`, '--topics', topicsPath, '-o', path.join(tmp, 'never.json')], /invalid --edition spec/],
+    ];
+    for (const [args, errRe] of pathBadCases) {
+      const res = spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', cwd: tmp });
+      assert.equal(res.status, 1, `expected exit 1 for ${args.join(' ')}`);
+      assert.match(res.stderr, errRe);
+    }
+    assert.equal(fs.existsSync(path.join(tmp, '--help')), false);
+
+    // Valid equals syntax, boundary values (minSim=0/1, minHits=1), and literal dash-prefixed path via --out=
     const okOut = path.join(tmp, 'ok-equals.json');
     const okRes = spawnSync(process.execPath, [
       cli,
@@ -350,13 +379,29 @@ function test_cli_numeric_and_equals_validation() {
       `--edition=2024-09=${docPath}`,
       `--topics=${topicsPath}`,
       `--out=${okOut}`,
+      '--title=a=b',
       '--min-sim=0.7',
       '--min-hits=3',
-    ], { encoding: 'utf8' });
+    ], { encoding: 'utf8', cwd: tmp });
     assert.equal(okRes.status, 0, okRes.stderr);
     const written = JSON.parse(fs.readFileSync(okOut, 'utf8'));
+    assert.equal(written.title, 'a=b');
     assert.equal(written.params.minSim, 0.7);
     assert.equal(written.params.minHits, 3);
+
+    const boundRes = spawnSync(process.execPath, [
+      cli,
+      `--edition=2024-03=${docPath}`,
+      `--edition=2024-09=${docPath}`,
+      `--topics=${topicsPath}`,
+      '--out=-dashed.json',
+      '--min-sim=0',
+      '--min-hits=1',
+    ], { encoding: 'utf8', cwd: tmp });
+    assert.equal(boundRes.status, 0, boundRes.stderr);
+    const bound = JSON.parse(fs.readFileSync(path.join(tmp, '-dashed.json'), 'utf8'));
+    assert.equal(bound.params.minSim, 0);
+    assert.equal(bound.params.minHits, 1);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
@@ -493,6 +538,19 @@ function test_build_finance_vocab_on_synthetic_fixtures() {
     const stale = BFV.staleReasons(lmPath, vaderPath, fakeModel);
     assert.equal(stale.length, 1);
     assert.ok(stale[0].includes('finance words differ'));
+
+    const bfvCli = path.join(ROOT, 'tools', 'build-finance-vocab.js');
+    for (const [args, re] of [
+      [['--lm'], /missing value for --lm/],
+      [['--lm', '--vader', vaderPath], /missing value for --lm/],
+      [['--vader='], /empty value for --vader/],
+      [['--check=true'], /option --check does not take a value/],
+      [['--bogus'], /unknown argument: --bogus/],
+    ]) {
+      const r = spawnSync(process.execPath, [bfvCli, ...args], { encoding: 'utf8', cwd: tmp });
+      assert.equal(r.status, 1, `expected exit 1 for build-finance-vocab ${args.join(' ')}`);
+      assert.match(r.stderr, re);
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
@@ -501,12 +559,13 @@ function test_build_finance_vocab_on_synthetic_fixtures() {
 function test_score_external_launch_week_json_and_csv() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sm-ext-'));
   try {
+    const cli = path.join(ROOT, 'examples', 'score-external.js');
     const mdPath = path.join(ROOT, 'examples', 'launch-week.md');
     const jsonOut = path.join(tmp, 'launch.scored.json');
     const csvOut = path.join(tmp, 'launch.scored.csv');
-    const rj = spawnSync(process.execPath, [path.join(ROOT, 'examples', 'score-external.js'), mdPath, '-o', jsonOut], { encoding: 'utf8' });
+    const rj = spawnSync(process.execPath, [cli, mdPath, '-o', jsonOut], { encoding: 'utf8' });
     assert.equal(rj.status, 0, rj.stderr);
-    const rc = spawnSync(process.execPath, [path.join(ROOT, 'examples', 'score-external.js'), mdPath, '--csv', '-o', csvOut], { encoding: 'utf8' });
+    const rc = spawnSync(process.execPath, [cli, mdPath, '--csv', '-o', csvOut], { encoding: 'utf8' });
     assert.equal(rc.status, 0, rc.stderr);
     const jDoc = SMCore.docFromScored(JSON.parse(fs.readFileSync(jsonOut, 'utf8')));
     const cDoc = SMCore.docFromScored(SMCore.csvToScored(fs.readFileSync(csvOut, 'utf8')));
@@ -514,6 +573,32 @@ function test_score_external_launch_week_json_and_csv() {
     assert.ok(Object.values(cDoc.warn).every(v => v === 0));
     assert.equal(jDoc.sents.length, cDoc.sents.length);
     assert.equal(jDoc.words.length, cDoc.words.length);
+
+    // Guard against missing/flag-like/empty -o / --out / --lexicon overwriting the default sibling fixture
+    const copyMd = path.join(tmp, 'launch-week.md');
+    const sentinelJson = path.join(tmp, 'launch-week.scored.json');
+    fs.copyFileSync(mdPath, copyMd);
+    fs.writeFileSync(sentinelJson, '{"sentinel":true}\n', 'utf8');
+    for (const [args, re] of [
+      [[copyMd, '-o'], /missing value for -o/],
+      [[copyMd, '-o', '--csv'], /missing value for -o/],
+      [[copyMd, '--out='], /empty value for --out/],
+      [[copyMd, '--lexicon'], /missing value for --lexicon/],
+      [[copyMd, '--lexicon='], /empty value for --lexicon/],
+      [[copyMd, '--csv=true'], /option --csv does not take a value/],
+    ]) {
+      const r = spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', cwd: tmp });
+      assert.equal(r.status, 1, `expected exit 1 for score-external ${args.join(' ')}`);
+      assert.match(r.stderr, re);
+      assert.equal(fs.readFileSync(sentinelJson, 'utf8'), '{"sentinel":true}\n');
+    }
+    assert.equal(fs.existsSync(path.join(tmp, '--csv')), false);
+
+    // Omitting -o preserves default sibling output behavior
+    const rDefault = spawnSync(process.execPath, [cli, copyMd], { encoding: 'utf8', cwd: tmp });
+    assert.equal(rDefault.status, 0, rDefault.stderr);
+    const defDoc = SMCore.docFromScored(JSON.parse(fs.readFileSync(sentinelJson, 'utf8')));
+    assert.equal(defDoc.sents.length, jDoc.sents.length);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

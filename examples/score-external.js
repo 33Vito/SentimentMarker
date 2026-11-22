@@ -4,8 +4,8 @@
  * "Bring your own scores" Node.js template: read a text or Markdown file, score words/sentences/paragraphs
  * using your own model, lexicon, or API call, and emit SentimentMarker JSON or CSV (docs/FORMAT.md).
  *
- *   node examples/score-external.js examples/launch-week.md -o my-launch-week.scored.json
- *   node examples/score-external.js examples/launch-week.md --csv -o my-launch-week.scored.csv
+ *   node examples/score-external.js examples/launch-week.md -o /tmp/launch-week.scored.json
+ *   node examples/score-external.js examples/launch-week.md --csv -o /tmp/launch-week.scored.csv
  *   node examples/score-external.js notes.md --lexicon my_zh.json
  *
  * Swap `scoreWord` / `scoreSentence` / `scoreParagraph` for your own model or `fetch()` API call
@@ -162,27 +162,59 @@ function toCSV(doc) {
   return rows.map(r => r.map(q).join(',')).join('\n') + '\n';
 }
 
+function parseArgs(argv) {
+  const opts = { input: null, out: null, csv: false, lexPath: null, help: false };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    let flag = arg;
+    let hasInline = false;
+    let inlineVal = null;
+    if (arg.startsWith('--')) {
+      const eq = arg.indexOf('=');
+      if (eq > 2) {
+        flag = arg.slice(0, eq);
+        hasInline = true;
+        inlineVal = arg.slice(eq + 1);
+      }
+    }
+    const longFlag = flag === '-o' ? '--out' : flag;
+    const nextPath = () => {
+      let val;
+      if (hasInline) {
+        val = inlineVal;
+      } else {
+        if (i + 1 >= argv.length) throw new Error(`missing value for ${flag}`);
+        val = argv[++i];
+        if (val.startsWith('-')) {
+          throw new Error(`missing value for ${flag} (got ${JSON.stringify(val)}; pass ${longFlag}=${val} for a literal dash-prefixed path)`);
+        }
+      }
+      if (val === '') throw new Error(`empty value for ${flag}`);
+      return val;
+    };
+    const noValue = () => {
+      if (hasInline) throw new Error(`option ${flag} does not take a value`);
+    };
+    if (flag === '-h' || flag === '--help') { noValue(); opts.help = true; continue; }
+    if (flag === '-o' || flag === '--out') opts.out = nextPath();
+    else if (flag === '--csv') { noValue(); opts.csv = true; }
+    else if (flag === '--lexicon') opts.lexPath = nextPath();
+    else if (!arg.startsWith('-') && !opts.input) opts.input = arg;
+    else throw new Error(`unexpected argument: ${arg}`);
+  }
+  return opts;
+}
+
 if (require.main === module) {
   try {
-    const argv = process.argv.slice(2);
-    let input = null;
-    let out = null;
-    let csv = false;
-    let lexPath = null;
-    for (let i = 0; i < argv.length; i++) {
-      const arg = argv[i];
-      if (arg === '-h' || arg === '--help') {
-        console.log('Usage: node examples/score-external.js <input> [-o|--out OUT] [--csv] [--lexicon PATH]');
-        process.exit(0);
-      } else if (arg === '-o' || arg === '--out') out = argv[++i];
-      else if (arg === '--csv') csv = true;
-      else if (arg === '--lexicon') lexPath = argv[++i];
-      else if (!arg.startsWith('-') && !input) input = arg;
-      else throw new Error(`unexpected argument: ${arg}`);
+    const { input, out, csv, lexPath, help } = parseArgs(process.argv.slice(2));
+    if (help) {
+      console.log('Usage: node examples/score-external.js <input> [-o|--out OUT] [--csv] [--lexicon PATH]');
+      process.exit(0);
     }
     if (!input) throw new Error('missing input path');
     const doc = build(input, loadLexicon(lexPath));
-    const dest = out || input.replace(/\.[^.]+$/, '') + '.scored.' + (csv ? 'csv' : 'json');
+    const dest = out !== null ? out : input.replace(/\.[^.]+$/, '') + '.scored.' + (csv ? 'csv' : 'json');
     const content = csv
       ? toCSV(doc)
       : JSON.stringify(doc, null, 1).replace(/\[\s*(-?[\d.]+(?:,\s*-?[\d.]+)*)\s*\]/g, (_, inner) => '[' + inner.replace(/\s+/g, '') + ']');
@@ -195,4 +227,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { scoreWord, scoreSentence, scoreParagraph, build, toCSV, loadLexicon };
+module.exports = { scoreWord, scoreSentence, scoreParagraph, build, toCSV, loadLexicon, parseArgs };

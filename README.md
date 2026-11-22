@@ -37,7 +37,7 @@ When you import external scores (a JSON / CSV file, or one pasted into the dialo
 To use your own model, score every word / sentence / paragraph in Node.js (or any language / API), save it as JSON or CSV, and drop it on the page:
 
 ```
-node examples/score-external.js examples/launch-week.md -o my-launch-week.scored.json   # template to swap in your model
+node examples/score-external.js examples/launch-week.md -o /tmp/launch-week.scored.json   # template to swap in your model
 ```
 
 Pass `-o` when trying it on `examples/launch-week.md`: without `-o` (and likewise with `--csv`), the default output path would overwrite the tracked `examples/launch-week.scored.json` / `.csv` VADER fixtures loaded by the tests. Those committed VADER fixtures can no longer be regenerated from this repo alone (VADER is not bundled). See [docs/FORMAT.md](docs/FORMAT.md). You may supply only some of the three levels; giving `reference` (the scores of the reference lexicon) is what draws the emotion spectrum.
@@ -90,10 +90,11 @@ node test/core.test.js            # core, app wiring, generator --check, golden 
 node test/diff.test.js            # Diff + Timeline, score-financial.js, build-finance-vocab.js, score-external.js
 node test/diff-ui.test.js         # SentimentDiff.html in node:vm, no browser; also rebuilds the pack with --check
 node tools/build-lexicon.js --check
+node tools/build-finance-vocab.js --check --lm <LM.csv> --vader <vader_lexicon.txt>   # verifies finance vocab against upstream lexicons (run in CI)
 node test/ui-smoke.js             # optional headless Chrome/Edge CDP smoke test (zero dependencies)
 ```
 
-The Diff + Timeline pack check rebuilds all six editions and compares canonical JSON payloads, independent of key order and indentation. Means and decomposition use exact BigInt rational arithmetic over integer 1e-4 sentence-score units, with half-even rounding at the existing precision (means: 4 decimal places; deltas and contributions: 5). The check compares those summaries in integer units at that precision and checks the remaining data exactly. CI runs Node 22 with zero external dependencies and no Python requirement.
+The Diff + Timeline pack check rebuilds all six editions and compares canonical JSON payloads, independent of key order and indentation. Means and decomposition use exact BigInt rational arithmetic over integer 1e-4 sentence-score units, with half-even rounding at the existing precision (means: 4 decimal places; deltas and contributions: 5). The check compares those summaries in integer units at that precision and checks the remaining data exactly. CI runs Node 22 with no Python runtime or npm dependencies; for the finance-vocabulary check it downloads two SHA-256-pinned upstream lexicon archives (cached by hash), verifies their checksums, and runs `tools/build-finance-vocab.js --check`.
 
 `test/golden.json` holds the shared golden vectors (negation, boosters, contrast, caps / exclamation, the "financial stability" neutral phrase, exact-match collisions such as goods / bridging, Chinese). Every field is checked: sentence score and raw sum, each scored word's code-point offsets, base and effective score and the engine's notes, and the negators / boosters / neutralised words that acted. Both direct engine calls and the `tools/score-cli.js` batch runner must reproduce them exactly.
 `node test/core.test.js` also deep-compares the General profile with the pre-model engine in `test/fixtures/` over every example text, the golden inputs and edge cases (sentences, tokens, whole documents, exports, topics): they must be identical.

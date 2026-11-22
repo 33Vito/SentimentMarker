@@ -199,7 +199,7 @@ const KIND = { e: 'Edited', a: 'Added', r: 'Removed' };
 
 let D = null;
 const st = { oneoffs: false, kind: 'topic', mode: 'abs', sort: 'doc', sel: null, filter: 'all', shown: 12 };
-const minHits = () => (D && D.params && D.params.minHits) || 5;
+const minHits = () => (D && D.params && D.params.minHits != null) ? D.params.minHits : 5;
 const DISCLAIMER = 'An added, removed or unmatched sentence is not by itself a new or deleted policy. A sentence score is the whole sentence, not aspect-level sentiment.';
 
 /* ---------- loading ---------- */

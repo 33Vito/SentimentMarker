@@ -131,14 +131,46 @@ function staleReasons(lmPath, vaderPath, model = null) {
 
 function parseArgs(argv) {
   const opts = {
-    check: argv.includes('--check'),
+    check: false,
     lm: process.env.LM_CSV || null,
     vader: process.env.VADER_LEXICON || null,
-    help: argv.includes('-h') || argv.includes('--help'),
+    help: false,
   };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--lm') opts.lm = argv[++i];
-    else if (argv[i] === '--vader') opts.vader = argv[++i];
+    const arg = argv[i];
+    let flag = arg;
+    let hasInline = false;
+    let inlineVal = null;
+    if (arg.startsWith('--')) {
+      const eq = arg.indexOf('=');
+      if (eq > 2) {
+        flag = arg.slice(0, eq);
+        hasInline = true;
+        inlineVal = arg.slice(eq + 1);
+      }
+    }
+    const nextPath = () => {
+      let val;
+      if (hasInline) {
+        val = inlineVal;
+      } else {
+        if (i + 1 >= argv.length) throw new Error(`missing value for ${flag}`);
+        val = argv[++i];
+        if (val.startsWith('-')) {
+          throw new Error(`missing value for ${flag} (got ${JSON.stringify(val)}; pass ${flag}=${val} for a literal dash-prefixed path)`);
+        }
+      }
+      if (val === '') throw new Error(`empty value for ${flag}`);
+      return val;
+    };
+    const noValue = () => {
+      if (hasInline) throw new Error(`option ${flag} does not take a value`);
+    };
+    if (flag === '-h' || flag === '--help') { noValue(); opts.help = true; }
+    else if (flag === '--check') { noValue(); opts.check = true; }
+    else if (flag === '--lm') opts.lm = nextPath();
+    else if (flag === '--vader') opts.vader = nextPath();
+    else throw new Error(`unknown argument: ${arg}`);
   }
   return opts;
 }
